@@ -38,20 +38,26 @@ function formatBytes(bytes) {
 
 function SiteHeader({ account, walletState, connectWallet, expedition = false }) {
   return (
-    <header className="site-header">
-      <a className="brand" href="/" aria-label="Ethscribe home"><img src="/ethscribe.svg" alt="Ethscribe" /></a>
-      <nav className="main-nav" aria-label="Primary navigation">
-        {expedition ? (
-          <><a href="/">Mission</a><a href="#expedition">Expedition</a><a href="#timeline">Timeline</a><a href="#byte-lab">Byte Lab</a></>
-        ) : (
-          <><a href="#mission">Mission</a><a href="#method">Method</a><a href="#expeditions">Expeditions</a><a href="#next">Future Hunts</a></>
-        )}
-      </nav>
-      <button className="wallet-button" type="button" onClick={connectWallet}>
-        <WalletIcon />
-        {account ? shortAddress(account) : walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet'}
-      </button>
-    </header>
+    <>
+      <header className="site-header">
+        <a className="brand" href="/" aria-label="Ethscribe home"><img src="/ethscribe-icon.svg" alt="Ethscribe" /></a>
+        <nav className="main-nav" aria-label="Primary navigation">
+          <a href={expedition ? '/#mission' : '#mission'}>Mission</a>
+          <a href={expedition ? '/#method' : '#method'}>Method</a>
+          <a className={expedition ? 'nav-active' : ''} href={expedition ? '/#expeditions' : '#expeditions'} aria-current={expedition ? 'page' : undefined}>Expeditions</a>
+          <a href={expedition ? '/#propose' : '#propose'}>Propose</a>
+        </nav>
+        <button className="wallet-button" type="button" onClick={connectWallet}>
+          <WalletIcon />
+          {account ? shortAddress(account) : walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet'}
+        </button>
+      </header>
+      {expedition && (
+        <nav className="expedition-context-bar" aria-label="Current expedition">
+          <a href="/#expeditions">EXPEDITIONS</a><span>└─</span><a href={EXPEDITION_PATH} aria-current="page">EXPEDITION 001: THE LOST PIXELS OF SATOSHI</a>
+        </nav>
+      )}
+    </>
   );
 }
 
@@ -215,7 +221,6 @@ function HomePage({ account, walletState, connectWallet, openParticipation }) {
         <section className="featured-expedition" id="expeditions">
           <div className="featured-visual">
             <img src={referenceImage} alt="Satoshi Nakamoto’s surviving 2010 Bitcoin source artwork" />
-            <div className="lost-file-stamp"><strong>bitcoin20x20.png</strong><span>ORIGINAL BYTES UNKNOWN</span></div>
           </div>
           <div className="featured-copy">
             <p className="kicker"><span /> Expedition 001 · Active</p>
@@ -230,7 +235,7 @@ function HomePage({ account, walletState, connectWallet, openParticipation }) {
           </div>
         </section>
 
-        <section className="next-section" id="next">
+        <section className="next-section" id="propose">
           <div className="section-heading compact">
             <div><p className="kicker"><span /> Future fieldwork</p><h2>Digital history is bigger than the web.</h2></div>
             <button type="button" className="text-action proposal-button" onClick={() => openParticipation('proposal')}>Propose an expedition <ArrowIcon /></button>
@@ -271,7 +276,6 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
             <div className="artifact-stage lost-stage">
               <span className="registration-mark mark-one">+</span><span className="registration-mark mark-two">+</span>
               <img src={referenceImage} alt="Satoshi Nakamoto’s surviving 2010 Bitcoin source artwork" />
-              <div className="lost-file-stamp"><strong>bitcoin20x20.png</strong><span>ORIGINAL BYTES UNKNOWN</span></div>
             </div>
             <div className="artifact-label bottom-label">
               <div><span>CORPUS</span><strong>{huntStats.known} KNOWN FILES</strong></div>
@@ -286,7 +290,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
 
         <section className="hunt-section">
           <div className="section-heading">
-            <div><p className="kicker"><span /> Expedition brief</p><h2>One corpus. Two kinds of hunt.</h2></div>
+            <div><p className="kicker"><span /> Expedition brief</p><h2>Find the files. Complete the record.</h2></div>
             <div className="hunt-status"><span>EXPEDITION 001</span><strong>CATALOGUE LIVE</strong></div>
           </div>
 
@@ -303,6 +307,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
               <div className="progress-fraction"><strong>{huntStats.secured}</strong><span>/ {huntStats.known}</span></div>
               <p className="progress-label">known byte-perfect files secured in this collection</p>
               <div className="progress-track" aria-label={`${huntStats.secured} of ${huntStats.known} artifacts secured`}><span style={{ width: `${(huntStats.secured / huntStats.known) * 100}%` }} /></div>
+              <p className="progress-sync-note">CURATED MANIFEST TODAY · CONTRACT-INDEXED WHEN THE MARKETPLACE LAUNCHES</p>
               <dl className="progress-breakdown">
                 <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured}</dd></div><div><dt>NEEDS ETHSCRIBING</dt><dd>{huntStats.open}</dd></div>
                 <div><dt>BYTES UNKNOWN</dt><dd>{huntStats.lost}</dd></div><div><dt>MAPPED COMPONENTS</dt><dd>{huntStats.components}</dd></div>
@@ -322,7 +327,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
             </div>
 
             <div className="timeline-legend" aria-label="Timeline status legend">
-              <span className="legend-secured">ETHSCRIBED</span><span className="legend-open">NEEDS ETHSCRIBING</span><span className="legend-unknown">BYTES UNKNOWN · EXPLAINED IN RECORD</span>
+              <span className="legend-secured">ETHSCRIBED</span><span className="legend-open">NOT YET ETHSCRIBED</span>
             </div>
 
             <div className="artifact-timeline">
@@ -389,7 +394,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
 function SiteFooter({ expedition = false }) {
   return (
     <footer>
-      <img src="/ethscribe.svg" alt="Ethscribe" /><p>Recover the artifact. Prove the bytes. Preserve the history.</p>
+      <img src="/ethscribe-icon.svg" alt="Ethscribe" /><p>Recover the artifact. Prove the bytes. Preserve the history.</p>
       <div><a href="/">Mission</a><a href={expedition ? '#timeline' : EXPEDITION_PATH}>Expedition 001</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
     </footer>
   );

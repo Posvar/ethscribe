@@ -188,11 +188,6 @@
   z-index: 1;
 }
 
-.featured-visual .lost-file-stamp {
-  bottom: 13%;
-  z-index: 2;
-}
-
 .featured-copy {
   align-items: flex-start;
   display: flex;
@@ -261,7 +256,7 @@
 .expedition-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.06fr) minmax(390px, 0.94fr);
-  min-height: calc(100vh - 78px);
+  min-height: calc(100vh - 120px);
 }
 
 .expedition-hero-copy {
@@ -327,6 +322,10 @@
 
 .timeline-legend .legend-secured {
   background: var(--signal);
+}
+
+.timeline-legend .legend-open {
+  background: #f7f3e9;
 }
 
 .timeline-event-content {
@@ -533,7 +532,7 @@
   }
 
   .expedition-hero-copy {
-    min-height: calc(100svh - 67px);
+    min-height: calc(100svh - 109px);
     padding: 70px 24px;
   }
 
@@ -625,8 +624,9 @@ a {
 
 .brand img,
 footer img {
-  filter: brightness(0) invert(1);
-  height: 22px;
+  filter: none;
+  height: 32px;
+  image-rendering: pixelated;
   width: auto;
 }
 
@@ -647,6 +647,38 @@ footer img {
 }
 
 .main-nav a:hover {
+  color: var(--signal);
+}
+
+.main-nav .nav-active {
+  color: var(--signal);
+}
+
+.expedition-context-bar {
+  align-items: center;
+  background: #191917;
+  border-top: 1px solid #383834;
+  color: #aaa9a2;
+  display: flex;
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  gap: 12px;
+  letter-spacing: 0.09em;
+  min-height: 42px;
+  padding: 0 4.5vw;
+  text-transform: uppercase;
+}
+
+.expedition-context-bar a {
+  text-decoration: none;
+}
+
+.expedition-context-bar a[aria-current="page"] {
+  color: white;
+}
+
+.expedition-context-bar span {
   color: var(--signal);
 }
 
@@ -1648,6 +1680,16 @@ footer > span {
   height: 100%;
 }
 
+.progress-sync-note {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+
 .progress-breakdown {
   border-left: 1px solid var(--line);
   border-top: 1px solid var(--line);
@@ -2385,7 +2427,7 @@ footer > span {
   }
 
   .brand img {
-    height: 18px;
+    height: 30px;
   }
 
   .wallet-button {

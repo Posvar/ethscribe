@@ -169,6 +169,8 @@ The site launches with these top-level destinations:
 
 The public shell separates the permanent mission at `/` from Expedition 001 at `/expeditions/lost-pixels-of-satoshi`. Future catalogue and Finding routes may follow as persistent data is added.
 
+Global navigation remains stable across routes: `Mission | Method | Expeditions | Propose`. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
+
 ### Home page
 
 The home page should answer five durable questions immediately:
@@ -212,6 +214,8 @@ Each expedition must contain:
 - `No Accession` as a valid outcome
 
 The expedition timeline is the primary catalogue interface. Every artifact pill expands its evidence record directly beneath its historical moment. Secured pills are fully green; all artifacts that still need Ethscribing are white. A lost-byte target is distinguished by explanatory copy and an explicit `BYTES UNKNOWN` label, not by treating it as a third completion color.
+
+Completion figures must be derived state, never separately edited content. In the shell, `secured / known` and its progress bar derive from the curated artifact manifest. After contract launch, the same UI derives secured status from indexed marketplace/vault state, reconciled against the manifest's raw-byte identities, so each accepted accession automatically updates the count and bar.
 
 ### Finding page
 

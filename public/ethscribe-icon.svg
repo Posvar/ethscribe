@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 25" shape-rendering="crispEdges" role="img" aria-labelledby="title">
+  <title id="title">Ethscribe</title>
+  <rect width="18" height="25" fill="#000"/>
+  <g fill="#fff">
+    <path d="M3 3h12v3H3zM3 11h9v3H3zM3 19h12v3H3z"/>
+  </g>
+  <g fill="#c5ff1a">
+    <path d="M4 6h1v1H4zM3 7h1v3H3zM5 7h1v3H5zM4 10h1v1H4zM4 14h1v1H4zM3 15h2v1H3zM4 16h1v2H4zM3 18h3v1H3z"/>
+  </g>
+</svg>
