@@ -40,12 +40,12 @@ The connected Netlify site should build the `main` branch on every GitHub push.
 Azure credentials must remain server-side and must never use a `REACT_APP_` prefix. Netlify Functions will read these variables when submissions are implemented:
 
 ```text
-AZURE_STORAGE_ACCOUNT=ethscribe
+AZURE_STORAGE_ACCOUNT_NAME=ethscribe
 AZURE_STORAGE_CONTAINER=ethscribe-assets
 AZURE_STORAGE_SAS_TOKEN=<secret>
 ```
 
-The current site does not read or expose the SAS token. Before asset uploads are enabled, confirm the existing Netlify variable name matches `AZURE_STORAGE_SAS_TOKEN` and restrict the SAS permissions and expiry to the minimum required by the server-side function.
+The current site does not read or expose the SAS token. The three variable names above are configured on the linked Netlify project. Before asset uploads are enabled, restrict the SAS permissions and expiry to the minimum required by the server-side function.
 
 ## Historical sources
 

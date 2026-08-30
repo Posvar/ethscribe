@@ -342,12 +342,12 @@ JSON objects should be immutable by identifier where practical. Mutable indexes 
 Expected server-side environment variables:
 
 ```text
-AZURE_STORAGE_ACCOUNT=ethscribe
+AZURE_STORAGE_ACCOUNT_NAME=ethscribe
 AZURE_STORAGE_CONTAINER=ethscribe-assets
 AZURE_STORAGE_SAS_TOKEN=<secret>
 ```
 
-The exact name of the SAS variable already configured in Netlify must be confirmed before the first storage-backed Function is deployed. The account and container may be safe configuration values, but keeping all three server-side makes environments explicit.
+The linked Netlify project uses these exact variable names. The account and container may be safe configuration values, but keeping all three server-side makes environments explicit. The SAS token remains server-only and should be narrowed to the minimum permissions and duration required before uploads are enabled.
 
 ### Data integrity
 
@@ -538,13 +538,13 @@ These are possible future tools, not requirements for product legitimacy.
 
 ## Immediate build checklist
 
-- [ ] Update roadmap to the simplified trust model
-- [ ] Build and visually verify the public shell
-- [ ] Add real wallet connection
-- [ ] Add production metadata and Netlify configuration
-- [ ] Create and push the GitHub repository
-- [ ] Connect the existing Netlify project to the repository
+- [x] Update roadmap to the simplified trust model
+- [x] Build and visually verify the public shell
+- [x] Add real wallet connection
+- [x] Add production metadata and Netlify configuration
+- [x] Create and push the GitHub repository
+- [x] Connect the existing Netlify project to the repository
 - [ ] Deploy the shell to `ethscri.be`
-- [ ] Confirm the server-side Azure variable name
+- [x] Confirm the server-side Azure variable names and container setting
 - [ ] Design the signed dossier schema
 - [ ] Implement Azure-backed Functions after the shell is live
