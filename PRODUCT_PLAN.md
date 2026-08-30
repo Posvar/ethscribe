@@ -367,6 +367,26 @@ signature
 
 The server validates the signature and stores the submitted document without rewriting its signed fields.
 
+### Raw-byte identity and historical-first indexing
+
+Ethscriptions Protocol uniqueness is based on the SHA-256 of the complete UTF-8 data URI. The MIME type, Data URI parameters, encoding, and ESIP-6 rule are therefore part of protocol identity. They are not part of Ethscribe artifact identity.
+
+Ethscribe defines:
+
+```text
+rawSha256 = SHA-256(decoded artifact bytes)
+```
+
+The same decoded bytes wrapped as `image/x-xpixmap`, `image/x-xpm`, or another syntactically valid Data URI are one Ethscribe artifact even when the protocol recognizes multiple Ethscriptions. Ethscribe must:
+
+1. Decode every submitted Ethscription and calculate `rawSha256` itself.
+2. Collapse matching raw hashes beneath one artifact record.
+3. Backfill every historical Ethscription exposed by the official indexer, including calldata, ESIP-3 event creations, ESIP-7 gzip transport, ESIP-6 duplicates, and ESIP-8 attachments.
+4. Maintain the index continuously by block, transaction index, and event-log index.
+5. Label an inscription `earliest known raw-byte match` only after the historical backfill is complete.
+
+The official API's `content_sha` hashes the complete Data URI and cannot answer whether identical decoded bytes were previously Ethscribed under another wrapper. Until the Ethscribe raw-byte index is complete, the site may say `not in this collection`; it must not claim `never previously Ethscribed`.
+
 ### Marketplace contract boundary
 
 The site is designed now around a small later contract, tentatively `HuntHouse`, with these responsibilities:
@@ -401,7 +421,7 @@ Research data, comments, source URLs, ranking, and presentation remain off-chain
 
 - Implement the complete visual system
 - Build the responsive home page
-- Present Genesis Hunt 001: Satoshi's Workshop
+- Present Genesis Hunt 001: The Lost Pixels of Satoshi
 - Include real historical source links and clearly labeled preview data
 - Implement a real wallet-connect control
 - Implement navigation, Hunt detail states, and proposal/submit previews
@@ -499,7 +519,7 @@ The community reserve accumulates until there is enough activity to define fair 
 
 Suggested first sequence:
 
-1. **Satoshi's Workshop** — recover and document Satoshi's original released icon files.
+1. **The Lost Pixels of Satoshi** — map Satoshi's 2009–2010 icon workshop as a timeline: 7 of 22 known byte-perfect files already secured, 15 deterministic collection gaps, 14 mapped ICO components, and one genuine lost-file hunt for the attested `bitcoin20x20.png` attachment.
 2. **PNG Genesis** — locate historically significant early PNG artifacts with exact source evidence.
 3. **The Disputed Artifact** — deliberately test the process with several plausible versions.
 4. **Open Discovery** — search a bounded category without a predetermined target.
@@ -546,5 +566,7 @@ These are possible future tools, not requirements for product legitimacy.
 - [x] Connect the existing Netlify project to the repository
 - [x] Deploy the shell to `ethscri.be`
 - [x] Confirm the server-side Azure variable names and container setting
+- [x] Build the researched Satoshi artifact timeline and client-side XPM preview
 - [ ] Design the signed dossier schema
+- [ ] Backfill a protocol-wide decoded-byte SHA-256 index before making historical-first claims
 - [ ] Implement Azure-backed Functions after the shell is live
