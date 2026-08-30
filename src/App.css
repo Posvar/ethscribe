@@ -574,6 +574,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 130px;
 }
 
 body {
@@ -601,7 +602,7 @@ a {
 
 .site-shell {
   min-width: 320px;
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 .site-header {
@@ -614,6 +615,12 @@ a {
   padding: 0 4.5vw;
   position: relative;
   z-index: 10;
+}
+
+.header-stack {
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .brand {
@@ -634,7 +641,7 @@ a {
 .brand-wordmark {
   color: white;
   font-family: "Courier New", monospace;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1;
@@ -2452,7 +2459,7 @@ footer > span {
   }
 
   .brand-wordmark {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .wallet-button {

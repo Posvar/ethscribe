@@ -21,6 +21,7 @@ test('renders a broad mission homepage with the first expedition separated', () 
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Propose' })).toHaveAttribute('href', '#propose');
   expect(screen.getByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
+  expect(screen.getByText(/recover the artifact\. prove the bytes\. own the history\./i)).toBeInTheDocument();
 });
 
 test('expands secured and open artifact records directly in the timeline', () => {

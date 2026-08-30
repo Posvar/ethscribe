@@ -38,7 +38,7 @@ function formatBytes(bytes) {
 
 function SiteHeader({ account, walletState, connectWallet, expedition = false }) {
   return (
-    <>
+    <div className="header-stack">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Ethscribe home"><img src="/ethscribe-icon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
         <nav className="main-nav" aria-label="Primary navigation">
@@ -57,7 +57,7 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false })
           <a href="/#expeditions">EXPEDITIONS</a><span>└─</span><a href={EXPEDITION_PATH} aria-current="page">EXPEDITION 001: THE LOST PIXELS OF SATOSHI</a>
         </nav>
       )}
-    </>
+    </div>
   );
 }
 
@@ -394,7 +394,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
 function SiteFooter({ expedition = false }) {
   return (
     <footer>
-      <img src="/ethscribe-icon.svg" alt="Ethscribe" /><p>Recover the artifact. Prove the bytes. Preserve the history.</p>
+      <img src="/ethscribe-icon.svg" alt="Ethscribe" /><p>Recover the artifact. Prove the bytes. Own the history.</p>
       <div><a href="/">Mission</a><a href={expedition ? '#timeline' : EXPEDITION_PATH}>Expedition 001</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
