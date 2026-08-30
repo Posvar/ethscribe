@@ -619,10 +619,27 @@ a {
 .brand {
   align-items: center;
   display: inline-flex;
+  gap: 12px;
   justify-self: start;
+  text-decoration: none;
 }
 
-.brand img,
+.brand img {
+  filter: none;
+  height: 42px;
+  image-rendering: pixelated;
+  width: auto;
+}
+
+.brand-wordmark {
+  color: white;
+  font-family: "Courier New", monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
 footer img {
   filter: none;
   height: 32px;
@@ -2427,7 +2444,15 @@ footer > span {
   }
 
   .brand img {
-    height: 30px;
+    height: 36px;
+  }
+
+  .brand {
+    gap: 9px;
+  }
+
+  .brand-wordmark {
+    font-size: 13px;
   }
 
   .wallet-button {

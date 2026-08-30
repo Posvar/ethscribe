@@ -40,7 +40,7 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false })
   return (
     <>
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Ethscribe home"><img src="/ethscribe-icon.svg" alt="Ethscribe" /></a>
+        <a className="brand" href="/" aria-label="Ethscribe home"><img src="/ethscribe-icon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
         <nav className="main-nav" aria-label="Primary navigation">
           <a href={expedition ? '/#mission' : '#mission'}>Mission</a>
           <a href={expedition ? '/#method' : '#method'}>Method</a>

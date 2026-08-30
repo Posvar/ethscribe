@@ -15,7 +15,9 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(screen.getByRole('heading', { name: /living museum built through public hunts/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /lost pixels of satoshi/i })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /open the expedition/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
-  expect(screen.getAllByRole('img', { name: 'Ethscribe' })[0]).toHaveAttribute('src', '/ethscribe-icon.svg');
+  const brand = screen.getByRole('link', { name: /ethscribe home/i });
+  expect(within(brand).getByText('ETHSCRI.BE')).toBeInTheDocument();
+  expect(brand.querySelector('img')).toHaveAttribute('src', '/ethscribe-icon.svg');
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Propose' })).toHaveAttribute('href', '#propose');
   expect(screen.getByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
