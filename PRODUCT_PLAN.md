@@ -544,7 +544,7 @@ These are possible future tools, not requirements for product legitimacy.
 - [x] Add production metadata and Netlify configuration
 - [x] Create and push the GitHub repository
 - [x] Connect the existing Netlify project to the repository
-- [ ] Deploy the shell to `ethscri.be`
+- [x] Deploy the shell to `ethscri.be`
 - [x] Confirm the server-side Azure variable names and container setting
 - [ ] Design the signed dossier schema
 - [ ] Implement Azure-backed Functions after the shell is live
