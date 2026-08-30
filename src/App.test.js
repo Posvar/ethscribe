@@ -20,6 +20,7 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(brand.querySelector('img')).toHaveAttribute('src', '/ethscribe-icon.svg');
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Propose' })).toHaveAttribute('href', '#propose');
+  expect(within(primaryNavigation).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', '/docs');
   expect(screen.getByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
   expect(screen.getByText(/recover the artifact\. prove the bytes\. own the history\./i)).toBeInTheDocument();
 });

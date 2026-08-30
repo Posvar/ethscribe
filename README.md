@@ -4,6 +4,10 @@ Ownable digital archaeology: a curated archive and future marketplace for histor
 
 The first release is intentionally site-first. It establishes the brand, the Genesis Hunt, archival sourcing, wallet-based researcher identity, and honest pre-contract participation flows. Custody, listings, and settlement arrive with the marketplace-contract milestone described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
 
+## Documentation
+
+The living whitepaper is published at `https://ethscri.be/docs`. Its canonical Markdown source lives in [`public/docs-content`](./public/docs-content), and `.gitbook.yaml` makes that same directory ready for GitBook Git Sync. Update the source once; the first-party docs and connected GitBook publication share the same history and navigation.
+
 ## Local development
 
 Requires Node.js 20 or newer.

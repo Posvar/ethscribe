@@ -166,10 +166,17 @@ The site launches with these top-level destinations:
 | `/collection` | Permanent Accessions and frozen provenance records. |
 | `/propose` | Structured proposal for a future Hunt. |
 | `/about` | Ethscriptions, byte-perfect verification, ownership limits, and curation policy. |
+| `/docs` | Git-backed project documentation and living whitepaper, using the same Markdown source as GitBook. |
 
 The public shell separates the permanent mission at `/` from Expedition 001 at `/expeditions/lost-pixels-of-satoshi`. Future catalogue and Finding routes may follow as persistent data is added.
 
-Global navigation remains stable across routes: `Mission | Method | Expeditions | Propose`. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
+Global navigation remains stable across routes: `Mission | Method | Expeditions | Propose | Docs`. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
+
+### Documentation and whitepaper
+
+Project documentation is maintained as GitBook-compatible Markdown in `public/docs-content`, with `.gitbook.yaml` and `SUMMARY.md` defining the published structure. The application renders that same source at `/docs`, keeping the first-party site, Git history, and an optional GitBook publication synchronized without duplicate editing.
+
+The documentation covers the mission, protocol foundations, byte-perfect identity, evidence limits, Expedition mechanics, dossiers, curation, marketplace boundaries, economics, architecture, threat model, phased roadmap, autonomy plan, FAQ, and sources. It distinguishes shipped behavior from proposed phases and should be updated whenever a material trust assumption, contract parameter, or public claim changes.
 
 ### Home page
 
@@ -574,6 +581,7 @@ These are possible future tools, not requirements for product legitimacy.
 - [x] Deploy the shell to `ethscri.be`
 - [x] Confirm the server-side Azure variable names and container setting
 - [x] Build the researched Satoshi artifact timeline and client-side XPM preview
+- [x] Publish the Git-backed documentation and living whitepaper at `/docs`
 - [ ] Design the signed dossier schema
 - [ ] Backfill a protocol-wide decoded-byte SHA-256 index before making historical-first claims
 - [ ] Implement Azure-backed Functions after the shell is live

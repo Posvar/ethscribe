@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import DocsPage from './DocsPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, huntStats, lostArtifact, timelineEvents } from './huntData';
 
@@ -36,16 +37,19 @@ function formatBytes(bytes) {
   return bytes ? `${bytes.toLocaleString('en-US')} bytes` : 'Unknown';
 }
 
-function SiteHeader({ account, walletState, connectWallet, expedition = false }) {
+function SiteHeader({ account, walletState, connectWallet, expedition = false, docs = false }) {
+  const awayFromHome = expedition || docs;
+
   return (
     <div className="header-stack">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Ethscribe home"><img src="/ethscribe-icon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
         <nav className="main-nav" aria-label="Primary navigation">
-          <a href={expedition ? '/#mission' : '#mission'}>Mission</a>
-          <a href={expedition ? '/#method' : '#method'}>Method</a>
-          <a className={expedition ? 'nav-active' : ''} href={expedition ? '/#expeditions' : '#expeditions'} aria-current={expedition ? 'page' : undefined}>Expeditions</a>
-          <a href={expedition ? '/#propose' : '#propose'}>Propose</a>
+          <a href={awayFromHome ? '/#mission' : '#mission'}>Mission</a>
+          <a href={awayFromHome ? '/#method' : '#method'}>Method</a>
+          <a className={expedition ? 'nav-active' : ''} href={awayFromHome ? '/#expeditions' : '#expeditions'} aria-current={expedition ? 'page' : undefined}>Expeditions</a>
+          <a href={awayFromHome ? '/#propose' : '#propose'}>Propose</a>
+          <a className={docs ? 'nav-active' : ''} href="/docs" aria-current={docs ? 'page' : undefined}>Docs</a>
         </nav>
         <button className="wallet-button" type="button" onClick={connectWallet}>
           <WalletIcon />
@@ -395,7 +399,7 @@ function SiteFooter({ expedition = false }) {
   return (
     <footer>
       <img src="/ethscribe-icon.svg" alt="Ethscribe" /><p>Recover the artifact. Prove the bytes. Own the history.</p>
-      <div><a href="/">Mission</a><a href={expedition ? '#timeline' : EXPEDITION_PATH}>Expedition 001</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
+      <div><a href="/">Mission</a><a href={expedition ? '#timeline' : EXPEDITION_PATH}>Expedition 001</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
 }
@@ -405,13 +409,16 @@ function App() {
   const [walletState, setWalletState] = useState('idle');
   const [modal, setModal] = useState(null);
   const [savedMessage, setSavedMessage] = useState('');
-  const isExpedition = window.location.pathname.replace(/\/$/, '') === EXPEDITION_PATH;
+  const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+  const isExpedition = pathname === EXPEDITION_PATH;
+  const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
 
   useEffect(() => {
+    if (isDocs) return;
     document.title = isExpedition
       ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
       : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isExpedition]);
+  }, [isDocs, isExpedition]);
 
   useEffect(() => {
     const ethereum = window.ethereum;
@@ -472,7 +479,9 @@ function App() {
 
   return (
     <>
-      {isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
+      {isDocs
+        ? <DocsPage header={<SiteHeader {...pageProps} docs />} footer={<SiteFooter />} />
+        : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
       {modal && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setModal(null)}>
           <section className="participation-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
