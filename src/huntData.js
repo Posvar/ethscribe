@@ -45,6 +45,9 @@ export const artifacts = [
     previewUrl: rawGit('4405b78d6059e536c36974088a8ed4d9f0f29898', 'rc/bitcoin.ico'),
     ethscriptionNumber: '175266',
     ethscriptionId: '0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef',
+    contentSha: '0x1a27e03916705c933876019cbe617384d7201c979ba244479528eb0cb8544e72',
+    ethscribedAt: '22 JUN 2023 · 19:48:35 UTC',
+    blockNumber: '17,537,337',
     note: 'The earliest known publicly released Bitcoin identity file. It later reappeared unchanged as bitcoin-bc.ico.',
   },
   xpmArtifact({
@@ -112,6 +115,9 @@ export const artifacts = [
     previewUrl: 'https://web.archive.org/web/20101222204928id_/http://www.bitcoin.org/download/bitcoin16.4.png',
     ethscriptionNumber: '174722',
     ethscriptionId: '0x00a175b9f1df32c94923afaa7f445ad241718ff86700f912434e2f75e273dc21',
+    contentSha: '0x23f75ab697dc7c2ebe9154c9aa82d6e9c3b6ec49e3cabe5650be44e2602a05ae',
+    ethscribedAt: '22 JUN 2023 · 18:38:35 UTC',
+    blockNumber: '17,536,989',
     note: 'Exact match to the surviving bitcoin.org file.',
   },
   {
@@ -131,6 +137,9 @@ export const artifacts = [
     previewUrl: 'https://web.archive.org/web/20101222205043id_/http://www.bitcoin.org/download/bitcoin20.4.png',
     ethscriptionNumber: '174733',
     ethscriptionId: '0x97c9280c06113b8f0d8d3e8ed03683738004dba1a3beaede371bf1cc21a8494a',
+    contentSha: '0xcb177724a9b01b9583d913679e10fa245aef2e10b9ee0600c1b3c4e49d1fcfb4',
+    ethscribedAt: '22 JUN 2023 · 18:39:35 UTC',
+    blockNumber: '17,536,994',
     note: 'The historic filename says 20; the preserved PNG canvas is actually 20 × 19 pixels.',
   },
   {
@@ -150,6 +159,9 @@ export const artifacts = [
     previewUrl: 'https://web.archive.org/web/20101222205146id_/http://www.bitcoin.org/download/bitcoin32.5.png',
     ethscriptionNumber: '174740',
     ethscriptionId: '0x3b54531668fb8bdaf6ba088512ce8d3835030679f7397795740ff701325866be',
+    contentSha: '0x818776d46f5e5f1084ab777612c65616662f15cac6bab3b380c3021ba8ebe374',
+    ethscribedAt: '22 JUN 2023 · 18:40:11 UTC',
+    blockNumber: '17,536,997',
     note: 'Final surviving revision after Satoshi adjusted the larger icon shadows.',
   },
   {
@@ -169,6 +181,9 @@ export const artifacts = [
     previewUrl: 'https://web.archive.org/web/20101222205116id_/http://www.bitcoin.org/download/bitcoin48.5.png',
     ethscriptionNumber: '174756',
     ethscriptionId: '0x0ad26352ba5447fbfd7fa96d13069ad3fe80bba6a4f97f546f2402ef83484c5f',
+    contentSha: '0x317fd48093cad5e27342b428251e4635a36de0da5324fcde8a78b44eec247ed0',
+    ethscribedAt: '22 JUN 2023 · 18:41:11 UTC',
+    blockNumber: '17,537,002',
     note: 'Final surviving revision after Satoshi adjusted the larger icon shadows.',
   },
   {
@@ -205,6 +220,9 @@ export const artifacts = [
     previewUrl: rawGit(commits.juneRelease, 'rc/bitcoin.ico'),
     ethscriptionNumber: '341275',
     ethscriptionId: '0xe60ade3619d5edaa8164d50e9d3ac3ef16e0b93849a648a53694a75d89a4a359',
+    contentSha: '0x4ed6d1aa7980e9d3938b89d38a519a4a6aadd63508743f53b84becf74147003c',
+    ethscribedAt: '27 JUN 2023 · 08:49:11 UTC',
+    blockNumber: '17,569,629',
     note: 'The canonical eight-frame container. Its extracted frames are components, not independently released artifacts.',
   },
   {
@@ -224,6 +242,9 @@ export const artifacts = [
     previewUrl: rawGit(commits.juneRelease, 'rc/favicon.ico'),
     ethscriptionNumber: '341248',
     ethscriptionId: '0x3cf236426f178584a2001d4067182fb60b627ea045097e957f07d5b0a5110db5',
+    contentSha: '0x8206f046dd3978887762fdfc61acfdb5c7f273fd344f4a24609f220da1fe52de',
+    ethscribedAt: '27 JUN 2023 · 08:46:47 UTC',
+    blockNumber: '17,569,617',
     note: 'The two-frame website favicon shipped alongside the new composite icon.',
   },
   ...[
@@ -356,4 +377,3 @@ export function artifactById(id) {
   if (id === lostArtifact.id) return lostArtifact;
   return artifacts.find((artifact) => artifact.id === id);
 }
-

@@ -159,41 +159,42 @@ The site launches with these top-level destinations:
 
 | Route | Purpose |
 |---|---|
-| `/` | Active Hunt, urgency, leading Findings, and explanation of the product. |
-| `/hunts` | Active, upcoming, concluded, unresolved, and No Accession hunts. |
-| `/hunts/:slug` | Hunt brief, rubric, timeline, Findings, Field Notes, and later auction. |
+| `/` | Permanent site mission, field method, active-expedition preview, and future fieldwork. |
+| `/expeditions` | Active, upcoming, concluded, unresolved, and No Accession expeditions. |
+| `/expeditions/:slug` | Expedition brief, corpus timeline, artifact records, Findings, Field Notes, and later auction. |
 | `/findings/:id` | Artifact preview, byte facts, dossier, sources, revisions, challenges, and owner. |
 | `/collection` | Permanent Accessions and frozen provenance records. |
 | `/propose` | Structured proposal for a future Hunt. |
 | `/about` | Ethscriptions, byte-perfect verification, ownership limits, and curation policy. |
 
-The first shell may implement these as anchored sections and UI states before routing and persistent data are added.
+The public shell separates the permanent mission at `/` from Expedition 001 at `/expeditions/lost-pixels-of-satoshi`. Future catalogue and Finding routes may follow as persistent data is added.
 
 ### Home page
 
-The home page should answer five questions immediately:
+The home page should answer five durable questions immediately:
 
 1. What is Ethscribe?
-2. What is today's active Hunt?
-3. What exact artifact is being sought?
-4. How can I participate?
-5. What does the winning artifact become?
+2. What kinds of digital history belong here?
+3. How does byte-perfect authentication work?
+4. What active expeditions can I enter?
+5. What does a verified artifact become?
 
 Required sections:
 
 - Brand header and Connect Wallet control
 - Hero statement: ownable digital archaeology
-- Active Hunt dossier with historical source
-- Status strip showing chain, stage, and deadlines
-- Candidate artifact board or target checklist
-- Four-step participation explanation
-- Permanent Collection preview
+- Explicit mission section covering discovery, authentication, preservation, and ownership
+- Four-step field method
+- Active-expedition preview linking to its own route
+- Future-expedition preview extending beyond internet history
 - Next-Hunt proposal preview
 - Clear disclaimer separating Ethscription ownership from IP rights
 
-### Active Hunt page
+The home page must not inherit the visual subject or historical scope of the featured expedition. An expedition may be about Bitcoin, the early web, or pre-internet software without redefining the Ethscribe mission.
 
-Each Hunt must contain:
+### Active Expedition page
+
+Each expedition must contain:
 
 - Title, ID, Season, status, and timeline
 - One-sentence challenge
@@ -209,6 +210,8 @@ Each Hunt must contain:
 - Field Notes and challenges
 - Curator identity and decision policy
 - `No Accession` as a valid outcome
+
+The expedition timeline is the primary catalogue interface. Every artifact pill expands its evidence record directly beneath its historical moment. Secured pills are fully green; all artifacts that still need Ethscribing are white. A lost-byte target is distinguished by explanatory copy and an explicit `BYTES UNKNOWN` label, not by treating it as a third completion color.
 
 ### Finding page
 
