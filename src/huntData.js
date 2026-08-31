@@ -2,11 +2,7 @@ const rawGit = (commit, path) =>
   `https://raw.githubusercontent.com/bitcoin/bitcoin/${commit}/${path}`;
 
 const commits = {
-  novemberSingle: 'e4c05d31778a85014b2a52e2f20753b38dfbf950',
-  novemberSizes: '956468c29adcbff83ab7c2e52d91f8e87b704853',
-  decemberRelease: 'e2c2648c14f4b87d331dbc30f0f2bd4aab9ce7e6',
   juneRelease: '68b973a913fd1569d3a9a444d4233b15f7866e3e',
-  versionThree: 'd77eac25b2ecd8e6ff5619cfa57d0ebc0682ed09',
 };
 
 const founderOwnership = {
@@ -14,21 +10,18 @@ const founderOwnership = {
   currentOwner: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37',
 };
 
-const xpmArtifact = ({ id, date, release, filename, dimensions, bytes, sha256, keccak256, commit, note }) => ({
+const xpmArtifact = ({ id, date, release, filename, dimensions, bytes, sourceLabel, note }) => ({
   id,
   date,
   release,
   filename,
   dimensions,
   bytes,
-  sha256,
-  keccak256,
   format: 'XPM',
   status: 'open',
+  validationMode: 'exact',
   evidence: 'A',
-  sourceLabel: `Bitcoin source ${release}`,
-  sourceUrl: rawGit(commit, `xpm/${filename}`),
-  previewUrl: rawGit(commit, `xpm/${filename}`),
+  sourceLabel,
   note,
 });
 
@@ -63,17 +56,15 @@ export const artifacts = [
     filename: 'bitcoin.xpm',
     dimensions: '48 × 48',
     bytes: 9215,
-    sha256: 'bfc746462cabcd70c1f9fa909065bdd1b2fb4e73f5904de38c7c8c8326bb34b4',
-    keccak256: 'c6e23e1b65ac3df2a80038559adfd4c41c232ce3c268551b314775e173343c35',
-    commit: commits.novemberSingle,
+    sourceLabel: 'Early untagged Bitcoin v0.2.0 BETA-era Unix source',
     note: 'The first Unix XPM version of the BC coin, added when bitmap resources moved out of the Windows resource file.',
   }),
   ...[
-    ['november-16-xpm', 'bitcoin16.xpm', '16 × 16', 3585, '6c51c501f1edeb6d4003af3feead10532b21a1a3aa8f82916eb03f969377eb84', '93273f76274e3ed1822d97579778f430867da327a7d11ba62ea8fa011c58bc99'],
-    ['november-20-xpm', 'bitcoin20.xpm', '20 × 20', 4193, '0e3a022e6539a78827bdbe8fb5eb575cc2c96a1d97f0f8a57d2a2bd6ac18e097', 'f7b2e21bcada3beb8f77fc9338b7d60396f61f7e1abaccebded2adecb8709f76'],
-    ['november-32-xpm', 'bitcoin32.xpm', '32 × 32', 5249, 'a5d5772caa050fc704c959296be88c0f50dc8b2aef8bf806fee742d567bf7f6d', '7b758447395310dd7c716780cca1eac977b634b8ef0b4725eb42b801566557ca'],
-    ['november-48-xpm', 'bitcoin48.xpm', '48 × 48', 8775, '534d52cb11f11d21ac0ba08a91d0c3e39ab8a9265c9eccb27b0ab016e8f73a3e', '2878eaeffb1667727d0a72fa3000d359d927945f0d42b7dbb059a456e8a4acff'],
-  ].map(([id, filename, dimensions, bytes, sha256, keccak256]) =>
+    ['november-16-xpm', 'bitcoin16.xpm', '16 × 16', 3585],
+    ['november-20-xpm', 'bitcoin20.xpm', '20 × 20', 4193],
+    ['november-32-xpm', 'bitcoin32.xpm', '32 × 32', 5249],
+    ['november-48-xpm', 'bitcoin48.xpm', '48 × 48', 8775],
+  ].map(([id, filename, dimensions, bytes]) =>
     xpmArtifact({
       id,
       date: '07 NOV 2009',
@@ -81,17 +72,15 @@ export const artifacts = [
       filename,
       dimensions,
       bytes,
-      sha256,
-      keccak256,
-      commit: commits.novemberSizes,
+      sourceLabel: 'Bitcoin v0.1.6test1 Unix source state',
       note: 'One of four hand-tuned Unix icon sizes introduced by Satoshi.',
     })),
   ...[
-    ['const-16-xpm', 'bitcoin16.xpm', '16 × 16', 3591, 'cc2099df026dba0eea686cda331bbc3e67198d1c318e486be1e6242802deb812', 'b8e6a3379ab82eebaad356f7b7339eed91bce9d31efc91897b5b1e23409542be'],
-    ['const-20-xpm', 'bitcoin20.xpm', '20 × 20', 4199, '6655ce1739c8d24c180285676075cff2a31c8baa78c14dbd131a562b29c89069', '7526797211b5d55dfeef76d20ec3e5cf3b2c3917a66405be44f369384d6b06b9'],
-    ['const-32-xpm', 'bitcoin32.xpm', '32 × 32', 5255, '594dd453e105d602e0cac7071d9bf7d301f4f70b6d18e806ef47a5712559831a', '3d2221d9c6498a134728b80e950a44c62d0b429663714067f86ded6d3107ef46'],
-    ['const-48-xpm', 'bitcoin48.xpm', '48 × 48', 8781, '46434c6da627f9f9fd65a08ade4831fad72b77b71471101b2dde6fba4391d852', '4264194bc6cc80c778baaf2032a846f3535374f11aa7faa07033f8f3a7f48054'],
-  ].map(([id, filename, dimensions, bytes, sha256, keccak256]) =>
+    ['const-16-xpm', 'bitcoin16.xpm', '16 × 16', 3591],
+    ['const-20-xpm', 'bitcoin20.xpm', '20 × 20', 4199],
+    ['const-32-xpm', 'bitcoin32.xpm', '32 × 32', 5255],
+    ['const-48-xpm', 'bitcoin48.xpm', '48 × 48', 8781],
+  ].map(([id, filename, dimensions, bytes]) =>
     xpmArtifact({
       id,
       date: '18 NOV 2009',
@@ -99,9 +88,7 @@ export const artifacts = [
       filename,
       dimensions,
       bytes,
-      sha256,
-      keccak256,
-      commit: commits.decemberRelease,
+      sourceLabel: 'Bitcoin v0.2.0 source release',
       note: 'The pixels are unchanged, but adding const created a distinct byte-perfect source revision.',
     })),
   {
@@ -203,14 +190,11 @@ export const artifacts = [
     filename: 'bitcoin530.png',
     dimensions: '530 × 526',
     bytes: 165329,
-    sha256: 'ce271869e6f41179a5db12e4f978dae4bd98c9d88a5d4434511a35ff6bdf6413',
-    keccak256: '9660f234a42dfabb231493edfee17bbde023ec37822953fbf2f02a5d04a113ea',
     format: 'PNG',
     status: 'open',
+    validationMode: 'exact',
     evidence: 'B',
-    sourceLabel: 'Preserved public-domain file',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Bitcoin.png',
-    previewUrl: 'https://raw.githubusercontent.com/lugaxker/nakamoto-archive/main/src/bitcoin530.png',
+    sourceLabel: 'Satoshi’s February–March 2010 public-domain artwork release',
     note: 'Satoshi described it as 530 × 529; the surviving file is 530 × 526. Its size needs a larger-file Ethscription creation path.',
   },
   {
@@ -260,11 +244,11 @@ export const artifacts = [
     note: 'The two-frame website favicon shipped alongside the new composite icon.',
   },
   ...[
-    ['june-16-xpm', 'bitcoin16.xpm', '16 × 16', 3847, '2425da94f97723bf54a7692783bf06d19c6ac17165de3370266f032943cc3f52', '6f4e30ae87a50a5bbc3514a6268f5c46c3bfa06dfb7a48d36fcbdb623d8b9088'],
-    ['june-20-xpm', 'bitcoin20.xpm', '20 × 20', 3143, '8b484f3cfcdbf06b4393bb62ded498765955354821708a8252a86934ac21f0dc', 'a4618cc8fa6003a56870dd06f5e7291d31051945410dc05d59339483df059e49'],
-    ['june-32-xpm', 'bitcoin32.xpm', '32 × 32', 5399, 'b746bbbf5ae0e315f678364dfe982c57eeb0a1307ab8bf147e964645c79f8f23', '6dfad86c7032ed249d6c8747a192e40f422a518adf45ccc9e445f638e01e617b'],
-    ['june-48-xpm', 'bitcoin48.xpm', '48 × 48', 8487, 'fad7e0aedf90288bab0e4b68a674207cd763d5d64f1c59687fe355b84d09e7ea', '4712b350d4d000a74097ae7e1bc5674e2eff965033ae0b822193caf4f863bf4a'],
-  ].map(([id, filename, dimensions, bytes, sha256, keccak256]) =>
+    ['june-16-xpm', 'bitcoin16.xpm', '16 × 16', 3847],
+    ['june-20-xpm', 'bitcoin20.xpm', '20 × 20', 3143],
+    ['june-32-xpm', 'bitcoin32.xpm', '32 × 32', 5399],
+    ['june-48-xpm', 'bitcoin48.xpm', '48 × 48', 8487],
+  ].map(([id, filename, dimensions, bytes]) =>
     xpmArtifact({
       id,
       date: '21 JUN 2010',
@@ -272,9 +256,7 @@ export const artifacts = [
       filename,
       dimensions,
       bytes,
-      sha256,
-      keccak256,
-      commit: commits.juneRelease,
+      sourceLabel: 'Bitcoin v0.2.13 source release',
       note: 'A new-design Unix XPM shipped with Satoshi’s v0.2.13 icon update.',
     })),
   xpmArtifact({
@@ -284,9 +266,7 @@ export const artifacts = [
     filename: 'bitcoin80.xpm',
     dimensions: '80 × 80',
     bytes: 16535,
-    sha256: '61277aa49c281f05048cfa8c15f46ed02fa2ea8704eb54a4455c83951c151838',
-    keccak256: '4b75d28a3afb398dd97dda2b6aef45b7614f3aafbc0a3f13269c220d720e2cec',
-    commit: commits.versionThree,
+    sourceLabel: 'Bitcoin v0.3.0 source release',
     note: 'Added later the same day and tuned to scale cleanly for Ubuntu at 20 and 16 pixels.',
   }),
 ];
@@ -302,6 +282,7 @@ export const lostArtifact = {
   keccak256: null,
   format: 'PNG',
   status: 'lost',
+  validationMode: 'provenance',
   evidence: 'C',
   sourceLabel: 'Satoshi’s contemporaneous forum post',
   sourceUrl: 'https://bitcointalk.org/index.php?topic=45.msg475#msg475',
@@ -328,21 +309,21 @@ export const timelineEvents = [
     id: 'unix-first',
     date: '05 NOV 2009',
     title: 'Bitcoin reaches Unix',
-    copy: 'A single 48-pixel XPM moves the BC coin into an X Window source asset.',
+    copy: 'An early, untagged v0.2.0 BETA-era Unix source state replaces Windows bitmap resources with one 48-pixel XPM.',
     artifactIds: ['november-single-xpm'],
   },
   {
     id: 'unix-sizes',
     date: '07 NOV 2009',
     title: 'Four hand-tuned sizes',
-    copy: 'Satoshi replaces the single XPM with dedicated 16, 20, 32, and 48-pixel files.',
+    copy: 'Two days later, the Unix source gains dedicated 16, 20, 32, and 48-pixel files. This family is preserved in the v0.1.6test1 source state.',
     artifactIds: ['november-16-xpm', 'november-20-xpm', 'november-32-xpm', 'november-48-xpm'],
   },
   {
     id: 'const-revision',
     date: '18 NOV 2009',
     title: 'Same pixels, new bytes',
-    copy: 'A source declaration changes from char to const char. The images look identical; all four byte hashes change.',
+    copy: 'Before the v0.2.0 release, a declaration changes from char to const char. The images look identical; all four files become byte-distinct revisions.',
     artifactIds: ['const-16-xpm', 'const-20-xpm', 'const-32-xpm', 'const-48-xpm'],
   },
   {

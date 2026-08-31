@@ -85,7 +85,9 @@ An accepted result is an Ethscribe Accession, not a declaration of copyright or 
 - Historical Bitcoin source packages and their preserved file trees, cited per artifact in the live timeline
 - [Ethscriptions protocol specification](https://docs.ethscriptions.com/overview/protocol-specification)
 
-The timeline is a living research interface. Its per-artifact records are the authoritative place for expected hashes, Ethscription links, source locations, and unresolved questions.
+The timeline is a living research interface. While an exact-byte target is open, it publishes historical clues and acceptance rules but seals the expected hash, primary-source location, and preview. Candidate files are hashed locally and checked by a match-only server validator before any gas action is prepared. When a matching artifact is accepted, its expected hash, source location, Ethscription links, and provenance record become public permanently.
+
+For transparency, sealing is a gameplay boundary rather than a claim of cryptographic secrecy for this already-researched seed expedition: some target data existed in earlier public site and repository history. Future expeditions must place commitments in private server configuration before their first public commit. Acceptance integrity never depends on hiding a hash; the server re-verifies the signed Finding against the frozen commitment and the indexed onchain bytes.
 
 Each expanded record separates four kinds of information:
 

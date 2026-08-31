@@ -140,6 +140,27 @@ export async function checkProtocolExistence(checks, fetchImpl = fetch) {
   }));
 }
 
+export async function checkExpeditionTarget(artifact, inspection, fetchImpl = fetch) {
+  if (!artifact?.id || !inspection?.rawSha256) throw new Error('Choose a target and inspect a file first.');
+  const response = await fetchImpl('/api/targets/check', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({
+      expeditionId: 'lost-pixels-of-satoshi',
+      targetId: artifact.id,
+      rawSha256: inspection.rawSha256,
+      byteLength: inspection.byteLength,
+      dataUriPrefix: inspection.dataUriPrefix,
+    }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message || 'The sealed target validator is unavailable. No transaction was prepared.');
+  if (!payload.result || payload.result.targetId !== artifact.id || typeof payload.result.eligible !== 'boolean') {
+    throw new Error('The sealed target validator returned an invalid response. No transaction was prepared.');
+  }
+  return payload.result;
+}
+
 export function buildCreateEthscriptionTransaction(account, dataUri) {
   if (!/^0x[a-fA-F0-9]{40}$/.test(account || '')) throw new Error('Connect a valid Ethereum wallet.');
   if (!/^data:[^,]+,/.test(dataUri || '')) throw new Error('The generated Data URI is invalid.');

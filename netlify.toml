@@ -36,6 +36,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/targets/check"
+  to = "/.netlify/functions/target-check"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

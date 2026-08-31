@@ -7,8 +7,7 @@ import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
 
 const EXPEDITION_PATH = '/expeditions/lost-pixels-of-satoshi';
-const referenceImage =
-  'https://raw.githubusercontent.com/lugaxker/nakamoto-archive/main/src/bitcoin530.png';
+const referenceImage = artifactById('new-png-48').previewUrl;
 
 const processSteps = [
   { number: '01', title: 'Define the target', body: 'A hunt begins with a culturally significant artifact and a precise definition of what counts.' },
@@ -136,6 +135,14 @@ function ArtifactPreview({ artifact, className = '' }) {
     );
   }
 
+  if (artifact.status === 'open') {
+    return (
+      <div className={`sealed-preview ${className}`} aria-label="Open hunt target; preview sealed until accession">
+        <span>?</span><strong>TARGET SEALED</strong><small>FIND THE EXACT FILE</small>
+      </div>
+    );
+  }
+
   if (artifact.format === 'XPM') {
     return <XpmPreview source={artifact.previewUrl} label={`${artifact.filename} decoded preview`} className={className} />;
   }
@@ -157,7 +164,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
   const [recordState, setRecordState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
   const statusCopy = {
     secured: 'ETHSCRIBED · VERIFIED MATCH',
-    open: 'KNOWN BYTES · NEEDS ETHSCRIBING',
+    open: 'OPEN HUNT · NEEDS ETHSCRIBING',
     lost: 'ORIGINAL BYTES UNKNOWN',
   };
   const creator = chainRecord?.creator || artifact.creator;
@@ -195,7 +202,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
     <article className={`artifact-detail detail-${artifact.status}`} aria-live="polite">
       <div className="artifact-detail-visual">
         <ArtifactPreview artifact={artifact} />
-        {artifact.status !== 'lost' && (
+        {artifact.status === 'secured' && (
           <p className="display-scale-note">
             {isSmallArtifact(artifact) ? 'PREVIEW ENLARGED WITH NEAREST-NEIGHBOR SCALING' : 'PREVIEW SCALED FOR INSPECTION'}<br />
             NATIVE {artifact.dimensions}
@@ -224,15 +231,32 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
               <RecordFact label="FORMAT" value={artifact.format} />
               <RecordFact label="NATIVE DIMENSIONS" value={artifact.dimensions} />
               <RecordFact label="RAW FILE SIZE" value={formatBytes(artifact.bytes)} />
+              <RecordFact label={artifact.status === 'secured' ? 'VERIFIED SOURCE' : 'SOURCE CLUE'} value={artifact.sourceLabel} className="record-fact-wide" />
             </dl>
           </section>
 
           <section className="artifact-record-section">
             <h4><span>02</span> Hashing</h4>
-            <dl className="artifact-record-grid">
-              <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
-            </dl>
-            <p className="record-section-note">This is the canonical Ethscribe artifact identity. It compares the decoded file bytes independently of MIME type or Data URI wrapper.</p>
+            {artifact.status === 'secured' ? (
+              <>
+                <dl className="artifact-record-grid">
+                  <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
+                </dl>
+                <p className="record-section-note">This is the canonical Ethscribe artifact identity. It compares the decoded file bytes independently of MIME type or Data URI wrapper.</p>
+              </>
+            ) : artifact.validationMode === 'exact' ? (
+              <div className="sealed-target-note">
+                <strong>EXPECTED SHA-256 SEALED WHILE THE HUNT IS OPEN</strong>
+                <p>Your upload is hashed locally, then checked against the private target commitment by the server. Only match or mismatch returns to the browser. The expected hash and primary source are published with the accepted Accession.</p>
+              </div>
+            ) : (
+              <>
+                <dl className="artifact-record-grid">
+                  <RecordFact label="DECODED RAW FILE SHA-256" value={null} className="record-fact-wide" />
+                </dl>
+                <p className="record-section-note">No verified original payload survives, so this target requires a reproducible provenance case rather than an automatic exact-hash match.</p>
+              </>
+            )}
           </section>
 
           <section className="artifact-record-section">
@@ -295,9 +319,11 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
           />
         )}
 
-        <div className="artifact-links">
-          <a href={artifact.sourceUrl} target="_blank" rel="noreferrer">Inspect primary source <ArrowIcon /></a>
-        </div>
+        {artifact.sourceUrl && (
+          <div className="artifact-links">
+            <a href={artifact.sourceUrl} target="_blank" rel="noreferrer">{artifact.status === 'lost' ? 'Inspect surviving evidence' : 'Inspect primary source'} <ArrowIcon /></a>
+          </div>
+        )}
       </div>
     </article>
   );
@@ -308,7 +334,7 @@ function MethodSection() {
     <section className="method-section" id="method">
       <div className="section-heading compact">
         <div><p className="kicker"><span /> The field method</p><h2>History deserves proof.</h2></div>
-        <p className="section-intro">Every expedition defines its evidence standard before the hunt begins. Known hashes can be verified automatically; unknown history stays unresolved until the source evidence is strong enough.</p>
+        <p className="section-intro">Every expedition defines its evidence standard before the hunt begins. Exact-byte targets use sealed server-side commitments while open; unknown history stays unresolved until the source evidence is strong enough.</p>
       </div>
       <div className="process-grid">
         {processSteps.map((step) => <article key={step.number}><span>{step.number}</span><h3>{step.title}</h3><p>{step.body}</p></article>)}
@@ -368,7 +394,7 @@ function HomePage({ account, walletState, connectWallet }) {
 
         <section className="featured-expedition" id="expeditions">
           <div className="featured-visual">
-            <img src={referenceImage} alt="Satoshi Nakamoto’s surviving 2010 Bitcoin source artwork" />
+            <img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" />
           </div>
           <div className="featured-copy">
             <p className="kicker"><span /> Expedition 001 · Active</p>
@@ -408,7 +434,7 @@ function ExpeditionsPage({ account, walletState, connectWallet, openParticipatio
             <h2 id="expedition-list-title">Active and completed field records.</h2>
           </div>
           <a className="expedition-index-card" href={EXPEDITION_PATH}>
-            <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s surviving 2010 Bitcoin source artwork" /><span>EXPEDITION 001</span></div>
+            <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" /><span>EXPEDITION 001</span></div>
             <div className="expedition-index-copy">
               <div className="expedition-index-meta"><span className="expedition-active-status">ACTIVE</span><span>BITCOIN · 2008–2010</span></div>
               <h3>The Lost Pixels of Satoshi</h3>
@@ -478,7 +504,7 @@ function ExpeditionPage({ account, walletState, connectWallet, chainId, switchTo
             <div className="artifact-label top-label"><span>FIELD NOTE 001</span><span>08 FEB 2010</span></div>
             <div className="artifact-stage lost-stage">
               <span className="registration-mark mark-one">+</span><span className="registration-mark mark-two">+</span>
-              <img src={referenceImage} alt="Satoshi Nakamoto’s surviving 2010 Bitcoin source artwork" />
+              <img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" />
             </div>
             <div className="artifact-label bottom-label">
               <div><span>CORPUS</span><strong>{huntStats.known} KNOWN FILES</strong></div>
@@ -579,8 +605,10 @@ function ExpeditionPage({ account, walletState, connectWallet, chainId, switchTo
 
           <section className="xpm-lab" id="byte-lab" aria-labelledby="xpm-title">
             <div className="xpm-lab-preview">
-              <XpmPreview source={artifactById('june-32-xpm').previewUrl} label="Live browser-decoded preview of Satoshi’s June 2010 32-pixel XPM" />
-              <span>LIVE CLIENT-SIDE DECODE</span>
+              <div className="sealed-preview" aria-label="XPM target preview sealed during the active hunt">
+                <span>?</span><strong>XPM PREVIEW SEALED</strong><small>REVEALED WITH THE ACCESSION</small>
+              </div>
+              <span>CLIENT-SIDE DECODER READY</span>
             </div>
             <div className="xpm-lab-copy">
               <p className="card-index">BYTE LAB / X PIXMAP</p><h3 id="xpm-title">The browser cannot see it. Ethscribe can.</h3>

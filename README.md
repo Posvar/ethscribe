@@ -52,6 +52,8 @@ AZURE_STORAGE_SAS_TOKEN=<secret>
 
 The browser never reads or receives the SAS token. The three variable names above are configured on the linked Netlify project. The SAS must allow creation/write of Finding JSON blobs in the named container; restrict its permissions, resource scope, and expiry to the minimum required by the server-side function.
 
+Open exact-byte targets use the secret-scoped Functions variable `EXPEDITION_001_TARGET_HASHES`. It contains a JSON map of target IDs to raw SHA-256 commitments. The public bundle sends a candidate hash to `/api/targets/check` and receives only eligibility; expected hashes and raw source URLs are revealed in the public record only after accession.
+
 ## Historical sources
 
 - [Satoshi Nakamoto’s February 24, 2010 Bitcointalk post](https://bitcointalk.org/index.php?topic=64.msg504#msg504)

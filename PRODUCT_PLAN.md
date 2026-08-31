@@ -224,7 +224,7 @@ Each expedition must contain:
 - Curator identity and decision policy
 - `No Accession` as a valid outcome
 
-The expedition timeline is the primary catalogue interface. Every artifact pill expands its evidence record directly beneath its historical moment. Secured pills are fully green; all artifacts that still need Ethscribing are white. A lost-byte target is distinguished by explanatory copy and an explicit `BYTES UNKNOWN` label, not by treating it as a third completion color.
+The expedition timeline is the primary catalogue interface. Every artifact pill expands its evidence record directly beneath its historical moment. Secured pills are fully green; all artifacts that still need Ethscribing are white. A lost-byte target is distinguished by explanatory copy and an explicit `BYTES UNKNOWN` label, not by treating it as a third completion color. Exact-byte targets remain clue-driven while open: their preview, raw source URL, and expected SHA-256 are sealed, and the browser receives only a match or mismatch from the server. The accepted Accession reveals the complete source and hash record.
 
 Completion figures must be derived state, never separately edited content. In the shell, `secured / known` and its progress bar derive from the curated artifact manifest. After contract launch, the same UI derives secured status from indexed marketplace/vault state, reconciled against the manifest's raw-byte identities, so each accepted accession automatically updates the count and bar.
 
@@ -260,7 +260,7 @@ V1 supports three intake paths:
 
 The safest creation flow initially uses two explicit transactions: create to the user's wallet, then transfer the resulting transaction-hash ID to the vault. The product presents one guided workflow while clearly showing both confirmations. Existing owned assets skip creation, and ESIP-5 supports bulk deposits.
 
-Inline target actions and the global `Ethscribe` action share the same transaction engine. Every expedition target freezes one accepted Data URI wrapper; the embedded UI generates it and the Finding verifier enforces it. The global flow lets the user choose a valid MIME type, then offers only compatible targets after creation or discovery of an existing wallet-owned match. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions remain separate.
+Inline target actions, the global `Ethscribe` action, and the wallet's Expedition preflight share the same transaction engine. Every expedition target freezes one accepted Data URI wrapper; the embedded UI generates it and the Finding verifier enforces it. For an exact-byte target, the browser hashes locally and a server-side sealed commitment returns only eligibility before protocol duplicate checks or gas actions continue. The global flow lets the user choose a valid MIME type, then test compatible targets after creation or discovery of an existing wallet-owned match. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions remain separate; a generic vault deposit is explicitly custody-only and does not create a Finding.
 
 Before the contract, a Finding remains non-custodial:
 
@@ -273,7 +273,7 @@ Before the contract, a Finding remains non-custodial:
 
 After the contract, the user can also deposit before or after assignment. The wallet dashboard reconciles potential-deposit events with the official indexer's `current_owner` and `previous_owner` fields before displaying `Escrow verified`.
 
-If a target's raw bytes are known, the official API can quickly test known complete data-URI hashes. It cannot search by Ethscribe's wrapper-independent `rawSha256`; that requires the historical decoded-byte index. This limitation applies even to conventional PNG/JPEG wrappers, though XPM aliases make it more visible. The live client checks the frozen wrapper plus a disclosed set of common XPM aliases and explicitly avoids claiming exhaustive raw-byte uniqueness. If target bytes are unknown, automatic matching begins only after a researcher submits candidate bytes in a Finding.
+If a target's raw bytes are known, a private server-side commitment can first determine whether a candidate is eligible without publishing the answer during the hunt. After that match, the official API can quickly test known complete data-URI hashes. It cannot search by Ethscribe's wrapper-independent `rawSha256`; that requires the historical decoded-byte index. This limitation applies even to conventional PNG/JPEG wrappers, though XPM aliases make it more visible. The live client checks the frozen wrapper plus a disclosed set of common XPM aliases and explicitly avoids claiming exhaustive raw-byte uniqueness. If target bytes are unknown, automatic exact matching is impossible; a researcher must submit candidate bytes and a reproducible provenance case.
 
 ### Review flow
 

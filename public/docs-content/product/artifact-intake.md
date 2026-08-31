@@ -40,7 +40,8 @@ Every open artifact target should expose an inline **Ethscribe + Submit** action
 1. Connect a wallet and choose a file.
 2. Calculate its byte length, signature, `rawSha256`, and candidate data URI locally.
 3. Compare known targets before asking for a transaction.
-4. Check the official API for the exact frozen protocol content and, for XPM, a disclosed set of known alternate wrappers.
+4. For an expedition submission, send the locally calculated candidate hash to the match-only target validator. The expected hash remains server-side while the target is open.
+5. Only after the target matches, check the official API for the exact frozen protocol content and, for XPM, a disclosed set of known alternate wrappers.
 5. If no suitable Ethscription exists, create one to the hunter's wallet.
 6. After creation is confirmed, transfer the resulting `ethscriptionId` to the vault.
 7. Sign the target assignment and initial Dossier.

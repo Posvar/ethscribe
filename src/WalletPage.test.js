@@ -63,6 +63,8 @@ test('shows live paused-market state and read-only wallet inventory', async () =
   expect(screen.getByText('DIRECTLY OWNED')).toBeInTheDocument();
   expect(screen.getByText(/no active market deposits/i)).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /two records must agree/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /test before you deposit/i })).toBeInTheDocument();
+  expect(screen.getByLabelText(/expedition 001 target/i)).toHaveTextContent('bitcoin20.xpm');
   expect(screen.getByRole('button', { name: /deposit test locked/i })).toBeDisabled();
   await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(`/api/market/wallet?owner=${owner}`, { headers: { accept: 'application/json' } }));
 });
@@ -129,7 +131,7 @@ test('simulates a deposit and waits for fail-closed custody reconciliation', asy
     footer={<div>FOOTER</div>}
   />);
 
-  const deposit = await screen.findByRole('button', { name: /deposit to market/i });
+  const deposit = await screen.findByRole('button', { name: /deposit for custody only/i });
   fireEvent.click(deposit);
   const confirm = screen.getByRole('button', { name: /simulate \+ open wallet/i });
   expect(confirm).toBeDisabled();
@@ -251,7 +253,7 @@ test('stops reconciliation if the connected account changes after confirmation',
   };
   const { rerender } = render(<WalletPage account={owner} {...props} />);
 
-  fireEvent.click(await screen.findByRole('button', { name: /deposit to market/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /deposit for custody only/i }));
   fireEvent.click(screen.getByRole('checkbox', { name: /disposable, low-value test artifact/i }));
   fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
   expect(await screen.findByText(/waiting for the official indexer/i)).toBeInTheDocument();

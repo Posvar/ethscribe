@@ -1,30 +1,16 @@
 const { createHash } = require('node:crypto');
 const { verifyMessage } = require('ethers');
 const { getWalletInventory, isAddress, isEthscriptionId, MARKET_ADDRESS } = require('./market');
+const {
+  EXPEDITION_ID,
+  TargetCommitmentError,
+  targetSpec,
+  verifyTargetCandidate,
+} = require('./targetCommitments');
 
-const EXPEDITION_ID = 'lost-pixels-of-satoshi';
 const MAX_CLOCK_AGE_MS = 60 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 const HASH_PATTERN = /^0x[a-f0-9]{64}$/;
-
-const TARGETS = Object.freeze({
-  'november-single-xpm': ['image/x-xpixmap', 'bfc746462cabcd70c1f9fa909065bdd1b2fb4e73f5904de38c7c8c8326bb34b4', 9215],
-  'november-16-xpm': ['image/x-xpixmap', '6c51c501f1edeb6d4003af3feead10532b21a1a3aa8f82916eb03f969377eb84', 3585],
-  'november-20-xpm': ['image/x-xpixmap', '0e3a022e6539a78827bdbe8fb5eb575cc2c96a1d97f0f8a57d2a2bd6ac18e097', 4193],
-  'november-32-xpm': ['image/x-xpixmap', 'a5d5772caa050fc704c959296be88c0f50dc8b2aef8bf806fee742d567bf7f6d', 5249],
-  'november-48-xpm': ['image/x-xpixmap', '534d52cb11f11d21ac0ba08a91d0c3e39ab8a9265c9eccb27b0ab016e8f73a3e', 8775],
-  'const-16-xpm': ['image/x-xpixmap', 'cc2099df026dba0eea686cda331bbc3e67198d1c318e486be1e6242802deb812', 3591],
-  'const-20-xpm': ['image/x-xpixmap', '6655ce1739c8d24c180285676075cff2a31c8baa78c14dbd131a562b29c89069', 4199],
-  'const-32-xpm': ['image/x-xpixmap', '594dd453e105d602e0cac7071d9bf7d301f4f70b6d18e806ef47a5712559831a', 5255],
-  'const-48-xpm': ['image/x-xpixmap', '46434c6da627f9f9fd65a08ade4831fad72b77b71471101b2dde6fba4391d852', 8781],
-  'full-size-png': ['image/png', 'ce271869e6f41179a5db12e4f978dae4bd98c9d88a5d4434511a35ff6bdf6413', 165329],
-  'june-16-xpm': ['image/x-xpixmap', '2425da94f97723bf54a7692783bf06d19c6ac17165de3370266f032943cc3f52', 3847],
-  'june-20-xpm': ['image/x-xpixmap', '8b484f3cfcdbf06b4393bb62ded498765955354821708a8252a86934ac21f0dc', 3143],
-  'june-32-xpm': ['image/x-xpixmap', 'b746bbbf5ae0e315f678364dfe982c57eeb0a1307ab8bf147e964645c79f8f23', 5399],
-  'june-48-xpm': ['image/x-xpixmap', 'fad7e0aedf90288bab0e4b68a674207cd763d5d64f1c59687fe355b84d09e7ea', 8487],
-  'june-80-xpm': ['image/x-xpixmap', '61277aa49c281f05048cfa8c15f46ed02fa2ea8704eb54a4455c83951c151838', 16535],
-  'lost-bc-png': ['image/png', null, null],
-});
 
 class FindingError extends Error {
   constructor(statusCode, code, message) {
@@ -63,15 +49,24 @@ function assertString(value, field, maximum) {
   }
 }
 
-function validateAssignment(assignment, now = Date.now()) {
+function validateAssignment(assignment, now = Date.now(), env = process.env) {
   if (!assignment || typeof assignment !== 'object' || Array.isArray(assignment)) {
     throw new FindingError(400, 'invalid_assignment', 'The Finding assignment is missing.');
   }
   if (assignment.schemaVersion !== 1 || assignment.documentType !== 'finding') {
     throw new FindingError(400, 'invalid_assignment', 'The Finding schema is not supported.');
   }
-  if (assignment.expeditionId !== EXPEDITION_ID || !TARGETS[assignment.targetId]) {
+  if (assignment.expeditionId !== EXPEDITION_ID) {
     throw new FindingError(400, 'invalid_target', 'The expedition target is not open for submissions.');
+  }
+  let spec;
+  try {
+    spec = targetSpec(assignment.targetId);
+  } catch (error) {
+    if (error instanceof TargetCommitmentError) {
+      throw new FindingError(error.statusCode, error.code, error.message);
+    }
+    throw error;
   }
   if (!isEthscriptionId(assignment.ethscriptionId) || assignment.ethscriptionId !== assignment.ethscriptionId.toLowerCase()) {
     throw new FindingError(400, 'invalid_ethscription', 'The Ethscription ID is invalid.');
@@ -109,16 +104,22 @@ function validateAssignment(assignment, now = Date.now()) {
     throw new FindingError(400, 'stale_assignment', 'The signed Finding has expired. Prepare a new assignment.');
   }
 
-  const [mediaType, expectedRawHash, expectedByteLength] = TARGETS[assignment.targetId];
+  const { mediaType } = spec;
   const expectedPrefix = `data:${mediaType};base64,`;
   if (assignment.dataUriPrefix !== expectedPrefix) {
     throw new FindingError(400, 'wrong_wrapper', `This target requires the exact ${expectedPrefix} wrapper.`);
   }
-  if (expectedRawHash && assignment.rawSha256 !== `0x${expectedRawHash}`) {
-    throw new FindingError(400, 'target_mismatch', 'The decoded bytes do not match the frozen target hash.');
-  }
-  if (expectedByteLength && assignment.byteLength !== expectedByteLength) {
-    throw new FindingError(400, 'target_mismatch', 'The decoded byte length does not match the frozen target.');
+  try {
+    const result = verifyTargetCandidate(assignment, env);
+    if (!result.eligible) {
+      throw new FindingError(400, 'target_mismatch', 'The decoded bytes do not match the sealed target commitment.');
+    }
+  } catch (error) {
+    if (error instanceof FindingError) throw error;
+    if (error instanceof TargetCommitmentError) {
+      throw new FindingError(error.statusCode, error.code, error.message);
+    }
+    throw error;
   }
 
   return { mediaType, expectedPrefix };
@@ -196,7 +197,8 @@ async function storeFinding(path, record, fetchImpl = fetch, env = process.env) 
 
 async function verifyAndStoreFinding(payload, dependencies = {}) {
   const { assignment, message, signature } = payload || {};
-  const { expectedPrefix, mediaType } = validateAssignment(assignment, dependencies.now ?? Date.now());
+  const env = dependencies.env || process.env;
+  const { expectedPrefix, mediaType } = validateAssignment(assignment, dependencies.now ?? Date.now(), env);
   const expectedMessage = assignmentMessage(assignment);
   if (message !== expectedMessage) {
     throw new FindingError(400, 'message_mismatch', 'The signed message does not match the Finding assignment.');
@@ -263,14 +265,13 @@ async function verifyAndStoreFinding(payload, dependencies = {}) {
     },
   };
   const putFinding = dependencies.storeFinding || storeFinding;
-  await putFinding(storagePath, storedRecord, fetchImpl, dependencies.env || process.env);
+  await putFinding(storagePath, storedRecord, fetchImpl, env);
   return { findingId, storagePath, verifiedAt: storedRecord.verifiedAt };
 }
 
 module.exports = {
   EXPEDITION_ID,
   FindingError,
-  TARGETS,
   assignmentMessage,
   decodeVerifiedContentUri,
   fetchEthscription,

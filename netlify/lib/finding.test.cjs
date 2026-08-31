@@ -83,7 +83,9 @@ test('rejects non-frozen wrappers and known-target hash mismatches', () => {
     () => validateAssignment(assignment({
       targetId: 'november-single-xpm',
       dataUriPrefix: 'data:image/x-xpixmap;base64,',
-    }), now),
+    }), now, {
+      EXPEDITION_001_TARGET_HASHES: JSON.stringify({ 'november-single-xpm': '11'.repeat(32) }),
+    }),
     (error) => error instanceof FindingError && error.code === 'target_mismatch',
   );
 });

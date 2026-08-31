@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import EthscribeWorkbench from './EthscribeWorkbench';
+import { artifacts, lostArtifact } from './huntData';
 import { fetchMarketStatus, fetchWalletInventory } from './marketApi';
 import {
   MAINNET_CHAIN_ID,
@@ -31,6 +33,8 @@ function formatDate(timestamp) {
     day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC',
   }).format(new Date(timestamp * 1000));
 }
+
+const expeditionTargets = [...artifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
 
 function TransactionStatus({ transaction, onDismiss }) {
   if (!transaction) return null;
@@ -103,6 +107,7 @@ export default function WalletPage({
   const [confirmation, setConfirmation] = useState(null);
   const [riskAccepted, setRiskAccepted] = useState(false);
   const [transaction, setTransaction] = useState(null);
+  const [preflightTargetId, setPreflightTargetId] = useState('');
 
   const refresh = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) {
@@ -247,7 +252,7 @@ export default function WalletPage({
     if (!market?.transactionsEnabled) return { disabled: true, label: 'DEPOSIT TEST LOCKED', hint: 'The operational transaction gate remains closed.' };
     if (market?.paused) return { disabled: true, label: 'MARKET PAUSED', hint: 'The owner must deliberately open the controlled deposit window.' };
     if (!market?.intakeEnabled) return { disabled: true, label: 'DEPOSIT UNAVAILABLE', hint: 'Contract, indexer, and interface readiness must all agree.' };
-    return { disabled: false, label: 'DEPOSIT TO MARKET', hint: 'Simulates first, then asks the wallet to send a zero-ETH transfer.', onClick: () => openConfirmation('deposit', record) };
+    return { disabled: false, label: 'DEPOSIT FOR CUSTODY ONLY', hint: 'Does not submit this artifact to an expedition. Use Expedition preflight for a Finding.', onClick: () => openConfirmation('deposit', record) };
   };
 
   const withdrawAction = (record) => {
@@ -309,6 +314,33 @@ export default function WalletPage({
                 <p>Deposits require the operational gate, an unpaused contract, Ethereum mainnet, and a current official indexer. Verified withdrawals remain contract-available during a pause.</p>
               </div>
 
+              <section className="wallet-expedition-preflight" aria-labelledby="wallet-preflight-title">
+                <div className="wallet-preflight-heading">
+                  <div><span>EXPEDITION SUBMISSION</span><h2 id="wallet-preflight-title">Test before you deposit.</h2></div>
+                  <p>Choose a target and upload the exact local file. Ethscribe hashes it locally, checks the sealed target commitment and protocol duplicates, and prepares no gas transaction unless the candidate is eligible.</p>
+                </div>
+                <label className="wallet-target-select">
+                  <span>EXPEDITION 001 TARGET</span>
+                  <select value={preflightTargetId} onChange={(event) => setPreflightTargetId(event.target.value)}>
+                    <option value="">Choose a target to test</option>
+                    {expeditionTargets.map((target) => <option value={target.id} key={target.id}>{target.date} · {target.filename} · {target.release}</option>)}
+                  </select>
+                  <small>The expected hash and source remain sealed while an exact-byte target is open.</small>
+                </label>
+                {preflightTargetId && (
+                  <EthscribeWorkbench
+                    key={preflightTargetId}
+                    mode="target"
+                    artifact={expeditionTargets.find((target) => target.id === preflightTargetId)}
+                    account={account}
+                    chainId={chainId}
+                    connectWallet={connectWallet}
+                    switchToMainnet={switchToMainnet}
+                    provider={provider}
+                  />
+                )}
+              </section>
+
               <div className="wallet-inventory-section">
                 <div className="wallet-inventory-title"><div><span>01</span><h2>Directly owned</h2></div><strong>{loading ? '—' : direct.length}</strong></div>
                 {!loading && direct.length === 0 && !error && <p className="wallet-empty-record">The official indexer reports no Ethscriptions directly owned by this address.</p>}
@@ -340,7 +372,7 @@ export default function WalletPage({
             <p className="kicker"><span /> Controlled custody pilot</p>
             <h2 id="wallet-confirmation-title">{confirmation.type === 'deposit' ? 'Deposit this Ethscription?' : 'Withdraw this Ethscription?'}</h2>
             <p>{confirmation.type === 'deposit'
-              ? 'A successful zero-ETH transaction transfers the complete Ethscription to the immutable market contract. A transaction receipt alone is not proof of custody; Ethscribe will wait for the official indexer and contract record to agree.'
+              ? 'A successful zero-ETH transaction transfers the complete Ethscription to the immutable market contract for custody only. It does not create an expedition Finding. A transaction receipt alone is not proof of custody; Ethscribe will wait for the official indexer and contract record to agree.'
               : 'The contract will emit an ESIP-2 conditional transfer returning the Ethscription to this connected wallet. This exit remains available while market intake is paused.'}</p>
             <dl>
               <div><dt>ETHSCRIPTION</dt><dd><code>{confirmation.record.transactionHash}</code></dd></div>

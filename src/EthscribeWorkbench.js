@@ -13,10 +13,10 @@ import {
   buildFindingAssignment,
   buildWrapperChecks,
   CANONICAL_XPM_MEDIA_TYPE,
+  checkExpeditionTarget,
   checkProtocolExistence,
   inspectFile,
   mediaTypeForFile,
-  normalizeSha,
   publishFinding,
   signFindingAssignment,
   waitForEthscriptionRecord,
@@ -89,8 +89,9 @@ export default function EthscribeWorkbench({
   const [confirmation, setConfirmation] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [claimSummary, setClaimSummary] = useState(artifact ? `Exact-byte candidate for ${artifact.filename}` : '');
-  const [sourceUrl, setSourceUrl] = useState(artifact?.status === 'lost' ? '' : artifact?.sourceUrl || '');
+  const [sourceUrl, setSourceUrl] = useState('');
   const [finding, setFinding] = useState(null);
+  const [targetCheck, setTargetCheck] = useState(null);
 
   useEffect(() => {
     if (!submissionMode) return undefined;
@@ -104,8 +105,8 @@ export default function EthscribeWorkbench({
   }, [submissionMode]);
 
   const onMainnet = chainId?.toLowerCase() === '0x1';
-  const expectedRawSha = normalizeSha(activeArtifact?.sha256);
-  const rawMatchesTarget = !expectedRawSha || inspection?.rawSha256 === expectedRawSha;
+  const targetEligible = Boolean(activeArtifact && targetCheck?.targetId === activeArtifact.id && targetCheck.eligible);
+  const rawMatchesTarget = !submissionMode || targetEligible;
   const existingRecord = existing?.ethscription || null;
   const existingOwner = existingRecord?.current_owner?.toLowerCase();
   const connectedOwner = account?.toLowerCase();
@@ -128,8 +129,7 @@ export default function EthscribeWorkbench({
     return submissionTargets.filter((target) => {
       if (target.status === 'secured') return false;
       if (targetMediaType(target) !== effectiveInspection.mediaType) return false;
-      const targetSha = normalizeSha(target.sha256);
-      return !targetSha || targetSha === effectiveInspection.rawSha256;
+      return true;
     });
   }, [effectiveInspection, embeddedTargetMode, submissionTargets]);
   const requiredTargetPrefix = activeArtifact ? `data:${targetMediaType(activeArtifact)};base64,` : '';
@@ -142,6 +142,7 @@ export default function EthscribeWorkbench({
     setEthscription(null);
     setCustody(null);
     setFinding(null);
+    setTargetCheck(null);
     if (!artifact) setSelectedTargetId('');
     setPhase('idle');
     setMessage('');
@@ -164,6 +165,7 @@ export default function EthscribeWorkbench({
     setMessage('Hashing the raw file and complete Data URI locally, then checking the official indexer.');
     setExisting(null);
     setDuplicateChecks([]);
+    setTargetCheck(null);
     setTransactionHash('');
 
     try {
@@ -174,11 +176,15 @@ export default function EthscribeWorkbench({
         setMessage(`The selected bytes do not have a valid ${artifact.format} file signature. No transaction was prepared.`);
         return;
       }
-      const expected = normalizeSha(activeArtifact?.sha256);
-      if (expected && nextInspection.rawSha256 !== expected) {
-        setPhase('mismatch');
-        setMessage('The uploaded bytes do not match this target. No transaction was prepared.');
-        return;
+      let checkedTarget = null;
+      if (submissionMode) {
+        checkedTarget = await checkExpeditionTarget(activeArtifact, nextInspection);
+        setTargetCheck(checkedTarget);
+        if (!checkedTarget.eligible) {
+          setPhase('mismatch');
+          setMessage('The uploaded bytes do not match the sealed target commitment. No transaction was prepared.');
+          return;
+        }
       }
 
       const checks = await buildWrapperChecks(
@@ -200,12 +206,40 @@ export default function EthscribeWorkbench({
       } else {
         setPhase('ready');
         setMessage(embeddedTargetMode
-          ? 'Exact target match. No duplicate was found for the canonical or known equivalent wrappers.'
+          ? checkedTarget?.validation === 'provenance-required'
+            ? 'Candidate file passed format preflight. This lost-byte target still requires a reproducible provenance case.'
+            : 'Exact target match confirmed by the sealed validator. No duplicate was found for the canonical or known equivalent wrappers.'
           : 'No exact protocol duplicate was found. The transaction can now be prepared.');
       }
     } catch (error) {
       setPhase('error');
       setMessage(error.message || 'The file could not be inspected. No transaction was prepared.');
+    }
+  };
+
+  const selectTargetForInspection = async (target) => {
+    if (!effectiveInspection) return;
+    setSelectedTargetId(target.id);
+    setTargetCheck(null);
+    setClaimSummary(`Exact-byte candidate for ${target.filename}`);
+    setSourceUrl('');
+    setPhase('inspecting');
+    setMessage('Testing your locally hashed bytes against the sealed target commitment.');
+    try {
+      const checkedTarget = await checkExpeditionTarget(target, effectiveInspection);
+      setTargetCheck(checkedTarget);
+      if (!checkedTarget.eligible) {
+        setPhase('mismatch');
+        setMessage('These bytes do not match that target. Your Ethscription remains in your wallet and no deposit was prepared.');
+        return;
+      }
+      setPhase(existing ? 'duplicate' : 'ready');
+      setMessage(checkedTarget.validation === 'provenance-required'
+        ? 'Candidate format accepted. The historical claim still requires a reproducible provenance case.'
+        : 'Exact target match confirmed by the sealed validator. You may continue with the existing matching Ethscription.');
+    } catch (error) {
+      setPhase('error');
+      setMessage(error.message || 'The sealed target validator is unavailable. No deposit was prepared.');
     }
   };
 
@@ -241,8 +275,8 @@ export default function EthscribeWorkbench({
         protocolContentSha256: inspection.protocolContentSha256,
       });
       setEthscription(record);
-      setPhase(embeddedTargetMode ? 'created' : 'complete');
-      setMessage(embeddedTargetMode
+      setPhase(submissionMode ? 'created' : 'complete');
+      setMessage(submissionMode
         ? 'Ethscription created in your wallet. It is not submitted yet; the second transaction deposits this ID into the market.'
         : 'Ethscription verified in your wallet. It was not deposited or assigned to an expedition.');
     } catch (error) {
@@ -380,7 +414,15 @@ export default function EthscribeWorkbench({
       {inspection && (
         <div className="ethscribe-byte-report">
           <div><span>RAW FILE</span><strong>{inspection.filename}</strong><small>{inspection.byteLength.toLocaleString('en-US')} bytes</small></div>
-          <div><span>RAW SHA-256</span><code>{inspection.rawSha256}</code><small>{expectedRawSha ? rawMatchesTarget ? 'EXACT TARGET MATCH' : 'DOES NOT MATCH TARGET' : 'CANDIDATE IDENTITY · NO EXPECTED HASH'}</small></div>
+          <div><span>RAW SHA-256</span><code>{inspection.rawSha256}</code><small>{submissionMode
+            ? targetCheck?.validation === 'exact'
+              ? 'SERVER VERIFIED · EXACT TARGET MATCH'
+              : targetCheck?.validation === 'provenance-required'
+                ? 'CANDIDATE IDENTITY · PROVENANCE REQUIRED'
+                : targetCheck?.validation === 'mismatch'
+                  ? 'DOES NOT MATCH SEALED TARGET'
+                  : 'AWAITING SEALED TARGET CHECK'
+            : 'LOCAL CANDIDATE IDENTITY'}</small></div>
           <div><span>PROTOCOL SHA-256</span><code>{inspection.protocolContentSha256}</code><small>SHA-256 of the complete UTF-8 Data URI</small></div>
           <div><span>EXACT PREFIX</span><code>{inspection.dataUriPrefix}</code><small>{inspection.calldataBytes.toLocaleString('en-US')} calldata bytes</small></div>
         </div>
@@ -414,7 +456,7 @@ export default function EthscribeWorkbench({
       <div className="ethscribe-flow-actions">
         {!account && <button type="button" onClick={connectWallet}>Connect wallet to continue <ArrowIcon /></button>}
         {account && !onMainnet && <button type="button" onClick={switchToMainnet}>Switch to Ethereum mainnet <ArrowIcon /></button>}
-        {account && onMainnet && canCreate && <button type="button" onClick={requestCreate}>{embeddedTargetMode ? '1 OF 2 · ETHSCRIBE TO MY WALLET' : 'ETHSCRIBE TO MY WALLET'} <ArrowIcon /></button>}
+        {account && onMainnet && canCreate && <button type="button" onClick={requestCreate}>{submissionMode ? '1 OF 2 · ETHSCRIBE TO MY WALLET' : 'ETHSCRIBE TO MY WALLET'} <ArrowIcon /></button>}
         {account && onMainnet && canDepositExisting && <button type="button" onClick={requestDeposit}>DEPOSIT MY EXISTING MATCH <ArrowIcon /></button>}
         {account && onMainnet && canDepositCreated && ['created', 'complete'].includes(phase) && <button type="button" onClick={requestDeposit}>2 OF 2 · DEPOSIT INTO MARKET <ArrowIcon /></button>}
       </div>
@@ -426,12 +468,8 @@ export default function EthscribeWorkbench({
           {compatibleTargets.length > 0 ? (
             <div className="compatible-targets">
               {compatibleTargets.map((target) => (
-                <button type="button" key={target.id} onClick={() => {
-                  setSelectedTargetId(target.id);
-                  setClaimSummary(`Exact-byte candidate for ${target.filename}`);
-                  setSourceUrl(target.status === 'lost' ? '' : target.sourceUrl || '');
-                }}>
-                  <span>{target.sha256 ? 'EXACT RAW-HASH MATCH' : 'OPEN RECOVERY TARGET'}</span>
+                <button type="button" key={target.id} onClick={() => selectTargetForInspection(target)}>
+                  <span>{target.validationMode === 'exact' ? 'TEST SEALED TARGET' : 'PROVENANCE RECOVERY TARGET'}</span>
                   <strong>{target.filename}</strong>
                   <small>Expedition 001 · continue to escrow</small>
                 </button>
@@ -445,7 +483,7 @@ export default function EthscribeWorkbench({
         <div className="selected-expedition-target">
           <span>SUBMITTING TO EXPEDITION 001</span>
           <strong>{activeArtifact.filename}</strong>
-          {!custody && <button type="button" onClick={() => setSelectedTargetId('')}>Keep in wallet instead</button>}
+          {!custody && <button type="button" onClick={() => { setSelectedTargetId(''); setTargetCheck(null); }}>Keep in wallet instead</button>}
         </div>
       )}
 
@@ -479,7 +517,7 @@ export default function EthscribeWorkbench({
             <p className="kicker"><span /> Wallet checkpoint</p>
             <h2 id="ethscribe-confirmation-title">{confirmation === 'create' ? 'Create this Ethscription?' : 'Deposit this Ethscription?'}</h2>
             <p>{confirmation === 'create'
-              ? `The initial owner will be your connected wallet. ${embeddedTargetMode ? 'This is transaction 1 of 2 and does not submit the Finding yet.' : 'No marketplace or expedition assignment is included.'}`
+              ? `The initial owner will be your connected wallet. ${submissionMode ? 'This is transaction 1 of 2 and does not submit the Finding yet.' : 'No marketplace or expedition assignment is included.'}`
               : 'This is transaction 2 of 2. It transfers the complete Ethscription to the immutable market while preserving your contract withdrawal path.'}</p>
             <dl>
               <div><dt>FROM</dt><dd><code>{account}</code></dd></div>

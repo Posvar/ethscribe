@@ -4,6 +4,7 @@ import {
   buildFindingAssignment,
   buildWrapperChecks,
   CANONICAL_XPM_MEDIA_TYPE,
+  checkExpeditionTarget,
   checkProtocolExistence,
   findingAssignmentMessage,
   inspectFile,
@@ -63,6 +64,24 @@ test('checks the canonical XPM wrapper and explicit known alternates', async () 
   const results = await checkProtocolExistence(checks, fetchImpl);
   expect(results[1].exists).toBe(true);
   expect(fetchImpl).toHaveBeenCalledWith(expect.stringMatching('/api/ethscriptions/exists/0x'), expect.any(Object));
+});
+
+test('checks a candidate against a sealed expedition target without requesting its expected hash', async () => {
+  const fetchImpl = jest.fn(async (_url, options) => ({
+    ok: true,
+    json: async () => ({ result: { targetId: 'november-20-xpm', eligible: true, validation: 'exact' } }),
+  }));
+  const result = await checkExpeditionTarget({ id: 'november-20-xpm' }, {
+    rawSha256: `0x${'11'.repeat(32)}`,
+    byteLength: 4193,
+    dataUriPrefix: 'data:image/x-xpixmap;base64,',
+  }, fetchImpl);
+
+  expect(result.validation).toBe('exact');
+  const [url, request] = fetchImpl.mock.calls[0];
+  expect(url).toBe('/api/targets/check');
+  expect(request.method).toBe('POST');
+  expect(request.body).not.toContain('expected');
 });
 
 test('creates to the connected wallet and signs a deterministic assignment message', () => {

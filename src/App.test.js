@@ -92,7 +92,8 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByText(/collection status/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /^xpm bitcoin\.xpm$/i }));
-  expect(screen.getByText('bfc746462cabcd70c1f9fa909065bdd1b2fb4e73f5904de38c7c8c8326bb34b4')).toBeInTheDocument();
+  expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
   expect(screen.getByDisplayValue('image/x-xpixmap')).toHaveAttribute('readonly');
   expect(screen.getByText(/creation does not go directly to the market/i)).toBeInTheDocument();
