@@ -2,7 +2,7 @@
 
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
-**Status:** Public site live; marketplace V1 pre-deployment candidate
+**Status:** Public site live; marketplace V1 deployed to mainnet, source-verified, and paused
 **Updated:** August 31, 2026
 
 ## Executive summary
@@ -417,7 +417,7 @@ The official API's `content_sha` hashes the complete Data URI and cannot answer 
 
 ### Marketplace contract boundary
 
-The implementation candidate is `EthscribeMarketV1`. Its behavioral starting point is the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, offers, and 5% fee ceiling.
+The implementation is `EthscribeMarketV1`, deployed paused on Ethereum mainnet at `0x44c241ac86724D64a33558b03A637a63D9a30B02`. Its behavioral starting point is the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, offers, and 5% fee ceiling.
 
 Ethscribe changes the boundary in several ways:
 
@@ -496,6 +496,8 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Enable deposits and binding offers in the existing UI
 - Activate atomic settlement and fee routing
 - Run the first primary Accession auction
+
+**Current status:** V1 is deployed to Ethereum mainnet from commit `687ed2d`, exact-match source verified, and paused. Official-indexer integration, independent review, low-value end-to-end checks, and a separate unpause transaction remain required before marketplace activity.
 
 ## Roadmap after MVP/V1
 

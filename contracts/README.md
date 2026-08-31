@@ -1,6 +1,17 @@
 # Ethscribe contracts
 
-`EthscribeMarketV1` is an immutable ESIP-2 vault and ETH marketplace for Ethscriptions. It is a pre-deployment candidate, not an audited or deployed production contract.
+`EthscribeMarketV1` is an immutable ESIP-2 vault and ETH marketplace for Ethscriptions. V1 is deployed to Ethereum mainnet, source-verified, and paused. It has not received an independent audit and is not yet open for valuable custody or trading.
+
+## Mainnet deployment
+
+- Contract: [`0x44c241ac86724D64a33558b03A637a63D9a30B02`](https://etherscan.io/address/0x44c241ac86724D64a33558b03A637a63D9a30B02)
+- Deployment transaction: [`0xf69d821904353eb57de9a28d4732ea96ca4f3198f289523dd6a9551517ae16df`](https://etherscan.io/tx/0xf69d821904353eb57de9a28d4732ea96ca4f3198f289523dd6a9551517ae16df)
+- Deployment block: `25873370`
+- Exact source commit: [`687ed2d`](https://github.com/Posvar/ethscribe/commit/687ed2dd94f71347ee69a5df5d16d0903306b671)
+- Sourcify verification: [`exact_match`](https://repo.sourcify.dev/contracts/full_match/1/0x44c241ac86724D64a33558b03A637a63D9a30B02/metadata.json)
+- Initial state: paused
+
+The machine-readable record is [deployments/mainnet.json](deployments/mainnet.json). Deployment does not authorize deposits: first-party official-indexer reconciliation, an independent review, interface integration, and a separate deliberate unpause remain release gates.
 
 ## Version 1 boundary
 

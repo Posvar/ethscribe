@@ -40,7 +40,7 @@ No one layer substitutes for the others.
 
 ## Current status
 
-The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. An immutable marketplace candidate is implemented and locally tested but is not audited or deployed; signed submission persistence and first-party indexer reconciliation remain required before live custody.
+The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. The immutable marketplace is deployed to Ethereum mainnet, source-verified, and paused. It is not independently audited or open for valuable custody; signed submission persistence, first-party indexer reconciliation, interface integration, and review remain required before unpause.
 
 The current trust model is straightforward:
 
@@ -54,6 +54,6 @@ Early historical eligibility is decided by a named curator applying a published 
 - Understand the technical distinction in [Byte-perfect identity](foundations/byte-perfect-identity.md).
 - See the product loop in [Expeditions](product/expeditions.md).
 - Follow the three submission paths in [Ethscribe, deposit, and assign](product/artifact-intake.md).
-- Review the contract candidate in [Ownership and marketplace](product/ownership-and-marketplace.md).
+- Review the contract in [Ownership and marketplace](product/ownership-and-marketplace.md) and its [Mainnet deployment](reference/mainnet-deployment.md).
 - Review the rollout in [Phased development](roadmap/phased-development.md).
 - Enter the live first hunt in [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md).

@@ -34,5 +34,6 @@
 
 ## Reference
 
+* [Mainnet deployment](reference/mainnet-deployment.md)
 * [Frequently asked questions](reference/faq.md)
 * [Sources and further reading](reference/sources.md)

@@ -1,6 +1,6 @@
 # EthscribeMarketV1 threat model
 
-This document records the security boundary of the pre-deployment `EthscribeMarketV1` candidate. It is not an audit report.
+This document records the security boundary of the deployed, paused `EthscribeMarketV1`. It is not an audit report. Mainnet deployment does not imply that valuable custody or trading has been approved.
 
 ## Assets at risk
 

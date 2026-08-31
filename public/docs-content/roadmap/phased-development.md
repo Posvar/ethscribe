@@ -63,7 +63,7 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 - Enable deposits, binding offers, refunds, settlement, and fee routing.
 - Complete the first primary Accession auction.
 
-**Current status:** the immutable contract candidate, unit/fuzz/invariant suite, threat model, and local deployment path exist. It is not audited or publicly deployed.
+**Current status:** the immutable contract, unit/fuzz/invariant suite, threat model, and deployment record are public. V1 is deployed to Ethereum mainnet, source-verified, and paused. It is not independently audited or open for valuable custody.
 
 **Release gate:** every asset and fund path is tested, failure recovery does not require curator goodwill, and the live UI is reconciled to contract and official-indexer state.
 

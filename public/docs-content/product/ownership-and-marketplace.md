@@ -67,9 +67,9 @@ An emergency pause may stop new deposits, listings, bids, and sales. It must not
 
 Global administration must not alter the price, fee, or recipients of an active sale. Each listing or accepted curator authorization commits to its own terms and expiry.
 
-## V1 contract candidate
+## V1 contract deployment
 
-The public implementation candidate is [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts). It combines a minimal ESIP-2 vault with fixed-price sales and funded escrow-first offers. It is not yet audited or deployed.
+The public implementation is [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts). It combines a minimal ESIP-2 vault with fixed-price sales and funded escrow-first offers. The immutable contract is [deployed to Ethereum mainnet](../reference/mainnet-deployment.md), source-verified, and paused. It is not independently audited or open for valuable custody.
 
 ### Vault responsibilities
 
@@ -278,21 +278,21 @@ Implemented tests cover deposits, withdrawals, listings, offers, expiry, refunds
 
 Still required before mainnet value is accepted:
 
-- a local deployment rehearsal, plus either an optional Sepolia rehearsal or a recorded decision to proceed with a paused mainnet deployment;
 - first-party official-indexer reconciliation tests;
 - an independent security review;
-- source verification and post-deployment checks; and
-- explicitly reviewed production owner and fee-recipient wallets.
+- first-party interface integration against the deployed address;
+- low-value end-to-end custody and settlement checks; and
+- a separate, explicitly reviewed unpause transaction.
 
 ## Delivery sequence
 
-1. Complete the local executable specification and deployment rehearsal.
+1. Keep the verified mainnet deployment paused during integration.
 2. Integrate official-indexer reconciliation into the wallet and market interface.
-3. Optionally deploy and exercise the exact candidate on Sepolia; otherwise record the decision to skip it and keep the mainnet deployment paused through verification and integration.
-4. Obtain an independent review and resolve findings.
-5. Deploy the immutable mainnet candidate from the reviewed commit.
-6. Verify source and enable low-value beta activity.
+3. Obtain an independent review and resolve findings.
+4. Exercise low-value custody and settlement against the deployed address.
+5. Review and submit a separate unpause transaction.
+6. Enable low-value beta activity.
 7. Route future fees to a separate rewards layer only after contribution rules are proven.
 8. Reconsider funded pre-escrow bids or native per-sale splits only after real demand.
 
-The candidate is ready for local and testnet rehearsal. It is not yet approved for mainnet value.
+The contract is live on mainnet but paused. It is not yet approved for valuable custody or trading.

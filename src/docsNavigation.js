@@ -46,6 +46,7 @@ export const docsSections = [
   {
     title: 'Reference',
     items: [
+      { title: 'Mainnet deployment', slug: 'reference/mainnet-deployment', file: 'reference/mainnet-deployment.md' },
       { title: 'Frequently asked questions', slug: 'reference/faq', file: 'reference/faq.md' },
       { title: 'Sources and further reading', slug: 'reference/sources', file: 'reference/sources.md' },
     ],
