@@ -27,6 +27,10 @@ Therefore:
 - an off-site Ethscription discovered by that index can be attached to the correct artifact record whether or not it ever entered the marketplace contract; and
 - `earliest raw-byte match` remains unavailable until the historical raw-byte backfill is complete.
 
+This is not only an XPM issue. PNG and JPEG have widely used conventional MIME labels, so their canonical check is usually more useful, but the protocol permits any syntactically valid MIME type plus valid Data URI parameters and encoding forms. XPM merely makes the ambiguity more visible because no single MIME label is universally dominant.
+
+Each expedition therefore freezes an accepted wrapper per target. The embedded action generates that wrapper automatically and the signed Finding verifier rejects a different prefix. Expedition 001 uses `data:image/x-xpixmap;base64,` for every XPM target and `data:image/png;base64,` for PNG targets. The site may check a small explicit set of known aliases as a warning, but that is not represented as a protocol-wide raw-byte search.
+
 For a lost target, no expected raw hash exists. Ethscribe cannot automatically recognize the file before someone presents candidate bytes. A Finding supplies those bytes and the provenance case; Ethscribe then calculates `rawSha256`, checks for earlier indexed matches, and begins evidence review.
 
 ## Path 1 — submit against an expedition target
@@ -36,7 +40,7 @@ Every open artifact target should expose an inline **Ethscribe + Submit** action
 1. Connect a wallet and choose a file.
 2. Calculate its byte length, signature, `rawSha256`, and candidate data URI locally.
 3. Compare known targets before asking for a transaction.
-4. Check the official API for the exact protocol content and Ethscribe's raw-byte index for equivalent wrappers.
+4. Check the official API for the exact frozen protocol content and, for XPM, a disclosed set of known alternate wrappers.
 5. If no suitable Ethscription exists, create one to the hunter's wallet.
 6. After creation is confirmed, transfer the resulting `ethscriptionId` to the vault.
 7. Sign the target assignment and initial Dossier.
@@ -46,17 +50,18 @@ The initial implementation uses two explicit wallet transactions—create, then 
 
 If the connected wallet already owns a byte-perfect Ethscription, the flow skips creation and goes directly to deposit and assignment.
 
-## Path 2 — generic vault intake
+## Path 2 — personal Ethscribe, then optional handoff
 
-The global **Ethscribe** action lets a wallet preserve something before deciding which expedition it belongs to.
+The global **Ethscribe** action lets a wallet preserve something before deciding whether it belongs to an expedition.
 
 1. Upload and inspect the file.
 2. Create the Ethscription if an appropriate one does not already exist.
-3. Deposit it into the vault without an expedition assignment.
-4. View it under **My Vault**.
-5. Later assign it to an active target by signing an assignment record.
+3. Verify that the official indexer recognizes the transaction and the connected wallet as owner.
+4. Stop with the Ethscription in the wallet for safekeeping; no vault transfer, listing, or target assignment occurs by default.
+5. Optionally continue into a compatible active target. Known-byte targets appear only when the raw hash and frozen wrapper match; bytes-unknown targets appear only when the file type matches their frozen wrapper.
+6. If a target is selected, deposit the existing ID and sign the Finding assignment.
 
-An unassigned vault item is not a Finding, Finalist, or Accession. It is simply a user-controlled escrow position.
+A personal Ethscription is not a Finding, Finalist, or Accession. It remains an ordinary wallet-held Ethscription unless its owner explicitly continues into an expedition.
 
 ## Path 3 — deposit an existing Ethscription
 
@@ -80,11 +85,13 @@ The wallet dashboard combines three sources:
 
 Only positions where the indexer confirms contract custody and the previous owner matches the depositor receive `Escrow verified`. Potential or invalid deposits stay visible as diagnostic records but cannot be presented as saleable inventory.
 
-### Current gated transaction release
+### Current transaction release
 
 The live `/wallet` route reads fixed market state from Ethereum mainnet, lists directly owned Ethscriptions from the official API, and checks each custody candidate against both sources. It also contains the first Deposit → Verify → Withdraw transaction slice behind a server-side operational gate. Deposits additionally require an unpaused contract; verified withdrawals remain available through the interface during a contract pause when the interface gate is enabled. The gate was enabled for the first production custody pilot and remained enabled afterward at the owner's direction; the live status panel is authoritative for current state.
 
-Every transaction is validated, checked for a raw-ID selector collision, simulated before wallet submission, and reconciled after its receipt. This release does not yet include signed target assignments, decoded-byte indexing, listings, offers, purchases, or claims. Those omissions are visible product states, not inferred from an empty custody list. See the [Controlled custody pilot](../reference/custody-pilot.md).
+The live `/ethscribe` route now creates standard, uncompressed calldata Ethscriptions to the connected wallet. Each open Expedition 001 target exposes the same engine with its accepted wrapper locked. The embedded path is deliberately two transactions: create to self, verify the new transaction-hash ID, then transfer that existing ID to the V1 market. A gas-free personal signature binds verified custody to the target, and a Netlify Function independently checks the signature, official content URI, decoded hash, frozen wrapper, and reconciled contract custody before writing an immutable Finding record to Azure.
+
+Every transaction is validated, simulated before wallet submission, and reconciled after its receipt. The standard creation path is capped at approximately 90 KB of source file bytes; gzip, blobs, and larger-file creation are deferred. The site does not yet provide a protocol-wide decoded-byte index, public Finding pages, listings, offers, purchases, or claims. See the [Controlled custody pilot](../reference/custody-pilot.md).
 
 ## Withdrawal guarantee
 

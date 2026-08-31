@@ -4173,3 +4173,865 @@ footer > span {
     gap: 6px;
   }
 }
+
+/* Expedition archive */
+.expeditions-page main {
+  margin: 0 auto;
+  max-width: 1500px;
+  padding: 0 5vw 110px;
+}
+
+.expeditions-index-hero {
+  align-items: end;
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  gap: 70px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(330px, 0.7fr);
+  padding: 105px 0 75px;
+}
+
+.expeditions-index-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(75px, 11vw, 165px);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.82;
+  margin: 30px 0 0;
+}
+
+.expeditions-index-hero > div:last-child > p,
+.expedition-proposal-callout > div:last-child > p {
+  color: #54514b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0 0 28px;
+}
+
+.expeditions-index-hero button,
+.expedition-proposal-callout button {
+  border-radius: 0;
+}
+
+.expedition-index-list {
+  padding: 95px 0 110px;
+}
+
+.expedition-index-heading {
+  align-items: flex-end;
+  display: flex;
+  gap: 35px;
+  justify-content: space-between;
+  margin-bottom: 45px;
+}
+
+.expedition-index-heading h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  margin: 0;
+  max-width: 830px;
+}
+
+.expedition-index-heading .card-index {
+  margin: 0;
+}
+
+.expedition-index-card {
+  border: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: minmax(360px, 0.8fr) minmax(0, 1.2fr);
+  text-decoration: none;
+}
+
+.expedition-index-visual {
+  align-items: center;
+  background-color: #191917;
+  background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+  background-size: 23px 23px;
+  border-right: 1px solid var(--ink);
+  display: flex;
+  justify-content: center;
+  min-height: 560px;
+  overflow: hidden;
+  padding: 55px;
+  position: relative;
+}
+
+.expedition-index-visual img {
+  filter: saturate(0.7) sepia(0.18);
+  max-height: 370px;
+  max-width: 88%;
+  object-fit: contain;
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+.expedition-index-card:hover .expedition-index-visual img {
+  filter: none;
+  transform: scale(1.035);
+}
+
+.expedition-index-visual > span {
+  bottom: 22px;
+  color: var(--signal);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  left: 24px;
+  letter-spacing: 0.1em;
+  position: absolute;
+}
+
+.expedition-index-copy {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(40px, 5vw, 78px);
+}
+
+.expedition-index-meta {
+  display: flex;
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  justify-content: space-between;
+  letter-spacing: 0.09em;
+}
+
+.expedition-active-status {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.expedition-active-status::before {
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  content: "";
+  height: 9px;
+  width: 9px;
+}
+
+.expedition-index-copy h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(48px, 5.5vw, 82px);
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+  margin: 70px 0 28px;
+  max-width: 760px;
+}
+
+.expedition-index-copy > p {
+  color: #55524c;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 690px;
+}
+
+.expedition-index-copy dl {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 48px 0;
+}
+
+.expedition-index-copy dl > div {
+  border-right: 1px solid var(--line);
+  padding: 17px 12px 17px 0;
+}
+
+.expedition-index-copy dl > div + div {
+  padding-left: 16px;
+}
+
+.expedition-index-copy dl > div:last-child {
+  border-right: 0;
+}
+
+.expedition-index-copy dt,
+.expedition-index-copy > strong {
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.expedition-index-copy dd {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  margin: 8px 0 0;
+}
+
+.expedition-index-copy > strong {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.expedition-index-copy > strong svg {
+  fill: none;
+  height: 17px;
+  stroke: currentColor;
+  width: 17px;
+}
+
+.expedition-proposal-callout {
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  display: grid;
+  gap: 70px;
+  grid-template-columns: 1fr 0.75fr;
+  padding: clamp(40px, 6vw, 85px);
+}
+
+.expedition-proposal-callout h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(43px, 5vw, 73px);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin: 24px 0 0;
+}
+
+.expedition-proposal-callout > div:last-child > p {
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .expeditions-index-hero,
+  .expedition-index-card,
+  .expedition-proposal-callout {
+    grid-template-columns: 1fr;
+  }
+
+  .expedition-index-visual {
+    border-bottom: 1px solid var(--ink);
+    border-right: 0;
+    min-height: 460px;
+  }
+}
+
+@media (max-width: 760px) {
+  .expeditions-page main {
+    padding: 0 20px 75px;
+  }
+
+  .expeditions-index-hero {
+    gap: 40px;
+    padding: 75px 4px 55px;
+  }
+
+  .expeditions-index-hero h1 {
+    font-size: clamp(72px, 23vw, 105px);
+  }
+
+  .expedition-index-list {
+    padding: 70px 0;
+  }
+
+  .expedition-index-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .expedition-index-visual {
+    min-height: 370px;
+    padding: 35px;
+  }
+
+  .expedition-index-copy {
+    padding: 36px 25px;
+  }
+
+  .expedition-index-meta {
+    gap: 15px;
+  }
+
+  .expedition-index-copy h3 {
+    font-size: 50px;
+    margin-top: 50px;
+  }
+
+  .expedition-index-copy dl {
+    grid-template-columns: 1fr;
+  }
+
+  .expedition-index-copy dl > div,
+  .expedition-index-copy dl > div + div {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+    padding: 14px 0;
+  }
+
+  .expedition-index-copy dl > div:last-child {
+    border-bottom: 0;
+  }
+
+  .expedition-proposal-callout {
+    gap: 40px;
+    padding: 42px 25px;
+  }
+}
+
+/* Exact-byte creation and expedition submission */
+.ethscribe-page main {
+  margin: 0 auto;
+  max-width: 1500px;
+  padding: 0 5vw 110px;
+}
+
+.ethscribe-page-hero {
+  align-items: end;
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  gap: 60px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  padding: 100px 0 70px;
+}
+
+.ethscribe-page-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(58px, 7vw, 108px);
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  line-height: 0.92;
+  margin: 28px 0 0;
+  max-width: 950px;
+}
+
+.ethscribe-page-hero > p {
+  color: #53514b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.ethscribe-workbench {
+  background: #e8e3d7;
+  border: 1px solid var(--ink);
+  margin-top: 36px;
+}
+
+.ethscribe-page > main > .ethscribe-workbench {
+  margin-top: 60px;
+}
+
+.ethscribe-workbench-heading,
+.ethscribe-boundary-note,
+.ethscribe-inspection-form,
+.ethscribe-byte-report,
+.ethscribe-duplicate-report,
+.existing-ethscription-card,
+.ethscribe-flow-status,
+.ethscribe-flow-actions,
+.ethscribe-follow-up,
+.selected-expedition-target,
+.finding-assignment-form,
+.finding-published-card {
+  padding: 22px;
+}
+
+.ethscribe-workbench-heading {
+  align-items: flex-start;
+  background: var(--ink);
+  color: white;
+  display: flex;
+  gap: 25px;
+  justify-content: space-between;
+}
+
+.ethscribe-workbench-heading span,
+.ethscribe-workbench-heading > strong,
+.ethscribe-boundary-note > strong,
+.ethscribe-inspection-form label > span,
+.ethscribe-byte-report span,
+.ethscribe-duplicate-report > div span,
+.existing-ethscription-card > span,
+.ethscribe-flow-status > span,
+.ethscribe-follow-up > div > span,
+.selected-expedition-target > span,
+.finding-assignment-form > div span,
+.finding-assignment-form > div strong,
+.finding-published-card > span,
+.ethscribe-market-state,
+.no-compatible-target {
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.ethscribe-workbench-heading span,
+.ethscribe-workbench-heading > strong {
+  color: var(--signal);
+}
+
+.ethscribe-workbench-heading h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(25px, 2.8vw, 40px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  margin: 10px 0 0;
+}
+
+.ethscribe-boundary-note {
+  border-bottom: 1px solid var(--ink);
+}
+
+.ethscribe-boundary-note p,
+.ethscribe-follow-up > p,
+.ethscribe-race-result {
+  color: #56534d;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 9px 0 0;
+}
+
+.ethscribe-inspection-form {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.ethscribe-inspection-form label,
+.finding-assignment-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ethscribe-inspection-form input,
+.finding-assignment-form input,
+.finding-assignment-form textarea {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 11px;
+}
+
+.ethscribe-inspection-form input[readonly] {
+  background: #d7d1c4;
+}
+
+.ethscribe-inspection-form small,
+.ethscribe-byte-report small,
+.ethscribe-duplicate-report > small,
+.compatible-targets small {
+  color: #6b6861;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.ethscribe-inspection-form button,
+.ethscribe-flow-actions button,
+.finding-assignment-form button,
+.compatible-targets button {
+  align-items: center;
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: space-between;
+  letter-spacing: 0.07em;
+  min-height: 48px;
+  padding: 12px 15px;
+  text-transform: uppercase;
+}
+
+.ethscribe-inspection-form > button {
+  grid-column: 1 / -1;
+}
+
+.ethscribe-inspection-form button svg,
+.ethscribe-flow-actions button svg,
+.finding-assignment-form button svg,
+.existing-ethscription-card a svg {
+  fill: none;
+  height: 16px;
+  stroke: currentColor;
+  width: 16px;
+}
+
+.ethscribe-inspection-form button:disabled,
+.ethscribe-flow-actions button:disabled,
+.finding-assignment-form button:disabled {
+  background: #cbc5b8;
+  color: #77736a;
+  cursor: not-allowed;
+}
+
+.ethscribe-byte-report {
+  border-top: 1px solid var(--ink);
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 1px;
+}
+
+.ethscribe-byte-report > div {
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 17px;
+}
+
+.ethscribe-byte-report code,
+.existing-ethscription-card code,
+.finding-published-card code,
+.ethscribe-confirmation code {
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.ethscribe-duplicate-report {
+  border-top: 1px solid var(--ink);
+}
+
+.ethscribe-duplicate-report > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.ethscribe-duplicate-report p {
+  align-items: flex-start;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+  padding: 10px 0;
+}
+
+.ethscribe-duplicate-report p code {
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.ethscribe-duplicate-report p span {
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.ethscribe-duplicate-report .duplicate-found {
+  color: #315b00;
+}
+
+.ethscribe-flow-status {
+  background: var(--paper);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  gap: 8px;
+}
+
+.ethscribe-flow-status > span {
+  color: #666159;
+}
+
+.ethscribe-flow-status > a,
+.existing-ethscription-card > a {
+  align-items: center;
+  display: inline-flex;
+  font-size: 11px;
+  gap: 8px;
+  width: fit-content;
+}
+
+.flow-error,
+.flow-mismatch,
+.flow-assignment-error {
+  border-left: 5px solid #8f291f;
+}
+
+.flow-complete,
+.flow-submitted,
+.flow-custody-verified {
+  border-left: 5px solid var(--signal);
+}
+
+.existing-ethscription-card,
+.ethscribe-follow-up,
+.selected-expedition-target,
+.finding-assignment-form,
+.finding-published-card {
+  border-top: 1px solid var(--ink);
+}
+
+.existing-ethscription-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.existing-ethscription-card p {
+  font-size: 11px;
+  margin: 0;
+}
+
+.ethscribe-flow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ethscribe-follow-up h4 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  font-weight: 400;
+  margin: 8px 0 0;
+}
+
+.compatible-targets {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.compatible-targets button {
+  align-items: flex-start;
+  background: var(--paper);
+  flex-direction: column;
+  text-align: left;
+}
+
+.compatible-targets button:hover {
+  background: var(--signal);
+}
+
+.compatible-targets button span {
+  color: #656159;
+  font-size: 8px;
+}
+
+.compatible-targets button strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  font-weight: 400;
+  text-transform: none;
+}
+
+.no-compatible-target {
+  display: block;
+  margin-top: 18px;
+}
+
+.selected-expedition-target {
+  align-items: center;
+  background: var(--signal);
+  display: grid;
+  gap: 8px 16px;
+  grid-template-columns: 1fr auto;
+}
+
+.selected-expedition-target strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.selected-expedition-target button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 10px;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  text-decoration: underline;
+}
+
+.ethscribe-race-result {
+  border-left: 4px solid #8f291f;
+  margin: 0 22px 22px;
+  padding-left: 13px;
+}
+
+.finding-assignment-form {
+  display: grid;
+  gap: 16px;
+}
+
+.finding-assignment-form > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.finding-published-card {
+  background: var(--signal);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ethscribe-market-state {
+  border-top: 1px solid var(--ink);
+  color: #625e56;
+  margin: 0;
+  padding: 12px 22px;
+}
+
+.ethscribe-confirmation-backdrop {
+  align-items: center;
+  background: rgba(13, 13, 11, 0.82);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 25px;
+  position: fixed;
+  z-index: 100;
+}
+
+.ethscribe-confirmation {
+  background: var(--paper);
+  box-shadow: 9px 9px 0 var(--signal);
+  max-height: calc(100vh - 50px);
+  max-width: 700px;
+  overflow-y: auto;
+  padding: 45px;
+  position: relative;
+  width: 100%;
+}
+
+.ethscribe-confirmation h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 46px;
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  margin: 20px 0;
+}
+
+.ethscribe-confirmation > p:not(.kicker) {
+  color: #55524c;
+  line-height: 1.6;
+}
+
+.ethscribe-confirmation dl {
+  border: 1px solid var(--ink);
+  margin: 25px 0;
+}
+
+.ethscribe-confirmation dl > div {
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 150px minmax(0, 1fr);
+  padding: 12px;
+}
+
+.ethscribe-confirmation dl > div:last-child {
+  border-bottom: 0;
+}
+
+.ethscribe-confirmation dt {
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ethscribe-confirmation dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ethscribe-confirm-check {
+  align-items: flex-start;
+  border: 1px solid var(--ink);
+  display: flex;
+  font-size: 12px;
+  gap: 12px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  padding: 14px;
+}
+
+.ethscribe-confirm-check input {
+  accent-color: var(--signal);
+  height: 17px;
+  margin: 1px 0 0;
+  width: 17px;
+}
+
+.ethscribe-confirmation .primary-action:disabled {
+  background: #cbc6ba;
+  color: #706d66;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .ethscribe-page-hero {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .ethscribe-page main {
+    padding: 0 20px 75px;
+  }
+
+  .ethscribe-page-hero {
+    gap: 35px;
+    padding: 70px 4px 50px;
+  }
+
+  .ethscribe-page-hero h1 {
+    font-size: clamp(55px, 16vw, 76px);
+  }
+
+  .ethscribe-workbench-heading,
+  .ethscribe-duplicate-report > div,
+  .finding-assignment-form > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ethscribe-inspection-form,
+  .ethscribe-byte-report,
+  .compatible-targets {
+    grid-template-columns: 1fr;
+  }
+
+  .ethscribe-inspection-form > button {
+    grid-column: auto;
+  }
+
+  .ethscribe-duplicate-report p,
+  .selected-expedition-target,
+  .ethscribe-confirmation dl > div {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-expedition-target button {
+    grid-column: auto;
+    grid-row: auto;
+    justify-self: start;
+    padding: 0;
+  }
+
+  .ethscribe-confirmation {
+    box-shadow: 5px 5px 0 var(--signal);
+    padding: 35px 22px;
+  }
+
+  .ethscribe-confirmation h2 {
+    font-size: 37px;
+  }
+}

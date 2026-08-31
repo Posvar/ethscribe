@@ -18,8 +18,20 @@
   force = true
 
 [[redirects]]
+  from = "/api/ethscriptions/exists/:sha"
+  to = "https://api.ethscriptions.com/v2/ethscriptions/exists/:sha"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/ethscriptions/:id"
   to = "https://api.ethscriptions.com/v2/ethscriptions/:id"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/findings"
+  to = "/.netlify/functions/findings"
   status = 200
   force = true
 

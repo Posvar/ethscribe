@@ -28,7 +28,7 @@ The site currently presents:
 
 Fourteen of the mapped items are image components extracted from historical ICO containers. Counts are derived from the expedition manifest and will later reconcile against indexed vault state.
 
-These figures describe Ethscribe's curated expedition state. They are not yet a protocol-wide claim that matching decoded bytes have never appeared under another data-URI wrapper.
+These figures describe Ethscribe's curated expedition state. They are not yet a protocol-wide claim that matching decoded bytes have never appeared under another data-URI wrapper. Each target nevertheless freezes one accepted creation wrapper: `data:image/x-xpixmap;base64,` for XPM and `data:image/png;base64,` for PNG.
 
 ## Historical arc
 
@@ -70,7 +70,8 @@ The expedition record should remain `BYTES UNKNOWN` until a candidate satisfies 
 - Compare decoded bytes, not screenshots.
 - Preserve original containers and neighboring files.
 - Document exactly where a candidate came from and every transformation performed.
-- Submit recovery leads while signed Findings and contract deposit are still under development.
+- Upload exact candidates directly within any unresolved target. Known files are rejected before gas when their raw hash is wrong; the lost target accepts a PNG candidate for provenance review because no authoritative hash exists yet.
+- Create to the connected wallet, optionally deposit into the deployed market, and publish a signed Finding after custody reconciliation.
 
 ## Acceptance standard
 

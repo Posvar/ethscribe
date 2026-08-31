@@ -30,7 +30,7 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 **Outcome:** wallets can create durable research records without marketplace custody.
 
 - Add Netlify Functions and Azure-backed storage.
-- Implement canonical EIP-712 Dossier signatures.
+- Implement canonical wallet-signed Finding assignments; use EIP-712 for the fuller versioned Dossier schema when its review UI lands.
 - Verify Ethscriptions and calculate decoded-byte hashes.
 - Publish Finding pages, Dossier revisions, Field Notes, and proposals.
 - Add abuse controls and curator review tooling.
@@ -38,11 +38,14 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 
 **Release gate:** independent users can submit and verify signed records without privileged database edits.
 
+**Current status:** the first narrow slice is implemented. The target UI verifies exact bytes, frozen wrappers, official protocol content, a personal wallet signature, and market custody before a server function writes an immutable Finding JSON record. Public Finding pages, Dossier revisions, Field Notes, moderation, rate limiting, and the protocol-wide raw-byte index remain open Phase 2 work.
+
 ## Phase 3 — live genesis expeditions
 
 **Outcome:** prove that the research loop creates repeat participation.
 
 - Freeze and publish expedition rubrics.
+- Expand the live Finding intake into a complete public review workflow.
 - Run three to five multi-day or weekly expeditions.
 - Curate Finalists with signed decisions.
 - Measure cross-expedition retention, collaborative research, and credible collector intent.

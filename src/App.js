@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import DocsPage from './DocsPage';
+import EthscribeWorkbench from './EthscribeWorkbench';
 import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
-import { artifactById, huntStats, lostArtifact, timelineEvents } from './huntData';
+import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
 
 const EXPEDITION_PATH = '/expeditions/lost-pixels-of-satoshi';
 const referenceImage =
@@ -14,12 +15,6 @@ const processSteps = [
   { number: '02', title: 'Follow the source', body: 'Researchers work from release archives, source commits, and contemporaneous records—not visual resemblance.' },
   { number: '03', title: 'Prove the bytes', body: 'Exact decoded bytes are matched by hash. A line ending, metadata rewrite, or reconstruction is a different artifact.' },
   { number: '04', title: 'Preserve the record', body: 'Verified files, evidence, and ownership enter a permanent public catalogue anchored to Ethereum.' },
-];
-
-const proposals = [
-  { eyebrow: 'PRE-INTERNET SOFTWARE', title: 'The Desktop Before the Web', description: 'Recover formative icons, cursors, and interface assets from early personal computing.' },
-  { eyebrow: 'WEB HISTORY', title: 'The First PNG', description: 'Trace the earliest surviving Portable Network Graphics files back to their exact sources.' },
-  { eyebrow: 'INTERNET CULTURE', title: 'Before Emoji', description: 'Find the tiny images and glyphs that taught networked culture how to feel.' },
 ];
 
 function ArrowIcon() {
@@ -48,8 +43,9 @@ function walletLabel(account, walletState) {
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, connectWallet, expedition = false, docs = false, wallet = false }) {
-  const awayFromHome = expedition || docs || wallet;
+function SiteHeader({ account, walletState, connectWallet, expedition = false, expeditions = false, docs = false, wallet = false, ethscribe = false }) {
+  const awayFromHome = expedition || expeditions || docs || wallet || ethscribe;
+  const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -75,9 +71,8 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, d
         <a className="brand" href="/" aria-label="Ethscribe home"><img src="/icon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
         <nav className="main-nav" aria-label="Primary navigation">
           <a href={awayFromHome ? '/#mission' : '#mission'}>Mission</a>
-          <a href={awayFromHome ? '/#method' : '#method'}>Method</a>
-          <a className={expedition ? 'nav-active' : ''} href={awayFromHome ? '/#expeditions' : '#expeditions'} aria-current={expedition ? 'page' : undefined}>Expeditions</a>
-          <a href={awayFromHome ? '/#propose' : '#propose'}>Propose</a>
+          <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" aria-current={expeditionsActive ? 'page' : undefined}>Expeditions</a>
+          <a className={ethscribe ? 'nav-active' : ''} href="/ethscribe" aria-current={ethscribe ? 'page' : undefined}>Ethscribe</a>
           <a className={docs ? 'nav-active' : ''} href="/docs" aria-current={docs ? 'page' : undefined}>Docs</a>
         </nav>
         {account ? (
@@ -117,16 +112,15 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, d
               </button>
             )}
             <a href={awayFromHome ? '/#mission' : '#mission'} onClick={closeMenu}>Mission</a>
-            <a href={awayFromHome ? '/#method' : '#method'} onClick={closeMenu}>Method</a>
-            <a className={expedition ? 'nav-active' : ''} href={awayFromHome ? '/#expeditions' : '#expeditions'} onClick={closeMenu}>Expeditions</a>
-            <a href={awayFromHome ? '/#propose' : '#propose'} onClick={closeMenu}>Propose</a>
+            <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" onClick={closeMenu}>Expeditions</a>
+            <a className={ethscribe ? 'nav-active' : ''} href="/ethscribe" onClick={closeMenu}>Ethscribe</a>
             <a className={docs ? 'nav-active' : ''} href="/docs" onClick={closeMenu}>Docs</a>
           </nav>
         )}
       </header>
       {expedition && (
         <nav className="expedition-context-bar" aria-label="Current expedition">
-          <a href="/#expeditions">EXPEDITIONS</a><span>└─</span><a href={EXPEDITION_PATH} aria-current="page">EXPEDITION 001: THE LOST PIXELS OF SATOSHI</a>
+          <a href="/expeditions">EXPEDITIONS</a><span>└─</span><a href={EXPEDITION_PATH} aria-current="page">EXPEDITION 001: THE LOST PIXELS OF SATOSHI</a>
         </nav>
       )}
     </div>
@@ -158,7 +152,7 @@ function RecordFact({ label, value, unknown = 'Unknown until the original bytes 
   );
 }
 
-function ArtifactDetail({ artifact, onDocumentRecovery }) {
+function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMainnet, provider }) {
   const [chainRecord, setChainRecord] = useState(null);
   const [recordState, setRecordState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
   const statusCopy = {
@@ -289,24 +283,21 @@ function ArtifactDetail({ artifact, onDocumentRecovery }) {
           <div className="artifact-prefix"><span>RECOMMENDED DATA URI</span><code>data:image/x-xpixmap;base64,&lt;exact XPM bytes&gt;</code></div>
         )}
 
-        {artifact.status === 'open' && (
-          <div className="contract-placeholder">
-            <span>ETHSCRIBE + SUBMIT</span>
-            <p>The immutable V1 contract is deployed and source-verified on Ethereum mainnet. Submission stays unavailable while the contract is deliberately paused and the transaction experience is completed.</p>
-            <strong>CONTRACT DEPLOYED · WRITES PAUSED</strong>
-          </div>
+        {(artifact.status === 'open' || artifact.status === 'lost') && (
+          <EthscribeWorkbench
+            mode="target"
+            artifact={artifact}
+            account={account}
+            chainId={chainId}
+            connectWallet={connectWallet}
+            switchToMainnet={switchToMainnet}
+            provider={provider}
+          />
         )}
 
         <div className="artifact-links">
           <a href={artifact.sourceUrl} target="_blank" rel="noreferrer">Inspect primary source <ArrowIcon /></a>
-          {artifact.status === 'lost' && (
-            <button type="button" onClick={onDocumentRecovery}>Document a possible recovery <ArrowIcon /></button>
-          )}
         </div>
-
-        {artifact.status === 'lost' && (
-          <p className="precontract-explainer">PRE-CONTRACT NOTEBOOK · This currently saves a private lead in your browser. It does not publish, validate, or ethscribe the candidate.</p>
-        )}
       </div>
     </article>
   );
@@ -330,7 +321,7 @@ function MethodSection() {
   );
 }
 
-function HomePage({ account, walletState, connectWallet, openParticipation }) {
+function HomePage({ account, walletState, connectWallet }) {
   return (
     <div className="site-shell home-page">
       <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} />
@@ -392,16 +383,49 @@ function HomePage({ account, walletState, connectWallet, openParticipation }) {
           </div>
         </section>
 
-        <section className="next-section" id="propose">
-          <div className="section-heading compact">
-            <div><p className="kicker"><span /> Future fieldwork</p><h2>Digital history is bigger than the web.</h2></div>
-            <button type="button" className="text-action proposal-button" onClick={() => openParticipation('proposal')}>Propose an expedition <ArrowIcon /></button>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function ExpeditionsPage({ account, walletState, connectWallet, openParticipation }) {
+  return (
+    <div className="site-shell expeditions-page">
+      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} expeditions />
+      <main id="top">
+        <section className="expeditions-index-hero">
+          <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
+          <div>
+            <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as permanent public records.</p>
+            <button type="button" className="primary-action" onClick={() => openParticipation('proposal')}>Propose an expedition <ArrowIcon /></button>
           </div>
-          <div className="proposal-grid">
-            {proposals.map((proposal, index) => (
-              <article key={proposal.title}><div className="proposal-meta"><span>{proposal.eyebrow}</span><span>0{index + 2}</span></div><h3>{proposal.title}</h3><p>{proposal.description}</p><span className="under-consideration">UNDER CONSIDERATION</span></article>
-            ))}
+        </section>
+
+        <section className="expedition-index-list" aria-labelledby="expedition-list-title">
+          <div className="expedition-index-heading">
+            <p className="card-index">EXPEDITION ARCHIVE / NEWEST FIRST</p>
+            <h2 id="expedition-list-title">Active and completed field records.</h2>
           </div>
+          <a className="expedition-index-card" href={EXPEDITION_PATH}>
+            <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s surviving 2010 Bitcoin source artwork" /><span>EXPEDITION 001</span></div>
+            <div className="expedition-index-copy">
+              <div className="expedition-index-meta"><span className="expedition-active-status">ACTIVE</span><span>BITCOIN · 2008–2010</span></div>
+              <h3>The Lost Pixels of Satoshi</h3>
+              <p>Complete the exact-file record behind Satoshi’s first two Bitcoin icon systems—and recover one attested PNG whose original bytes remain lost.</p>
+              <dl>
+                <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured} / {huntStats.known}</dd></div>
+                <div><dt>KNOWN-BYTE GAPS</dt><dd>{huntStats.open}</dd></div>
+                <div><dt>LOST-BYTE TARGETS</dt><dd>{huntStats.lost}</dd></div>
+              </dl>
+              <strong>OPEN EXPEDITION <ArrowIcon /></strong>
+            </div>
+          </a>
+        </section>
+
+        <section className="expedition-proposal-callout">
+          <div><p className="kicker"><span /> Propose the next hunt</p><h2>What should the field investigate next?</h2></div>
+          <div><p>A strong proposal names a culturally important digital artifact, bounds the exact targets, and starts with credible primary sources. Proposals enter review; they do not become live hunts automatically.</p><button type="button" className="primary-action dark" onClick={() => openParticipation('proposal')}>Start a proposal <ArrowIcon /></button></div>
         </section>
       </main>
       <SiteFooter />
@@ -409,7 +433,7 @@ function HomePage({ account, walletState, connectWallet, openParticipation }) {
   );
 }
 
-function ExpeditionPage({ account, walletState, connectWallet, openParticipation }) {
+function ExpeditionPage({ account, walletState, connectWallet, chainId, switchToMainnet, provider }) {
   const requestedArtifactId = new URLSearchParams(window.location.search).get('artifact');
   const [selectedArtifactId, setSelectedArtifactId] = useState(
     artifactById(requestedArtifactId) ? requestedArtifactId : lostArtifact.id,
@@ -486,7 +510,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
               <div className="progress-fraction"><strong>{huntStats.secured}</strong><span>/ {huntStats.known}</span></div>
               <p className="progress-label">known byte-perfect files secured in this collection</p>
               <div className="progress-track" aria-label={`${huntStats.secured} of ${huntStats.known} artifacts secured`}><span style={{ width: `${(huntStats.secured / huntStats.known) * 100}%` }} /></div>
-              <p className="progress-sync-note">CURATED MANIFEST TODAY · DEPLOYED MARKET READS LIVE · WRITES PAUSED</p>
+              <p className="progress-sync-note">CURATED MANIFEST TODAY · LIVE TARGET INTAKE · VERIFIED MARKET CUSTODY</p>
               <dl className="progress-breakdown">
                 <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured}</dd></div><div><dt>NEEDS ETHSCRIBING</dt><dd>{huntStats.open}</dd></div>
                 <div><dt>BYTES UNKNOWN</dt><dd>{huntStats.lost}</dd></div><div><dt>MAPPED COMPONENTS</dt><dd>{huntStats.components}</dd></div>
@@ -536,7 +560,14 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
                       </div>
                       {selectedArtifact && (
                         <div className="timeline-expanded" id={`record-${selectedArtifact.id}`}>
-                          <ArtifactDetail artifact={selectedArtifact} onDocumentRecovery={() => openParticipation('finding')} />
+                          <ArtifactDetail
+                            artifact={selectedArtifact}
+                            account={account}
+                            chainId={chainId}
+                            connectWallet={connectWallet}
+                            switchToMainnet={switchToMainnet}
+                            provider={provider}
+                          />
                         </div>
                       )}
                     </div>
@@ -561,7 +592,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
 
           <div className="hunt-callout">
             <div><span className="callout-number">1</span><p>attested artifact has no verified surviving bytes</p></div>
-            <button type="button" className="primary-action dark" onClick={() => openParticipation('finding')}>Document a possible recovery <ArrowIcon /></button>
+            <a className="primary-action dark" href={`${EXPEDITION_PATH}?artifact=${lostArtifact.id}#record-${lostArtifact.id}`}>Open the recovery target <ArrowIcon /></a>
           </div>
         </section>
       </main>
@@ -570,11 +601,40 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
   );
 }
 
+function EthscribePage({ account, walletState, connectWallet, chainId, switchToMainnet, provider }) {
+  const submissionTargets = [...artifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
+
+  return (
+    <div className="site-shell ethscribe-page">
+      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} ethscribe />
+      <main id="top">
+        <section className="ethscribe-page-hero">
+          <div>
+            <p className="kicker"><span /> Exact-byte preservation</p>
+            <h1>Ethscribe a file to your own wallet.</h1>
+          </div>
+          <p>Create a standard Ethscription without listing it or assigning it to a hunt. After the official indexer verifies the record, you can stop—or continue into a compatible live expedition.</p>
+        </section>
+        <EthscribeWorkbench
+          mode="personal"
+          submissionTargets={submissionTargets}
+          account={account}
+          chainId={chainId}
+          connectWallet={connectWallet}
+          switchToMainnet={switchToMainnet}
+          provider={provider}
+        />
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
 function SiteFooter({ expedition = false }) {
   return (
     <footer>
       <img src="/icon.svg" alt="Ethscribe" /><p>Find the bytes. Establish the provenance. Own the artifact.</p>
-      <div><a href="/">Mission</a><a href={expedition ? '#timeline' : EXPEDITION_PATH}>Expedition 001</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
+      <div><a href="/">Mission</a><a href="/expeditions">Expeditions</a>{expedition && <a href="#timeline">Expedition 001</a>}<a href="/ethscribe">Ethscribe</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
 }
@@ -587,17 +647,23 @@ function App() {
   const [savedMessage, setSavedMessage] = useState('');
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const isExpedition = pathname === EXPEDITION_PATH;
+  const isExpeditions = pathname === '/expeditions';
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
+  const isEthscribe = pathname === '/ethscribe';
 
   useEffect(() => {
     if (isDocs) return;
     document.title = isWallet
       ? 'Wallet — Ethscribe'
+      : isEthscribe
+        ? 'Ethscribe a File — Ethscribe'
+      : isExpeditions
+        ? 'Expeditions — Ethscribe'
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition, isWallet]);
+  }, [isDocs, isEthscribe, isExpedition, isExpeditions, isWallet]);
 
   useEffect(() => {
     const ethereum = window.ethereum;
@@ -678,7 +744,15 @@ function App() {
     }
   };
 
-  const pageProps = { account, walletState, connectWallet, openParticipation };
+  const pageProps = {
+    account,
+    walletState,
+    connectWallet,
+    openParticipation,
+    chainId,
+    switchToMainnet,
+    provider: window.ethereum,
+  };
   const headerProps = { account, walletState, connectWallet };
 
   return (
@@ -695,7 +769,11 @@ function App() {
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />
-          : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
+          : isEthscribe
+            ? <EthscribePage {...pageProps} />
+            : isExpeditions
+              ? <ExpeditionsPage {...pageProps} />
+            : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
       {modal && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setModal(null)}>
           <section className="participation-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -718,7 +796,7 @@ function App() {
             )}
 
             {modal === 'proposal' && (
-              <><p className="kicker"><span /> Expedition notebook</p><h2 id="modal-title">Propose the next hunt.</h2><p>Strong expeditions name a culturally important artifact, define an exact target, and begin with credible primary sources. This pre-contract preview saves only to this device.</p>
+              <><p className="kicker"><span /> Expedition notebook</p><h2 id="modal-title">Propose the next hunt.</h2><p>Strong expeditions name a culturally important artifact, define an exact target, and begin with credible primary sources. This proposal preview still saves only to this device.</p>
                 <form onSubmit={(event) => saveLocalDraft(event, 'proposal')}>
                   <label>Expedition title<input name="title" type="text" placeholder="The first…" required /></label>
                   <label>What should researchers find?<textarea name="target" rows="3" placeholder="Describe the exact digital artifacts." required /></label>

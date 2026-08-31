@@ -172,9 +172,9 @@ The site launches with these top-level destinations:
 | `/about` | Ethscriptions, byte-perfect verification, ownership limits, and curation policy. |
 | `/docs` | Git-backed project documentation and living whitepaper, using the same Markdown source as GitBook. |
 
-The public shell separates the permanent mission at `/` from Expedition 001 at `/expeditions/lost-pixels-of-satoshi`. Future catalogue and Finding routes may follow as persistent data is added.
+The public shell separates the permanent mission at `/`, the reverse-chronological expedition archive at `/expeditions`, and Expedition 001 at `/expeditions/lost-pixels-of-satoshi`. The archive begins with active work and retains concluded expeditions below it so their records and assets remain discoverable.
 
-Global navigation remains stable across routes: `Mission | Method | Expeditions | Propose | Docs`. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
+Global navigation remains stable across routes: `Mission | Expeditions | Ethscribe | Docs`, followed by the wallet control. Method remains a homepage section rather than a global destination. Proposals begin within the Expeditions archive rather than occupying permanent navigation. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
 
 ### Documentation and whitepaper
 
@@ -255,12 +255,12 @@ The vault is expedition-agnostic. It stores Ethscription custody and market stat
 V1 supports three intake paths:
 
 1. **Inline Ethscribe + Submit.** From an artifact target, upload a file, verify its raw hash, create the Ethscription when needed, deposit it, and sign its target assignment and Dossier.
-2. **Generic Ethscribe.** Create and deposit an artifact without assigning it. It appears in `My Vault` and can be attached to an active target later.
+2. **Generic Ethscribe.** Create an artifact directly to the connected wallet and stop there by default. After indexer verification, the user may optionally continue into a compatible active target; only that explicit continuation deposits the asset.
 3. **Deposit an existing Ethscription.** Query assets owned by the connected wallet, select one or more, transfer them to the vault, and optionally assign them to targets.
 
 The safest creation flow initially uses two explicit transactions: create to the user's wallet, then transfer the resulting transaction-hash ID to the vault. The product presents one guided workflow while clearly showing both confirmations. Existing owned assets skip creation, and ESIP-5 supports bulk deposits.
 
-Inline target actions and the global `Ethscribe` action share the same transaction engine. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions are separate tabs; an assignment can be added or changed without another custody transaction.
+Inline target actions and the global `Ethscribe` action share the same transaction engine. Every expedition target freezes one accepted Data URI wrapper; the embedded UI generates it and the Finding verifier enforces it. The global flow lets the user choose a valid MIME type, then offers only compatible targets after creation or discovery of an existing wallet-owned match. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions remain separate.
 
 Before the contract, a Finding remains non-custodial:
 
@@ -273,7 +273,7 @@ Before the contract, a Finding remains non-custodial:
 
 After the contract, the user can also deposit before or after assignment. The wallet dashboard reconciles potential-deposit events with the official indexer's `current_owner` and `previous_owner` fields before displaying `Escrow verified`.
 
-If a target's raw bytes are known, the official API can quickly test known complete data-URI hashes. It cannot search by Ethscribe's wrapper-independent `rawSha256`; that requires the historical decoded-byte index. If target bytes are unknown, automatic matching begins only after a researcher submits candidate bytes in a Finding.
+If a target's raw bytes are known, the official API can quickly test known complete data-URI hashes. It cannot search by Ethscribe's wrapper-independent `rawSha256`; that requires the historical decoded-byte index. This limitation applies even to conventional PNG/JPEG wrappers, though XPM aliases make it more visible. The live client checks the frozen wrapper plus a disclosed set of common XPM aliases and explicitly avoids claiming exhaustive raw-byte uniqueness. If target bytes are unknown, automatic matching begins only after a researcher submits candidate bytes in a Finding.
 
 ### Review flow
 
@@ -476,10 +476,12 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Implement Finding pages and signed Field Notes
 - Add basic moderation and rate limiting
 
+**Current status:** the first production slice now supports personal creation to the connected wallet and inline target submissions. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled V1 custody. Public Finding pages, Dossier revisions, Field Notes, proposals, moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
+
 ### Phase 3 — live Genesis Hunts
 
 - Publish the frozen Hunt rubric
-- Open real Finding submissions
+- Expand live Finding intake into a complete public review workflow
 - Run three to five weekly Hunts
 - Curate Finalists with signed decisions
 - Measure return behavior and collector interest

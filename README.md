@@ -2,7 +2,7 @@
 
 Ownable digital archaeology: Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
 
-The first release is intentionally site-first. It establishes the brand, the Genesis Hunt, archival sourcing, wallet-based researcher identity, and honest pre-contract participation flows. Custody, listings, and settlement arrive with the marketplace-contract milestone described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
+The current release establishes the brand, Genesis Hunt, archival sourcing, wallet-based researcher identity, personal Ethscription creation, verified market custody, and signed Finding intake. Listings and settlement remain behind the marketplace milestones described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
 
 ## Documentation
 
@@ -23,6 +23,7 @@ The development server opens at `http://localhost:3000`.
 
 ```bash
 npm test -- --watchAll=false
+npm run test:functions
 npm run build
 ```
 
@@ -41,7 +42,7 @@ The connected Netlify site should build the `main` branch on every GitHub push.
 
 ## Azure asset storage
 
-Azure credentials must remain server-side and must never use a `REACT_APP_` prefix. Netlify Functions will read these variables when submissions are implemented:
+Azure credentials must remain server-side and must never use a `REACT_APP_` prefix. The signed Finding function reads:
 
 ```text
 AZURE_STORAGE_ACCOUNT_NAME=ethscribe
@@ -49,7 +50,7 @@ AZURE_STORAGE_CONTAINER=ethscribe-assets
 AZURE_STORAGE_SAS_TOKEN=<secret>
 ```
 
-The current site does not read or expose the SAS token. The three variable names above are configured on the linked Netlify project. Before asset uploads are enabled, restrict the SAS permissions and expiry to the minimum required by the server-side function.
+The browser never reads or receives the SAS token. The three variable names above are configured on the linked Netlify project. The SAS must allow creation/write of Finding JSON blobs in the named container; restrict its permissions, resource scope, and expiry to the minimum required by the server-side function.
 
 ## Historical sources
 

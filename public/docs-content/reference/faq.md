@@ -16,6 +16,8 @@ The decoded bytes match exactly, as measured by SHA-256. Looking identical is no
 
 The protocol identifies the complete data URI. The same decoded bytes can potentially appear under different valid wrappers, MIME types, or protocol mechanisms. Ethscribe calculates `rawSha256` to group those equivalent payloads and find the earliest indexed raw-byte match.
 
+PNG and JPEG conventions reduce accidental variation but do not eliminate it: MIME aliases, parameters, percent encoding, gzip, attachments, and opt-in protocol rules can still change protocol identity without changing the eventual file bytes. Expedition actions therefore freeze and generate one accepted wrapper.
+
 ## Does `content_sha` identify the raw file?
 
 No. The official API's content hash identifies complete protocol content. Ethscribe separately decodes supported content and hashes the artifact bytes.
@@ -68,11 +70,11 @@ Usually not natively. XPM is textual source data. Ethscribe can safely parse it 
 
 ## What is live now?
 
-The Git-backed public site, mission, method, wallet connection, Expedition 001 research timeline, artifact inspection, and project documentation. Signed participation, persistent storage, a protocol-wide raw-byte index, contract custody, and bidding follow in the documented phases.
+The Git-backed public site, mission, method, wallet connection, Expedition 001 research timeline, artifact inspection, project documentation, personal Ethscription creation, verified market custody, and signed target Finding intake. A protocol-wide raw-byte index, public Finding review pages, listings, offers, settlement, and bidding remain incomplete.
 
 ## How can I participate?
 
-Explore the current expedition, inspect its unresolved records, preserve promising files without modification, and document source custody. Signed Finding and proposal workflows will become the formal entry points as Phase 2 launches.
+Explore the current expedition, inspect an unresolved target, preserve the candidate without modification, and use its embedded **Ethscribe + Submit** flow. To preserve an unrelated file first, use the global **Ethscribe** page; after creation it offers a compatible expedition handoff without moving the file unless you choose to continue.
 
 ## Can anyone propose an expedition?
 
