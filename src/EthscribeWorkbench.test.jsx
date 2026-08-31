@@ -56,7 +56,7 @@ test('reduces successful target validation to one ready checkpoint with optional
   />);
 
   fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [file] } });
-  fireEvent.click(screen.getByRole('button', { name: /^test bytes/i }));
+  fireEvent.submit(screen.getByRole('button', { name: /^test bytes/i }).closest('form'));
 
   expect(await screen.findByText('READY TO ETHSCRIBE')).toBeInTheDocument();
   expect(screen.getByText('✓ TARGET MATCHED')).toBeInTheDocument();

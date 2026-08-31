@@ -1,19 +1,20 @@
 import { render, screen, within } from '@testing-library/react';
+import { vi } from 'vitest';
 import App from './App';
 
-jest.mock('./XpmPreview', () => function MockXpmPreview() {
+vi.mock('./XpmPreview', () => ({ default: function MockXpmPreview() {
   return <div data-testid="xpm-preview" />;
-});
-jest.mock('./useEthscribeWallet', () => ({
+} }));
+vi.mock('./useEthscribeWallet', () => ({
   useEthscribeWallet: () => ({
     account: '',
     chainId: '',
     walletState: 'idle',
     walletName: '',
     provider: null,
-    connectWallet: jest.fn(),
-    switchToMainnet: jest.fn(),
-    openAccountModal: jest.fn(),
+    connectWallet: vi.fn(),
+    switchToMainnet: vi.fn(),
+    openAccountModal: vi.fn(),
   }),
 }));
 const originalFetch = global.fetch;

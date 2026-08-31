@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { vi } from 'vitest';
 import App from './App';
 import { useEthscribeWallet } from './useEthscribeWallet';
 
-jest.mock('./XpmPreview', () => function MockXpmPreview() {
+vi.mock('./XpmPreview', () => ({ default: function MockXpmPreview() {
   return <div data-testid="xpm-preview" />;
-});
-jest.mock('./useEthscribeWallet', () => ({ useEthscribeWallet: jest.fn() }));
+} }));
+vi.mock('./useEthscribeWallet', () => ({ useEthscribeWallet: vi.fn() }));
 
 const originalFetch = global.fetch;
 const connectWallet = jest.fn();
@@ -94,7 +95,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(legend.children).toHaveLength(2);
   expect(within(legend).getByText('NOT YET ETHSCRIBED')).toBeInTheDocument();
 
-  fireEvent.click(screen.getAllByRole('button', { name: /ico bitcoin\.ico/i })[0]);
+  fireEvent.click(screen.getAllByRole('button', { name: /icobitcoin\.ico/i })[0]);
   expect(screen.getByRole('heading', { name: /file information/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /hashing/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /ethscription transaction/i })).toBeInTheDocument();
@@ -109,7 +110,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByText(/ethereum block/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/collection status/i)).not.toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: /^xpm bitcoin\.xpm$/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
