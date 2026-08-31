@@ -5,9 +5,21 @@ import EthscribeWorkbench from './EthscribeWorkbench';
 import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
+import {
+  buildExpeditionProposal,
+  fetchExpeditionProposals,
+  publishExpeditionProposal,
+  signExpeditionProposal,
+} from './proposalApi';
 
 const EXPEDITION_PATH = '/expeditions/lost-pixels-of-satoshi';
 const referenceImage = artifactById('new-png-48').previewUrl;
+
+const proposalDirections = [
+  { eyebrow: 'PRE-INTERNET SOFTWARE', title: 'The Desktop Before the Web', description: 'Recover formative icons, cursors, and interface assets from early personal computing.' },
+  { eyebrow: 'WEB HISTORY', title: 'The First PNG', description: 'Trace the earliest surviving Portable Network Graphics files back to their exact sources.' },
+  { eyebrow: 'INTERNET CULTURE', title: 'Before Emoji', description: 'Find the tiny images and glyphs that taught networked culture how to feel.' },
+];
 
 const processSteps = [
   { number: '01', title: 'Define the target', body: 'A hunt begins with a culturally significant artifact and a precise definition of what counts.' },
@@ -415,7 +427,7 @@ function HomePage({ account, walletState, connectWallet }) {
   );
 }
 
-function ExpeditionsPage({ account, walletState, connectWallet, openParticipation }) {
+function ExpeditionsPage({ account, walletState, connectWallet }) {
   return (
     <div className="site-shell expeditions-page">
       <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} expeditions />
@@ -424,15 +436,12 @@ function ExpeditionsPage({ account, walletState, connectWallet, openParticipatio
           <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
           <div>
             <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as permanent public records.</p>
-            <button type="button" className="primary-action" onClick={() => openParticipation('proposal')}>Propose an expedition <ArrowIcon /></button>
+            <a className="primary-action" href="/expeditions/propose">Propose an expedition <ArrowIcon /></a>
           </div>
         </section>
 
-        <section className="expedition-index-list" aria-labelledby="expedition-list-title">
-          <div className="expedition-index-heading">
-            <p className="card-index">EXPEDITION ARCHIVE / NEWEST FIRST</p>
-            <h2 id="expedition-list-title">Active and completed field records.</h2>
-          </div>
+        <section className="expedition-index-list" aria-label="Expedition archive, newest first">
+          <p className="card-index expedition-archive-label">EXPEDITION ARCHIVE / NEWEST FIRST</p>
           <a className="expedition-index-card" href={EXPEDITION_PATH}>
             <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" /><span>EXPEDITION 001</span></div>
             <div className="expedition-index-copy">
@@ -449,9 +458,153 @@ function ExpeditionsPage({ account, walletState, connectWallet, openParticipatio
           </a>
         </section>
 
-        <section className="expedition-proposal-callout">
-          <div><p className="kicker"><span /> Propose the next hunt</p><h2>What should the field investigate next?</h2></div>
-          <div><p>A strong proposal names a culturally important digital artifact, bounds the exact targets, and starts with credible primary sources. Proposals enter review; they do not become live hunts automatically.</p><button type="button" className="primary-action dark" onClick={() => openParticipation('proposal')}>Start a proposal <ArrowIcon /></button></div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function formatProposalDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'DATE UNAVAILABLE';
+  return new Intl.DateTimeFormat('en-US', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date).toUpperCase();
+}
+
+function friendlyProposalError(error) {
+  if (error?.code === 4001 || /user rejected|user denied/i.test(error?.message || '')) {
+    return 'The proposal signature was cancelled in the wallet. Nothing was published.';
+  }
+  return error?.message || 'The proposal could not be published.';
+}
+
+function ProposeExpeditionPage({ account, walletState, connectWallet, provider }) {
+  const [proposals, setProposals] = useState([]);
+  const [listState, setListState] = useState('loading');
+  const [submitState, setSubmitState] = useState('idle');
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    fetchExpeditionProposals()
+      .then((records) => {
+        if (!active) return;
+        setProposals(records);
+        setListState('ready');
+      })
+      .catch((error) => {
+        if (!active) return;
+        setListState('error');
+        setSubmitMessage(error.message);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const submitProposal = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fields = Object.fromEntries(new FormData(form));
+    setSubmitMessage('');
+
+    try {
+      const activeAccount = account || (await connectWallet());
+      if (!activeAccount) return;
+      setSubmitState('signing');
+      const proposal = buildExpeditionProposal({ ...fields, authorAddress: activeAccount });
+      const signed = await signExpeditionProposal(provider, activeAccount, proposal);
+      setSubmitState('publishing');
+      const published = await publishExpeditionProposal(proposal, signed.message, signed.signature);
+      setProposals((current) => [published, ...current.filter((item) => item.proposalId !== published.proposalId)]);
+      setListState('ready');
+      setSubmitState('complete');
+      setSubmitMessage('Proposal published to the public expedition notebook.');
+      form.reset();
+    } catch (error) {
+      setSubmitState('error');
+      setSubmitMessage(friendlyProposalError(error));
+    }
+  };
+
+  return (
+    <div className="site-shell propose-expedition-page">
+      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} expeditions />
+      <main id="top">
+        <section className="proposal-page-hero">
+          <div>
+            <p className="page-breadcrumb"><a href="/expeditions">EXPEDITIONS</a><span>/</span>PROPOSE</p>
+            <p className="kicker"><span /> Community fieldwork</p>
+            <h1>Propose the next expedition.</h1>
+          </div>
+          <p>A compelling expedition starts with a culturally important digital artifact, a bounded exact-file target, and at least one credible place to begin the search.</p>
+        </section>
+
+        <section className="proposal-directions" aria-labelledby="proposal-directions-title">
+          <div className="section-heading compact">
+            <div><p className="kicker"><span /> Possible directions</p><h2 id="proposal-directions-title">Digital history is bigger than the web.</h2></div>
+            <p className="section-intro">These are prompts, not a fixed roadmap. The strongest proposal turns a broad theme into a finite set of files whose identity can be investigated and proven.</p>
+          </div>
+          <div className="proposal-grid">
+            {proposalDirections.map((proposal, index) => (
+              <article key={proposal.title}>
+                <div className="proposal-meta"><span>{proposal.eyebrow}</span><span>0{index + 1}</span></div>
+                <h3>{proposal.title}</h3>
+                <p>{proposal.description}</p>
+                <span className="under-consideration">EXAMPLE DIRECTION</span>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="proposal-notebook" aria-labelledby="proposal-form-title">
+          <div className="proposal-form-copy">
+            <p className="kicker"><span /> Expedition notebook</p>
+            <h2 id="proposal-form-title">Make the case.</h2>
+            <p>Submitting costs no gas. Your wallet signs the exact proposal to establish authorship; it does not send a transaction or grant Ethscribe custody of anything.</p>
+            <dl>
+              <div><dt>GOOD TARGETS</dt><dd>Historically meaningful, exact-file oriented, and bounded enough to finish.</dd></div>
+              <div><dt>GOOD SOURCES</dt><dd>Release archives, source repositories, contemporary posts, or verifiable custody trails.</dd></div>
+              <div><dt>WHAT HAPPENS NEXT</dt><dd>Proposals enter the public notebook. Publication does not automatically activate an expedition.</dd></div>
+            </dl>
+          </div>
+          <form className="proposal-inline-form" onSubmit={submitProposal}>
+            <label>Expedition title<input name="title" type="text" maxLength="120" placeholder="The first…" required /></label>
+            <label>What should researchers find?<textarea name="target" rows="4" maxLength="1200" placeholder="Describe the exact digital artifacts and the boundary of the hunt." required /></label>
+            <label>Why does it matter?<textarea name="rationale" rows="4" maxLength="1200" placeholder="Explain the historical significance and why people would want to participate." required /></label>
+            <label>Starting source<input name="source" type="url" maxLength="2048" placeholder="https://…" required /></label>
+            <button className="primary-action" type="submit" disabled={['signing', 'publishing'].includes(submitState)}>
+              {submitState === 'signing' ? 'SIGN IN WALLET…' : submitState === 'publishing' ? 'PUBLISHING…' : account ? 'SIGN + PUBLISH PROPOSAL' : 'CONNECT + PUBLISH PROPOSAL'} <ArrowIcon />
+            </button>
+            {submitMessage && <p className={`proposal-submit-message state-${submitState}`} role="status">{submitMessage}</p>}
+            {account && <p className="connected-as">PROPOSER {shortAddress(account)}</p>}
+          </form>
+        </section>
+
+        <section className="proposal-submissions" aria-labelledby="proposal-submissions-title">
+          <div className="proposal-submissions-heading">
+            <div><p className="kicker"><span /> Public notebook</p><h2 id="proposal-submissions-title">Proposed expeditions.</h2></div>
+            <span>{proposals.length.toString().padStart(2, '0')} SUBMISSION{proposals.length === 1 ? '' : 'S'} · NEWEST FIRST</span>
+          </div>
+          {listState === 'loading' && <p className="proposal-empty-state">Loading the public notebook…</p>}
+          {listState === 'error' && <p className="proposal-empty-state">The public notebook could not be loaded. You can still prepare a proposal and try again.</p>}
+          {listState === 'ready' && proposals.length === 0 && <p className="proposal-empty-state">No proposals yet. The first signed submission will appear here.</p>}
+          {proposals.length > 0 && (
+            <div className="proposal-rows">
+              {proposals.map((proposal, index) => (
+                <article key={proposal.proposalId}>
+                  <div className="proposal-row-index"><span>{String(index + 1).padStart(2, '0')}</span><strong>PROPOSED</strong></div>
+                  <div className="proposal-row-main"><h3>{proposal.title}</h3><p>{proposal.target}</p></div>
+                  <div className="proposal-row-proof">
+                    <span>{formatProposalDate(proposal.submittedAt || proposal.createdAt)}</span>
+                    <a href={proposal.source} target="_blank" rel="noreferrer">STARTING SOURCE <ArrowIcon /></a>
+                    <a href={`https://etherscan.io/address/${proposal.authorAddress}`} target="_blank" rel="noreferrer">{shortAddress(proposal.authorAddress)} <ArrowIcon /></a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </main>
       <SiteFooter />
@@ -672,10 +825,10 @@ function App() {
   const [chainId, setChainId] = useState('');
   const [walletState, setWalletState] = useState('idle');
   const [modal, setModal] = useState(null);
-  const [savedMessage, setSavedMessage] = useState('');
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const isExpedition = pathname === EXPEDITION_PATH;
   const isExpeditions = pathname === '/expeditions';
+  const isProposal = pathname === '/expeditions/propose';
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
   const isEthscribe = pathname === '/ethscribe';
@@ -686,12 +839,14 @@ function App() {
       ? 'Wallet — Ethscribe'
       : isEthscribe
         ? 'Ethscribe a File — Ethscribe'
+      : isProposal
+        ? 'Propose an Expedition — Ethscribe'
       : isExpeditions
         ? 'Expeditions — Ethscribe'
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isEthscribe, isExpedition, isExpeditions, isWallet]);
+  }, [isDocs, isEthscribe, isExpedition, isExpeditions, isProposal, isWallet]);
 
   useEffect(() => {
     const ethereum = window.ethereum;
@@ -747,36 +902,10 @@ function App() {
     }
   };
 
-  const openParticipation = async (type) => {
-    const activeAccount = account || (await connectWallet());
-    if (activeAccount) {
-      setSavedMessage('');
-      setModal(type);
-    }
-  };
-
-  const saveLocalDraft = (event, type) => {
-    event.preventDefault();
-    const formData = Object.fromEntries(new FormData(event.currentTarget));
-    const storageKey = `ethscribe:${type}:drafts`;
-
-    try {
-      const existing = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
-      const drafts = Array.isArray(existing) ? existing : [];
-      drafts.push({ ...formData, wallet: account, savedAt: new Date().toISOString() });
-      window.localStorage.setItem(storageKey, JSON.stringify(drafts));
-      setSavedMessage('Draft saved on this device. Nothing was published or submitted onchain.');
-      event.currentTarget.reset();
-    } catch {
-      setSavedMessage('This browser could not save the draft. Copy your notes before closing.');
-    }
-  };
-
   const pageProps = {
     account,
     walletState,
     connectWallet,
-    openParticipation,
     chainId,
     switchToMainnet,
     provider: window.ethereum,
@@ -799,6 +928,8 @@ function App() {
             />
           : isEthscribe
             ? <EthscribePage {...pageProps} />
+            : isProposal
+              ? <ProposeExpeditionPage {...pageProps} />
             : isExpeditions
               ? <ExpeditionsPage {...pageProps} />
             : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
@@ -811,31 +942,6 @@ function App() {
             {modal === 'wallet-error' && <><p className="kicker"><span /> Connection error</p><h2 id="modal-title">The wallet did not connect.</h2><p>Check that your wallet is unlocked and connected to this browser, then try again.</p><button className="primary-action" type="button" onClick={connectWallet}>Try again <ArrowIcon /></button></>}
             {modal === 'network-error' && <><p className="kicker"><span /> Network change failed</p><h2 id="modal-title">Ethereum mainnet was not selected.</h2><p>The wallet view remains read-only, but marketplace transactions will require Ethereum mainnet. Switch networks in your wallet and try again.</p><button className="primary-action" type="button" onClick={switchToMainnet}>Try again <ArrowIcon /></button></>}
 
-            {modal === 'finding' && (
-              <><p className="kicker"><span /> Pre-contract recovery notebook</p><h2 id="modal-title">Document a possible recovery.</h2>
-                <p>The target is the original `bitcoin20x20.png`, not a reconstruction. Until the contract and public evidence workflow launch, this form only saves a private, wallet-associated draft in this browser. It does not submit a finding to Ethscribe.</p>
-                <form onSubmit={(event) => saveLocalDraft(event, 'finding')}>
-                  <label>Archive or primary-source URL<input name="source" type="url" placeholder="https://archive.example/source" required /></label>
-                  <label>Chain of custody<textarea name="evidence" rows="5" placeholder="Where were the bytes found, who preserved them, and how can another researcher reproduce the discovery?" required /></label>
-                  <label>Candidate SHA-256, if available<input name="hash" type="text" placeholder="64 hexadecimal characters" pattern="[a-fA-F0-9]{64}" /></label>
-                  <button className="primary-action" type="submit">Save private draft <ArrowIcon /></button>
-                </form>
-              </>
-            )}
-
-            {modal === 'proposal' && (
-              <><p className="kicker"><span /> Expedition notebook</p><h2 id="modal-title">Propose the next hunt.</h2><p>Strong expeditions name a culturally important artifact, define an exact target, and begin with credible primary sources. This proposal preview still saves only to this device.</p>
-                <form onSubmit={(event) => saveLocalDraft(event, 'proposal')}>
-                  <label>Expedition title<input name="title" type="text" placeholder="The first…" required /></label>
-                  <label>What should researchers find?<textarea name="target" rows="3" placeholder="Describe the exact digital artifacts." required /></label>
-                  <label>Starting source<input name="source" type="url" placeholder="https://…" required /></label>
-                  <button className="primary-action" type="submit">Save private draft <ArrowIcon /></button>
-                </form>
-              </>
-            )}
-
-            {savedMessage && <p className="saved-message" role="status">{savedMessage}</p>}
-            {account && modal !== 'wallet' && modal !== 'wallet-error' && modal !== 'network-error' && <p className="connected-as">RESEARCHER {shortAddress(account)}</p>}
           </section>
         </div>
       )}

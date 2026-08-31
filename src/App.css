@@ -4347,6 +4347,10 @@ footer > span {
   padding: 95px 0 110px;
 }
 
+.expedition-archive-label {
+  margin: 0 0 28px;
+}
+
 .expedition-index-heading {
   align-items: flex-end;
   display: flex;
@@ -4606,6 +4610,340 @@ footer > span {
   .expedition-proposal-callout {
     gap: 40px;
     padding: 42px 25px;
+  }
+}
+
+/* Expedition proposals */
+.propose-expedition-page main {
+  margin: 0 auto;
+  max-width: 1500px;
+  padding: 0 5vw 110px;
+}
+
+.proposal-page-hero {
+  align-items: end;
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  gap: 65px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  padding: 82px 0 75px;
+}
+
+.proposal-page-hero .page-breadcrumb {
+  margin: 0 0 48px;
+}
+
+.proposal-page-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(66px, 9vw, 138px);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.84;
+  margin: 28px 0 0;
+  max-width: 980px;
+}
+
+.proposal-page-hero > p,
+.proposal-form-copy > p {
+  color: #54514b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.proposal-directions {
+  border-bottom: 1px solid var(--ink);
+  padding: 95px 0 110px;
+}
+
+.proposal-directions .section-heading {
+  padding-top: 0;
+}
+
+.proposal-directions .proposal-grid {
+  margin-top: 48px;
+}
+
+.proposal-notebook {
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  gap: clamp(50px, 8vw, 125px);
+  grid-template-columns: minmax(300px, 0.75fr) minmax(420px, 1.25fr);
+  padding: 110px 0;
+}
+
+.proposal-form-copy h2,
+.proposal-submissions-heading h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(48px, 6vw, 88px);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+  margin: 28px 0;
+}
+
+.proposal-form-copy dl {
+  border-top: 1px solid var(--ink);
+  margin: 44px 0 0;
+}
+
+.proposal-form-copy dl > div {
+  border-bottom: 1px solid var(--line);
+  padding: 20px 0;
+}
+
+.proposal-form-copy dt,
+.proposal-inline-form label,
+.proposal-submit-message,
+.proposal-submissions-heading > span,
+.proposal-row-index,
+.proposal-row-proof,
+.proposal-empty-state {
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.proposal-form-copy dd {
+  color: #55524c;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 8px 0 0;
+}
+
+.proposal-inline-form {
+  background: #e8e3d7;
+  border: 1px solid var(--ink);
+  padding: clamp(28px, 4vw, 55px);
+}
+
+.proposal-inline-form label {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.proposal-inline-form input,
+.proposal-inline-form textarea {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.45;
+  margin-top: 9px;
+  padding: 15px 16px;
+  resize: vertical;
+  width: 100%;
+}
+
+.proposal-inline-form input:focus,
+.proposal-inline-form textarea:focus {
+  box-shadow: 0 0 0 3px var(--signal);
+  outline: 1px solid var(--ink);
+}
+
+.proposal-inline-form button {
+  border-radius: 0;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.proposal-inline-form button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.proposal-submit-message {
+  border-left: 4px solid var(--ink);
+  line-height: 1.55;
+  margin: 20px 0 0;
+  padding: 12px 14px;
+}
+
+.proposal-submit-message.state-complete {
+  background: var(--signal);
+}
+
+.proposal-submit-message.state-error {
+  background: #f3ddd4;
+  border-color: #9e3020;
+}
+
+.proposal-inline-form .connected-as {
+  margin: 20px 0 0;
+}
+
+.proposal-submissions {
+  padding: 110px 0 0;
+}
+
+.proposal-submissions-heading {
+  align-items: flex-end;
+  display: flex;
+  gap: 35px;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+
+.proposal-submissions-heading h2 {
+  margin-bottom: 0;
+}
+
+.proposal-submissions-heading > span {
+  margin-bottom: 8px;
+}
+
+.proposal-empty-state {
+  border: 1px solid var(--ink);
+  margin: 0;
+  padding: 42px;
+}
+
+.proposal-rows {
+  border-left: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+}
+
+.proposal-rows article {
+  border-bottom: 1px solid var(--ink);
+  border-right: 1px solid var(--ink);
+  display: grid;
+  gap: 35px;
+  grid-template-columns: 110px minmax(0, 1fr) 215px;
+  padding: 30px;
+}
+
+.proposal-row-index {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.proposal-row-index span {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+.proposal-row-index strong {
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  padding: 6px 8px;
+}
+
+.proposal-row-main h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 3vw, 48px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0 0 15px;
+}
+
+.proposal-row-main p {
+  color: #55524c;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.proposal-row-proof {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.proposal-row-proof a {
+  align-items: center;
+  border-bottom: 1px solid var(--ink);
+  display: inline-flex;
+  gap: 7px;
+  padding-bottom: 4px;
+  text-decoration: none;
+}
+
+.proposal-row-proof svg {
+  fill: none;
+  height: 13px;
+  stroke: currentColor;
+  width: 13px;
+}
+
+@media (max-width: 900px) {
+  .proposal-page-hero,
+  .proposal-notebook {
+    grid-template-columns: 1fr;
+  }
+
+  .proposal-rows article {
+    grid-template-columns: 85px minmax(0, 1fr);
+  }
+
+  .proposal-row-proof {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .propose-expedition-page main {
+    padding: 0 20px 75px;
+  }
+
+  .proposal-page-hero {
+    gap: 38px;
+    padding: 60px 4px 55px;
+  }
+
+  .proposal-page-hero .page-breadcrumb {
+    margin-bottom: 36px;
+  }
+
+  .proposal-page-hero h1 {
+    font-size: clamp(62px, 19vw, 92px);
+  }
+
+  .proposal-directions,
+  .proposal-notebook,
+  .proposal-submissions {
+    padding: 72px 0;
+  }
+
+  .proposal-notebook {
+    gap: 45px;
+  }
+
+  .proposal-inline-form {
+    padding: 28px 20px;
+  }
+
+  .proposal-submissions-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .proposal-rows article {
+    gap: 22px;
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+  }
+
+  .proposal-row-index {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .proposal-row-proof {
+    grid-column: 1;
   }
 }
 

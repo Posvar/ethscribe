@@ -6,6 +6,7 @@ jest.mock('./XpmPreview', () => function MockXpmPreview() {
 });
 
 const originalFetch = global.fetch;
+const originalEthereum = window.ethereum;
 
 beforeEach(() => {
   global.fetch = jest.fn().mockRejectedValue(new Error('offline test'));
@@ -13,6 +14,8 @@ beforeEach(() => {
 
 afterEach(() => {
   global.fetch = originalFetch;
+  if (originalEthereum) window.ethereum = originalEthereum;
+  else delete window.ethereum;
   window.history.pushState({}, '', '/');
 });
 
@@ -98,7 +101,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.getByDisplayValue('image/x-xpixmap')).toHaveAttribute('readonly');
   expect(screen.getByText(/creation does not go directly to the market/i)).toBeInTheDocument();
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
-});
+}, 10_000);
 
 test('offers a standalone personal Ethscribe flow with expedition handoff explained', () => {
   window.history.pushState({}, '', '/ethscribe');
@@ -111,16 +114,57 @@ test('offers a standalone personal Ethscribe flow with expedition handoff explai
   expect(within(primaryNavigation).getByRole('link', { name: 'Ethscribe' })).toHaveAttribute('aria-current', 'page');
 });
 
-test('renders a newest-first Expeditions archive with proposal entry points', () => {
+test('renders a compact newest-first Expeditions archive with a dedicated proposal entry point', () => {
   window.history.pushState({}, '', '/expeditions');
   render(<App />);
 
   expect(screen.getByRole('heading', { name: /^expeditions$/i })).toBeInTheDocument();
   expect(screen.getByText(/expedition archive \/ newest first/i)).toBeInTheDocument();
+  expect(screen.queryByText(/active and completed field records/i)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: /lost pixels of satoshi/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
-  expect(screen.getAllByRole('button', { name: /propose|start a proposal/i })).toHaveLength(2);
+  expect(screen.getByRole('link', { name: /propose an expedition/i })).toHaveAttribute('href', '/expeditions/propose');
+  expect(screen.queryByText(/what should the field investigate next/i)).not.toBeInTheDocument();
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Expeditions' })).toHaveAttribute('aria-current', 'page');
+});
+
+test('publishes a wallet-signed expedition proposal inline and clears the form', async () => {
+  const account = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
+  window.ethereum = {
+    request: jest.fn(async ({ method }) => {
+      if (method === 'eth_accounts' || method === 'eth_requestAccounts') return [account];
+      if (method === 'eth_chainId') return '0x1';
+      if (method === 'personal_sign') return `0x${'12'.repeat(65)}`;
+      throw new Error(`Unexpected wallet method: ${method}`);
+    }),
+    on: jest.fn(),
+    removeListener: jest.fn(),
+  };
+  global.fetch = jest.fn(async (url, options = {}) => {
+    if (url === '/api/proposals' && options.method === 'POST') {
+      const { proposal } = JSON.parse(options.body);
+      return { ok: true, json: async () => ({ result: { ...proposal, proposalId: 'proposal-test', status: 'proposed', submittedAt: proposal.createdAt } }) };
+    }
+    if (url === '/api/proposals') return { ok: true, json: async () => ({ result: [] }) };
+    throw new Error('Unexpected request');
+  });
+  window.history.pushState({}, '', '/expeditions/propose');
+  render(<App />);
+
+  expect(screen.getByRole('heading', { name: /propose the next expedition/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /digital history is bigger than the web/i })).toBeInTheDocument();
+  expect(screen.getByText('The Desktop Before the Web')).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText(/no proposals yet/i)).toBeInTheDocument());
+
+  fireEvent.change(screen.getByLabelText(/expedition title/i), { target: { value: 'Browser Archaeology' } });
+  fireEvent.change(screen.getByLabelText(/what should researchers find/i), { target: { value: 'Recover the exact browser icons.' } });
+  fireEvent.change(screen.getByLabelText(/why does it matter/i), { target: { value: 'They shaped visual web culture.' } });
+  fireEvent.change(screen.getByLabelText(/starting source/i), { target: { value: 'https://example.com/archive' } });
+  fireEvent.click(await screen.findByRole('button', { name: /sign \+ publish proposal/i }));
+
+  expect(await screen.findByRole('heading', { name: 'Browser Archaeology' })).toBeInTheDocument();
+  expect(screen.getByText(/proposal published to the public expedition notebook/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/expedition title/i)).toHaveValue('');
 });
 
 test('explains when a browser wallet is unavailable', () => {

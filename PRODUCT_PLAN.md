@@ -168,7 +168,7 @@ The site launches with these top-level destinations:
 | `/collection` | Permanent Accessions and frozen provenance records. |
 | `/ethscribe` | Generic file inspection, existence check, creation, and vault deposit flow. |
 | `/wallet` | Connected wallet's directly owned Ethscriptions, vault positions, assignments, listings, bids, and proceeds. |
-| `/propose` | Structured proposal for a future Hunt. |
+| `/expeditions/propose` | Public, wallet-signed proposal notebook for future Hunts. |
 | `/about` | Ethscriptions, byte-perfect verification, ownership limits, and curation policy. |
 | `/docs` | Git-backed project documentation and living whitepaper, using the same Markdown source as GitBook. |
 
@@ -478,7 +478,7 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Implement Finding pages and signed Field Notes
 - Add basic moderation and rate limiting
 
-**Current status:** the first production slice now supports personal creation to the connected wallet and inline target submissions. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled V1 custody. Public Finding pages, Dossier revisions, Field Notes, proposals, moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
+**Current status:** the first production slice now supports personal creation to the connected wallet, inline target submissions, and a public wallet-signed expedition proposal notebook. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled V1 custody. Expedition proposals use gas-free signatures and immutable Azure-backed records; curation remains separate from publication. Public Finding pages, Dossier revisions, Field Notes, proposal moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
 
 ### Phase 3 — live Genesis Hunts
 

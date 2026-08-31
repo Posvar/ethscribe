@@ -372,14 +372,14 @@ export default function EthscribeWorkbench({
   const canDepositCreated = submissionMode && ethscription && ethscription.current_owner?.toLowerCase() === connectedOwner;
   const displayTransactionHash = transactionHash || selectedEthscriptionId;
   const preflightComplete = duplicateChecks.length > 0;
-  const preflightTitle = phase === 'mismatch'
-    ? 'NOT A TARGET MATCH'
-    : phase === 'error'
-      ? 'CHECK INCOMPLETE'
-      : existing
-        ? 'EXISTING ETHSCRIPTION FOUND'
-        : preflightComplete
-          ? 'READY TO ETHSCRIBE'
+  const preflightTitle = existing
+    ? 'EXISTING ETHSCRIPTION FOUND'
+    : preflightComplete
+      ? 'READY TO ETHSCRIBE'
+      : phase === 'mismatch'
+        ? 'NOT A TARGET MATCH'
+        : phase === 'error'
+          ? 'CHECK INCOMPLETE'
           : 'CHECKING…';
   const wrapperCheckSummary = duplicateChecks.length === 1
     ? 'Canonical Data URI checked in the background.'
@@ -435,12 +435,12 @@ export default function EthscribeWorkbench({
             {preflightComplete && !existing && <span className="check-passed">✓ NO KNOWN DUPLICATE FOUND</span>}
             {existing && <span className="check-warning">! EXISTING CONTENT FOUND</span>}
           </div>
-          <p>{phase === 'mismatch'
-            ? 'These bytes are not eligible for this target. No gas transaction was prepared.'
-            : existing
+          <p>{existing
               ? 'Do not create another copy. Review the existing Ethscription below and continue only if your wallet owns it.'
               : preflightComplete
                 ? `${wrapperCheckSummary} No transaction has been sent.`
+                : phase === 'mismatch'
+                  ? 'These bytes are not eligible for this target. No gas transaction was prepared.'
                 : 'Running the target and duplicate checks. No transaction has been prepared.'}</p>
           <details className="preflight-technical-details">
             <summary>Technical checks <span>HASHES + WRAPPERS</span></summary>

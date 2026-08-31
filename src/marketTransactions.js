@@ -127,6 +127,9 @@ export function friendlyTransactionError(error) {
   if (error?.code === 4001) return 'The transaction was cancelled in the wallet.';
   const message = typeof error?.message === 'string' ? error.message : '';
   if (/user rejected|user denied/i.test(message)) return 'The transaction was cancelled in the wallet.';
+  if (/External transactions to internal accounts cannot include data/i.test(message)) {
+    return 'Your wallet provider rejected the self-addressed calldata used to create an Ethscription. That restriction is not an Ethereum mainnet rule. Confirm the wallet is routing through Ethereum Mainnet, then retry with an Ethereum-compatible wallet provider. Your byte preflight passed and no transaction was sent.';
+  }
   if (/pause/i.test(message)) return 'The market is paused. No Ethscription was deposited.';
   if (/insufficient funds/i.test(message)) return 'The wallet does not have enough ETH for gas.';
   return message && message.length <= 220

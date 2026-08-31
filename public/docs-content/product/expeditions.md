@@ -20,6 +20,14 @@ Every expedition publishes:
 
 The brief must be useful before a wallet is connected. Research is the product; trading comes later.
 
+## Proposing an expedition
+
+Any connected wallet can publish a structured proposal from `/expeditions/propose`. The proposal names the expedition, defines what researchers should find, explains its historical significance, and cites a credible starting source.
+
+Publication uses a gas-free wallet signature rather than an Ethereum transaction. The server verifies that signature, stores the signed proposal as an immutable record, and exposes it in the public proposal notebook newest-first. Publishing proves authorship; it does not activate an expedition, promise a reward, or make the historical claim true.
+
+The curator still decides which proposals are developed into frozen briefs. Permissionless proposal is therefore separate from permissionless accession.
+
 ## Two compatible hunt shapes
 
 ### Deterministic gap

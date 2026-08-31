@@ -38,6 +38,13 @@ test('reduces successful target validation to one ready checkpoint with optional
     size: bytes.byteLength,
     arrayBuffer: async () => bytes.buffer,
   };
+  const provider = {
+    request: jest.fn(async ({ method }) => {
+      if (method === 'eth_chainId') return '0x1';
+      if (method === 'eth_estimateGas') throw new Error('External transactions to internal accounts cannot include data');
+      throw new Error(`Unexpected wallet method: ${method}`);
+    }),
+  };
   const { container } = render(<EthscribeWorkbench
     mode="target"
     artifact={{ id: 'november-20-xpm', filename: 'bitcoin20.xpm', format: 'XPM', status: 'open', validationMode: 'exact' }}
@@ -45,6 +52,7 @@ test('reduces successful target validation to one ready checkpoint with optional
     chainId="0x1"
     connectWallet={jest.fn()}
     switchToMainnet={jest.fn()}
+    provider={provider}
   />);
 
   fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [file] } });
@@ -56,4 +64,12 @@ test('reduces successful target validation to one ready checkpoint with optional
   const technicalDetails = screen.getByText('HASHES + WRAPPERS').closest('details');
   expect(technicalDetails).not.toHaveAttribute('open');
   expect(global.fetch).toHaveBeenCalledTimes(6);
+
+  fireEvent.click(screen.getByRole('button', { name: /1 of 2 · ethscribe to my wallet/i }));
+  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
+
+  expect(await screen.findByText(/restriction is not an Ethereum mainnet rule/i)).toBeInTheDocument();
+  expect(screen.getByText('READY TO ETHSCRIBE')).toBeInTheDocument();
+  expect(screen.queryByText('CHECK INCOMPLETE')).not.toBeInTheDocument();
 });
