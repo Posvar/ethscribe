@@ -262,6 +262,8 @@ The safest creation flow initially uses two explicit transactions: create to the
 
 Inline target actions, the global `Ethscribe` action, and the wallet's Expedition preflight share the same transaction engine. Every expedition target freezes one accepted Data URI wrapper; the embedded UI generates it and the Finding verifier enforces it. For an exact-byte target, the browser hashes locally and a server-side sealed commitment returns only eligibility before protocol duplicate checks or gas actions continue. The global flow lets the user choose a valid MIME type, then test compatible targets after creation or discovery of an existing wallet-owned match. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions remain separate; a generic vault deposit is explicitly custody-only and does not create a Finding.
 
+Preflight is progressively disclosed. The default result is one decision-oriented checkpoint—target matched, no known duplicate found, ready to Ethscribe. Raw and protocol hashes, the exact prefix, and individual wrapper checks remain available under `Technical checks`. A duplicate or mismatch expands into the relevant blocking explanation automatically.
+
 Before the contract, a Finding remains non-custodial:
 
 1. Connect wallet.

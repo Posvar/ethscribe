@@ -371,6 +371,19 @@ export default function EthscribeWorkbench({
   const canDepositExisting = submissionMode && inspection && rawMatchesTarget && wrapperMatchesTarget && existing && existingOwnedByWallet;
   const canDepositCreated = submissionMode && ethscription && ethscription.current_owner?.toLowerCase() === connectedOwner;
   const displayTransactionHash = transactionHash || selectedEthscriptionId;
+  const preflightComplete = duplicateChecks.length > 0;
+  const preflightTitle = phase === 'mismatch'
+    ? 'NOT A TARGET MATCH'
+    : phase === 'error'
+      ? 'CHECK INCOMPLETE'
+      : existing
+        ? 'EXISTING ETHSCRIPTION FOUND'
+        : preflightComplete
+          ? 'READY TO ETHSCRIBE'
+          : 'CHECKING…';
+  const wrapperCheckSummary = duplicateChecks.length === 1
+    ? 'Canonical Data URI checked in the background.'
+    : `Canonical Data URI + ${Math.max(duplicateChecks.length - 1, 0)} common XPM aliases checked in the background.`;
 
   return (
     <section className={`ethscribe-workbench workbench-${mode}`} aria-label={embeddedTargetMode ? `Submit a finding for ${artifact.filename}` : 'Ethscribe a file into your wallet'}>
@@ -408,40 +421,53 @@ export default function EthscribeWorkbench({
             ? `This target locks the canonical prefix: data:${lockedMediaType};base64,`
             : 'The prefix is part of protocol identity. Change it only deliberately.'}</small>
         </label>
-        <button type="submit" disabled={!file || busy}>Inspect bytes + check duplicates <ArrowIcon /></button>
+        <button type="submit" disabled={!file || busy}>Test bytes <ArrowIcon /></button>
       </form>
 
       {inspection && (
-        <div className="ethscribe-byte-report">
-          <div><span>RAW FILE</span><strong>{inspection.filename}</strong><small>{inspection.byteLength.toLocaleString('en-US')} bytes</small></div>
-          <div><span>RAW SHA-256</span><code>{inspection.rawSha256}</code><small>{submissionMode
-            ? targetCheck?.validation === 'exact'
-              ? 'SERVER VERIFIED · EXACT TARGET MATCH'
-              : targetCheck?.validation === 'provenance-required'
-                ? 'CANDIDATE IDENTITY · PROVENANCE REQUIRED'
-                : targetCheck?.validation === 'mismatch'
-                  ? 'DOES NOT MATCH SEALED TARGET'
-                  : 'AWAITING SEALED TARGET CHECK'
-            : 'LOCAL CANDIDATE IDENTITY'}</small></div>
-          <div><span>PROTOCOL SHA-256</span><code>{inspection.protocolContentSha256}</code><small>SHA-256 of the complete UTF-8 Data URI</small></div>
-          <div><span>EXACT PREFIX</span><code>{inspection.dataUriPrefix}</code><small>{inspection.calldataBytes.toLocaleString('en-US')} calldata bytes</small></div>
+        <div className={`ethscribe-preflight-result ${existing ? 'preflight-existing' : preflightComplete ? 'preflight-ready' : phase === 'mismatch' ? 'preflight-mismatch' : ''}`} role="status">
+          <div className="preflight-result-heading"><span>BYTE PREFLIGHT</span><strong>{preflightTitle}</strong></div>
+          <div className="preflight-checklist">
+            <span className="check-passed">✓ FILE HASHED LOCALLY</span>
+            {submissionMode && targetCheck?.validation === 'exact' && <span className="check-passed">✓ TARGET MATCHED</span>}
+            {submissionMode && targetCheck?.validation === 'provenance-required' && <span className="check-passed">✓ FORMAT ACCEPTED · PROVENANCE REQUIRED</span>}
+            {submissionMode && targetCheck?.validation === 'mismatch' && <span className="check-failed">× TARGET DID NOT MATCH</span>}
+            {preflightComplete && !existing && <span className="check-passed">✓ NO KNOWN DUPLICATE FOUND</span>}
+            {existing && <span className="check-warning">! EXISTING CONTENT FOUND</span>}
+          </div>
+          <p>{phase === 'mismatch'
+            ? 'These bytes are not eligible for this target. No gas transaction was prepared.'
+            : existing
+              ? 'Do not create another copy. Review the existing Ethscription below and continue only if your wallet owns it.'
+              : preflightComplete
+                ? `${wrapperCheckSummary} No transaction has been sent.`
+                : 'Running the target and duplicate checks. No transaction has been prepared.'}</p>
+          <details className="preflight-technical-details">
+            <summary>Technical checks <span>HASHES + WRAPPERS</span></summary>
+            <dl>
+              <div><dt>RAW FILE</dt><dd>{inspection.filename} · {inspection.byteLength.toLocaleString('en-US')} bytes</dd></div>
+              <div><dt>RAW SHA-256</dt><dd><code>{inspection.rawSha256}</code></dd></div>
+              <div><dt>PROTOCOL SHA-256</dt><dd><code>{inspection.protocolContentSha256}</code></dd></div>
+              <div><dt>EXACT PREFIX</dt><dd><code>{inspection.dataUriPrefix}</code></dd></div>
+            </dl>
+            {duplicateChecks.length > 0 && (
+              <div className="preflight-wrapper-checks">
+                {duplicateChecks.map((check) => (
+                  <p key={check.mediaType} className={check.exists ? 'duplicate-found' : ''}>
+                    <code>{check.dataUriPrefix}</code>
+                    <span>{check.exists ? `ETHSCRIPTION #${check.ethscription.ethscription_number}` : 'Not found'}</span>
+                  </p>
+                ))}
+                <small>The official API verifies each complete Data URI listed here. Arbitrary unlisted wrappers require Ethscribe’s separate decoded-byte index and are not covered by this check.</small>
+              </div>
+            )}
+          </details>
         </div>
       )}
 
-      {duplicateChecks.length > 0 && (
-        <div className="ethscribe-duplicate-report">
-          <div><span>OFFICIAL PROTOCOL CHECK</span><strong>{existing ? 'EXISTING CONTENT FOUND' : 'NO KNOWN WRAPPER MATCH'}</strong></div>
-          {duplicateChecks.map((check) => (
-            <p key={check.mediaType} className={check.exists ? 'duplicate-found' : ''}>
-              <code>{check.dataUriPrefix}</code>
-              <span>{check.exists ? `ETHSCRIPTION #${check.ethscription.ethscription_number}` : 'Not found'}</span>
-            </p>
-          ))}
-          <small>The official API is authoritative for each complete Data URI checked above. A global raw-byte search across arbitrary MIME parameters, gzip, attachments, or unlisted wrappers requires Ethscribe’s separate decoded-byte index and is not yet claimed here.</small>
-        </div>
+      {(!inspection || !['inspecting', 'ready', 'duplicate', 'mismatch'].includes(phase)) && (
+        <StatusBanner phase={phase} message={message} transactionHash={displayTransactionHash && ['indexing', 'created', 'complete', 'depositing', 'reconciling', 'custody-verified', 'signing', 'assignment-error', 'submitted'].includes(phase) ? displayTransactionHash : ''} />
       )}
-
-      <StatusBanner phase={phase} message={message} transactionHash={displayTransactionHash && ['indexing', 'created', 'complete', 'depositing', 'reconciling', 'custody-verified', 'signing', 'assignment-error', 'submitted'].includes(phase) ? displayTransactionHash : ''} />
 
       {existingRecord && (
         <div className="existing-ethscription-card">
