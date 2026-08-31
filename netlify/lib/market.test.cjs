@@ -5,6 +5,7 @@ const {
   decodePotentialDeposit,
   encodePotentialDepositCall,
   isAddress,
+  marketCapabilities,
   reconcileCustody,
   reconcileIndexerStatus,
 } = require('./market');
@@ -104,4 +105,39 @@ test('checks indexer freshness against the independently read RPC block', () => 
     lastImportedBlock: 104,
   }, 105);
   assert.equal(current.healthy, true);
+});
+
+test('keeps intake and exits behind an explicit operational transaction gate', () => {
+  const locked = marketCapabilities({
+    deployed: true,
+    chainId: 1,
+    paused: false,
+    indexerHealthy: true,
+    transactionsEnabled: false,
+  });
+  assert.deepEqual(locked, {
+    transactionsEnabled: false,
+    intakeEnabled: false,
+    exitsEnabled: false,
+  });
+
+  const paused = marketCapabilities({
+    deployed: true,
+    chainId: 1,
+    paused: true,
+    indexerHealthy: true,
+    transactionsEnabled: true,
+  });
+  assert.equal(paused.intakeEnabled, false);
+  assert.equal(paused.exitsEnabled, true);
+
+  const active = marketCapabilities({
+    deployed: true,
+    chainId: 1,
+    paused: false,
+    indexerHealthy: true,
+    transactionsEnabled: true,
+  });
+  assert.equal(active.intakeEnabled, true);
+  assert.equal(active.exitsEnabled, true);
 });

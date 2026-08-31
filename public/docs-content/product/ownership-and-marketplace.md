@@ -278,20 +278,20 @@ Implemented tests cover deposits, withdrawals, listings, offers, expiry, refunds
 
 Still required before mainnet value is accepted:
 
-- first-party official-indexer reconciliation tests;
 - an independent security review;
-- first-party interface integration against the deployed address;
-- low-value end-to-end custody and settlement checks; and
+- the controlled low-value mainnet custody round trip;
+- transaction slices and tests for listings, purchases, offers, cancellation, and claims;
+- low-value end-to-end settlement checks; and
 - a separate, explicitly reviewed unpause transaction.
 
 ## Delivery sequence
 
-1. Keep the verified mainnet deployment paused during integration.
-2. Integrate official-indexer reconciliation into the wallet and market interface.
+1. Keep the verified mainnet deployment paused and the interface transaction gate closed by default.
+2. Complete the independently rehearsed Deposit → Verify → Withdraw interface slice.
 3. Obtain an independent review and resolve findings.
-4. Exercise low-value custody and settlement against the deployed address.
-5. Review and submit a separate unpause transaction.
-6. Enable low-value beta activity.
+4. Review and submit a separate short-window unpause for the [controlled custody pilot](../reference/custody-pilot.md).
+5. Re-pause, complete the withdrawal, and close the interface gate.
+6. Add and rehearse low-value settlement controls before beta activity.
 7. Route future fees to a separate rewards layer only after contribution rules are proven.
 8. Reconsider funded pre-escrow bids or native per-sale splits only after real demand.
 

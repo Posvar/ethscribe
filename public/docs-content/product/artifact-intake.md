@@ -80,11 +80,11 @@ The wallet dashboard combines three sources:
 
 Only positions where the indexer confirms contract custody and the previous owner matches the depositor receive `Escrow verified`. Potential or invalid deposits stay visible as diagnostic records but cannot be presented as saleable inventory.
 
-### Current read-only release
+### Current gated transaction release
 
-The live `/wallet` route implements the safe inspection subset of this design. It reads fixed market state from Ethereum mainnet, lists directly owned Ethscriptions from the official API, and checks each custody candidate against both sources. The reader also requires a healthy indexer and the five-block transfer cooldown before displaying verified custody. It deliberately exposes no deposit, listing, offer, purchase, or withdrawal transaction while the market is paused.
+The live `/wallet` route reads fixed market state from Ethereum mainnet, lists directly owned Ethscriptions from the official API, and checks each custody candidate against both sources. It also contains the first Deposit → Verify → Withdraw transaction slice behind a server-side operational gate that defaults closed. Deposits additionally require an unpaused contract; verified withdrawals remain available through the interface during a contract pause once the operational pilot gate has been enabled.
 
-This release does not yet include signed target assignments, decoded-byte indexing, or write controls. Those omissions are visible product states, not inferred from an empty custody list.
+Every transaction is validated, checked for a raw-ID selector collision, simulated before wallet submission, and reconciled after its receipt. This release does not yet include signed target assignments, decoded-byte indexing, listings, offers, purchases, or claims. Those omissions are visible product states, not inferred from an empty custody list. See the [Controlled custody pilot](../reference/custody-pilot.md).
 
 ## Withdrawal guarantee
 

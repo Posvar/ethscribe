@@ -691,6 +691,7 @@ function App() {
               chainId={chainId}
               connectWallet={connectWallet}
               switchToMainnet={switchToMainnet}
+              provider={window.ethereum}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />

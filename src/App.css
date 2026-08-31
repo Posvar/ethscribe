@@ -3849,6 +3849,216 @@ footer > span {
   width: 15px;
 }
 
+.wallet-custody-action {
+  border-top: 1px solid var(--ink);
+  display: grid;
+  gap: 10px;
+  margin-top: 25px;
+  padding-top: 20px;
+}
+
+.wallet-custody-action button {
+  align-items: center;
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 15px;
+}
+
+.wallet-custody-action button:disabled {
+  background: #dedbd2;
+  color: #69665f;
+  cursor: not-allowed;
+}
+
+.wallet-custody-action button svg {
+  fill: none;
+  height: 15px;
+  stroke: currentColor;
+  width: 15px;
+}
+
+.wallet-custody-action small {
+  color: #5c5952;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.wallet-pilot-gate {
+  border: 1px solid var(--ink);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 150px minmax(220px, 0.65fr) minmax(280px, 1fr);
+  margin: 35px 0 0;
+  padding: 20px;
+}
+
+.wallet-pilot-gate.pilot-ready {
+  box-shadow: inset 7px 0 0 var(--signal);
+}
+
+.wallet-pilot-gate span,
+.wallet-pilot-gate strong {
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.wallet-pilot-gate p {
+  color: #55524c;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.wallet-transaction-status {
+  align-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin-top: 35px;
+  padding: 22px;
+}
+
+.wallet-transaction-status.transaction-complete {
+  box-shadow: inset 7px 0 0 var(--signal);
+}
+
+.wallet-transaction-status.transaction-error {
+  box-shadow: inset 7px 0 0 #ff765d;
+}
+
+.wallet-transaction-status > div {
+  display: grid;
+  gap: 8px;
+}
+
+.wallet-transaction-status span,
+.wallet-transaction-status a,
+.wallet-transaction-status button {
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  letter-spacing: 0.07em;
+}
+
+.wallet-transaction-status strong {
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.5;
+}
+
+.wallet-transaction-status a {
+  color: var(--signal);
+}
+
+.wallet-transaction-status button {
+  background: transparent;
+  border: 1px solid #77746c;
+  color: white;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 0 13px;
+}
+
+.wallet-confirmation-backdrop {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.76);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 100;
+}
+
+.wallet-confirmation {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 10px 10px 0 var(--signal);
+  max-height: calc(100vh - 40px);
+  max-width: 680px;
+  overflow-y: auto;
+  padding: clamp(30px, 5vw, 55px);
+  position: relative;
+  width: 100%;
+}
+
+.wallet-confirmation h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(38px, 5vw, 58px);
+  font-weight: normal;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+  margin: 22px 0;
+}
+
+.wallet-confirmation > p:not(.kicker) {
+  color: #4f4c45;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.wallet-confirmation dl {
+  border-top: 1px solid var(--ink);
+  margin: 28px 0;
+}
+
+.wallet-confirmation dl > div {
+  border-bottom: 1px solid #aaa69c;
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 125px minmax(0, 1fr);
+  padding: 13px 0;
+}
+
+.wallet-confirmation dt,
+.wallet-confirmation dd {
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.wallet-confirmation dd,
+.wallet-confirmation code {
+  overflow-wrap: anywhere;
+}
+
+.wallet-risk-confirmation {
+  align-items: flex-start;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  gap: 12px;
+  line-height: 1.5;
+  margin: 0 0 24px;
+  padding: 15px;
+}
+
+.wallet-risk-confirmation input {
+  accent-color: var(--signal);
+  height: 17px;
+  margin: 1px 0 0;
+  width: 17px;
+}
+
+.wallet-confirmation .primary-action:disabled {
+  background: #d1cec6;
+  color: #77746c;
+  cursor: not-allowed;
+}
+
 .wallet-empty-record,
 .wallet-limit-note {
   border: 1px dashed #8f8c83;
@@ -3946,5 +4156,20 @@ footer > span {
   .wallet-card-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .wallet-pilot-gate,
+  .wallet-transaction-status {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-confirmation {
+    box-shadow: 6px 6px 0 var(--signal);
+    padding: 35px 24px;
+  }
+
+  .wallet-confirmation dl > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 }

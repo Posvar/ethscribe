@@ -35,5 +35,6 @@
 ## Reference
 
 * [Mainnet deployment](reference/mainnet-deployment.md)
+* [Controlled custody pilot](reference/custody-pilot.md)
 * [Frequently asked questions](reference/faq.md)
 * [Sources and further reading](reference/sources.md)

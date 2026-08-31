@@ -38,11 +38,11 @@ There were no assets, listings, offers, or claimable balances at deployment. Unp
 
 1. **Read integration complete:** expose the deployed address, paused state, fixed parameters, directly owned Ethscriptions, and potential custody positions in the first-party wallet view.
 2. **Read reconciliation complete:** label custody verified only when official-indexer ownership, previous owner, active contract deposit state, indexer health, and the five-block cooldown all agree.
-3. Add transactional controls and complete integration tests against the deployed address.
+3. **Custody slice complete and locked:** the interface validates, simulates, sends, and reconciles deposit and withdrawal transactions behind an operational flag; a disposable fork test exercises the deployed address.
 4. Obtain an independent contract security review and resolve or explicitly accept findings.
-5. Publish the low-value launch procedure and recovery guidance.
-6. Reconfirm owner, fee recipient, bytecode, and paused state immediately before a separate unpause transaction.
+5. Execute and publish the [controlled low-value custody pilot](custody-pilot.md).
+6. Reconfirm owner, fee recipient, bytecode, and paused state immediately before each separately authorized unpause transaction.
 
-The live reader fails closed: an unavailable or lagging indexer, ownership mismatch, inactive contract record, unreadable contract state, or incomplete cooldown never receives a verified-custody label. No deposit, listing, offer, purchase, or withdrawal control is exposed while the release remains paused.
+The live reader fails closed: an unavailable or lagging indexer, ownership mismatch, inactive contract record, unreadable contract state, or incomplete cooldown never receives a verified-custody label. The transaction interface has a second operational gate independent of the contract pause. Its production default is closed; no listing, offer, purchase, or claim control is implemented yet.
 
 Mainnet presence should not be interpreted as an audit, endorsement, or invitation to send Ethscriptions directly to the contract.

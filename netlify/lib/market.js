@@ -29,6 +29,10 @@ function indexerUrl() {
   return (process.env.ETHSCRIPTIONS_API_URL || DEFAULT_INDEXER_URL).replace(/\/$/, '');
 }
 
+function transactionUiEnabled() {
+  return process.env.MARKET_UI_TRANSACTIONS_ENABLED === 'true';
+}
+
 function isAddress(value) {
   return /^0x[a-fA-F0-9]{40}$/.test(value || '');
 }
@@ -168,6 +172,18 @@ function reconcileIndexerStatus(indexer, rpcBlockNumber) {
   };
 }
 
+function marketCapabilities({ deployed, chainId, paused, indexerHealthy, transactionsEnabled }) {
+  const readBoundaryHealthy = Boolean(deployed)
+    && chainId === MAINNET_CHAIN_ID
+    && Boolean(indexerHealthy);
+
+  return {
+    transactionsEnabled: Boolean(transactionsEnabled),
+    intakeEnabled: Boolean(transactionsEnabled) && readBoundaryHealthy && !paused,
+    exitsEnabled: Boolean(transactionsEnabled) && readBoundaryHealthy,
+  };
+}
+
 function requiredResult(response, label) {
   if (!response || response.error || typeof response.result !== 'string') {
     throw new Error(`${label} unavailable`);
@@ -199,6 +215,13 @@ async function getMarketStatus() {
   const code = requiredResult(responses[2], 'runtime code');
   const paused = decodeBool(requiredResult(responses[3], 'paused'));
   const deployed = code !== '0x' && code !== '0x0';
+  const capabilities = marketCapabilities({
+    deployed,
+    chainId,
+    paused,
+    indexerHealthy: reconciledIndexer.healthy,
+    transactionsEnabled: transactionUiEnabled(),
+  });
 
   return {
     network: 'ethereum-mainnet',
@@ -217,7 +240,8 @@ async function getMarketStatus() {
     lockedOfferTotalWei: decodeUint(requiredResult(responses[11], 'lockedOfferTotal')).toString(),
     totalClaimableWei: decodeUint(requiredResult(responses[12], 'totalClaimable')).toString(),
     indexer: reconciledIndexer,
-    writesEnabled: deployed && chainId === MAINNET_CHAIN_ID && !paused && reconciledIndexer.healthy,
+    ...capabilities,
+    writesEnabled: capabilities.intakeEnabled,
     checkedAt: new Date().toISOString(),
   };
 }
@@ -393,6 +417,7 @@ module.exports = {
   isAddress,
   isEthscriptionId,
   jsonResponse,
+  marketCapabilities,
   reconcileCustody,
   reconcileIndexerStatus,
 };

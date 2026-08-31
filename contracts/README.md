@@ -11,7 +11,7 @@
 - Sourcify verification: [`exact_match`](https://repo.sourcify.dev/contracts/full_match/1/0x44c241ac86724D64a33558b03A637a63D9a30B02/metadata.json)
 - Initial state: paused
 
-The machine-readable record is [deployments/mainnet.json](deployments/mainnet.json). Deployment does not authorize deposits: first-party official-indexer reconciliation, an independent review, interface integration, and a separate deliberate unpause remain release gates.
+The machine-readable record is [deployments/mainnet.json](deployments/mainnet.json). Deployment does not authorize deposits: the interface and official-indexer reconciliation are implemented behind a closed operational gate, while an independent review, the [controlled custody pilot](CUSTODY_PILOT_CHECKLIST.md), and a separate deliberate unpause remain release gates.
 
 ## Version 1 boundary
 

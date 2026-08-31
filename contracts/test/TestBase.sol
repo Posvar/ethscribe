@@ -11,6 +11,8 @@ interface VmTest {
     function assume(bool condition) external;
     function bound(uint256 value, uint256 min, uint256 max) external pure returns (uint256 result);
     function deal(address account, uint256 newBalance) external;
+    function envOr(string calldata name, string calldata defaultValue) external view returns (string memory value);
+    function createSelectFork(string calldata urlOrAlias) external returns (uint256 forkId);
     function expectRevert(bytes4 revertData) external;
     function expectRevert(bytes calldata revertData) external;
     function getRecordedLogs() external returns (Log[] memory logs);

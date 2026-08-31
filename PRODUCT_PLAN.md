@@ -2,7 +2,7 @@
 
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
-**Status:** Public site live; marketplace V1 deployed to mainnet, source-verified, and paused
+**Status:** Public site live; marketplace V1 deployed to mainnet, source-verified, paused, and integrated behind a closed custody-pilot gate
 **Updated:** August 31, 2026
 
 ## Executive summary
@@ -497,7 +497,7 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Activate atomic settlement and fee routing
 - Run the first primary Accession auction
 
-**Current status:** V1 is deployed to Ethereum mainnet from commit `687ed2d`, exact-match source verified, and paused. Official-indexer integration, independent review, low-value end-to-end checks, and a separate unpause transaction remain required before marketplace activity.
+**Current status:** V1 is deployed to Ethereum mainnet from commit `687ed2d`, exact-match source verified, and paused. The wallet now includes fail-closed official-indexer reconciliation and a simulated Deposit → Verify → Withdraw slice behind a server-side operational gate that defaults closed. A disposable fork test exercises the deployed address. Independent review, a separately authorized controlled custody pilot, settlement controls, and low-value end-to-end settlement checks remain required before marketplace activity.
 
 ## Roadmap after MVP/V1
 
