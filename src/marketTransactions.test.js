@@ -4,6 +4,7 @@ import {
   encodeWithdrawEthscription,
   friendlyTransactionError,
   hasDepositSelectorCollision,
+  isInternalAccountCalldataRejection,
   reconciliationTimedOut,
   sendTransactionDirect,
   simulateAndSendTransaction,
@@ -80,7 +81,9 @@ test('waits for a successful receipt and explains common wallet failures', async
   await expect(waitForTransactionReceipt(provider, `0x${'34'.repeat(32)}`, { pollMs: 0, timeoutMs: 10 })).resolves.toMatchObject({ status: '0x1' });
   expect(friendlyTransactionError({ code: 4001 })).toMatch(/cancelled/i);
   expect(friendlyTransactionError(new Error('execution reverted: EnforcedPause'))).toMatch(/paused/i);
-  expect(friendlyTransactionError(new Error('External transactions to internal accounts cannot include data'))).toMatch(/preserving your wallet as creator/i);
+  const internalAccountError = new Error('External transactions to internal accounts cannot include data');
+  expect(isInternalAccountCalldataRejection(internalAccountError)).toBe(true);
+  expect(friendlyTransactionError(internalAccountError)).toMatch(/MetaMask prevents websites/i);
 });
 
 test('bounds post-confirmation reconciliation without timing out an unknown start', () => {

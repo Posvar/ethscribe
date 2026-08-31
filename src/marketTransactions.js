@@ -140,12 +140,18 @@ export async function waitForTransactionReceipt(provider, transactionHash, optio
   throw new Error('The transaction is still pending. Check it on Etherscan before trying again.');
 }
 
+export function isInternalAccountCalldataRejection(error) {
+  return /External transactions to internal accounts cannot include data/i.test(
+    typeof error?.message === 'string' ? error.message : '',
+  );
+}
+
 export function friendlyTransactionError(error) {
   if (error?.code === 4001) return 'The transaction was cancelled in the wallet.';
   const message = typeof error?.message === 'string' ? error.message : '';
   if (/user rejected|user denied/i.test(message)) return 'The transaction was cancelled in the wallet.';
-  if (/External transactions to internal accounts cannot include data/i.test(message)) {
-    return 'The selected wallet rejected the direct self-addressed calldata transaction used to create an Ethscription. Your byte preflight passed and no transaction was sent. Open Manage Wallet, disconnect, and choose another RainbowKit connection while preserving your wallet as creator.';
+  if (isInternalAccountCalldataRejection(error)) {
+    return 'MetaMask prevents websites from sending calldata to an address managed by the same MetaMask. The bytes remain valid and no transaction was sent.';
   }
   if (/pause/i.test(message)) return 'The market is paused. No Ethscription was deposited.';
   if (/insufficient funds/i.test(message)) return 'The wallet does not have enough ETH for gas.';

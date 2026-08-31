@@ -66,6 +66,19 @@ The global **Ethscribe** action lets a wallet preserve something before deciding
 
 A personal Ethscription is not a Finding, Finalist, or Accession. It remains an ordinary wallet-held Ethscription unless its owner explicitly continues into an expedition.
 
+### MetaMask self-send compatibility
+
+Direct calldata creation normally sends 0 ETH from the connected EOA back to that same address. This preserves the EOA as both protocol creator and initial owner. Newer MetaMask extensions reject website-originated transactions when non-empty calldata is addressed to any account managed by that MetaMask. This is a wallet policy, not an Ethereum or Ethscriptions protocol rule, and it also affects legacy creation interfaces.
+
+Ethscribe does not silently switch to ESIP-3 contract creation because ESIP-3 would identify the emitting contractâ€”not the hunter's EOAâ€”as creator. When MetaMask returns this specific restriction, the interface instead offers a byte-safe manual path:
+
+1. Copy the exact hex-encoded canonical Data URI produced by the completed preflight.
+2. Enable **Show hex data** under MetaMask **Settings â†’ Transactions**.
+3. Use MetaMask's own **Send** screen to send 0 ETH from the connected address back to itself and paste the copied hex data.
+4. Return to Ethscribe and run **Test bytes** again after confirmation. The official indexer check discovers the existing Ethscription, verifies ownership, and resumes the normal flow.
+
+MetaMask exempts transactions initiated inside its own interface from the external-dapp restriction. Wallets that permit dapp-originated self-addressed calldata can continue through Ethscribe's one-click creation request. See [MetaMask's hex-data instructions](https://support.metamask.io/configure/transactions/how-to-add-a-memo-to-a-transaction/) and the [ESIP-3 creator rules](https://docs.ethscriptions.com/esips/accepted-esips/esip-3-smart-contract-ethscription-creations).
+
 ## Path 3 — deposit an existing Ethscription
 
 The wallet experience queries the official API by `current_owner` and shows Ethscriptions directly controlled by the connected address.
@@ -94,7 +107,7 @@ The live `/wallet` route reads fixed market state from Ethereum mainnet, lists d
 
 The live `/ethscribe` route now creates standard, uncompressed calldata Ethscriptions to the connected wallet. Each open Expedition 001 target exposes the same engine with its accepted wrapper locked. The embedded path is deliberately two transactions: create to self, verify the new transaction-hash ID, then transfer that existing ID to the V1 market. A gas-free personal signature binds verified custody to the target, and a Netlify Function independently checks the signature, official content URI, decoded hash, frozen wrapper, and reconciled contract custody before writing an immutable Finding record to Azure.
 
-Every transaction is validated, simulated before wallet submission, and reconciled after its receipt. The standard creation path is capped at approximately 90 KB of source file bytes; gzip, blobs, and larger-file creation are deferred. The site does not yet provide a protocol-wide decoded-byte index, public Finding pages, listings, offers, purchases, or claims. See the [Controlled custody pilot](../reference/custody-pilot.md).
+Every transaction is validated and reconciled after its receipt. Marketplace custody transactions are also simulated before wallet submission. Direct Ethscription creation does not treat optional gas estimation as a validity gate because self-addressed calldata can be rejected by wallet simulation policy even when the Ethereum transaction is valid. The standard creation path is capped at approximately 90 KB of source file bytes; gzip, blobs, and larger-file creation are deferred. The site does not yet provide a protocol-wide decoded-byte index, public Finding pages, listings, offers, purchases, or claims. See the [Controlled custody pilot](../reference/custody-pilot.md).
 
 ## Withdrawal guarantee
 

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import EthscribeWorkbench from './EthscribeWorkbench';
+import { utf8ToHex } from './ethscriptionCreation';
 
 const originalFetch = global.fetch;
 
@@ -41,7 +42,7 @@ test('reduces successful target validation to one ready checkpoint with optional
   const provider = {
     request: jest.fn(async ({ method }) => {
       if (method === 'eth_chainId') return '0x1';
-      if (method === 'eth_sendTransaction') throw Object.assign(new Error('User rejected the request'), { code: 4001 });
+      if (method === 'eth_sendTransaction') throw new Error('External transactions to internal accounts cannot include data');
       throw new Error(`Unexpected wallet method: ${method}`);
     }),
   };
@@ -69,7 +70,14 @@ test('reduces successful target validation to one ready checkpoint with optional
   fireEvent.click(screen.getByRole('checkbox'));
   fireEvent.click(screen.getByRole('button', { name: /^open wallet/i }));
 
-  expect(await screen.findByText(/transaction was cancelled in the wallet/i)).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: /finish inside metamask/i })).toBeInTheDocument();
+  expect(screen.getByText(/MetaMask blocks dapp-created calldata transactions/i)).toBeInTheDocument();
+  const clipboard = { writeText: jest.fn().mockResolvedValue(undefined) };
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: clipboard });
+  fireEvent.click(screen.getByRole('button', { name: /copy exact hex data/i }));
+  const expectedDataUri = `data:image/x-xpixmap;base64,${btoa(String.fromCharCode(...bytes))}`;
+  expect(clipboard.writeText).toHaveBeenCalledWith(utf8ToHex(expectedDataUri));
+  expect(await screen.findByRole('button', { name: /^copied/i })).toBeInTheDocument();
   expect(provider.request).toHaveBeenCalledTimes(2);
   expect(provider.request.mock.calls.map(([request]) => request.method)).toEqual(['eth_chainId', 'eth_sendTransaction']);
   expect(screen.getByText('READY TO ETHSCRIBE')).toBeInTheDocument();

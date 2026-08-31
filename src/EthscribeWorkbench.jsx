@@ -5,6 +5,7 @@ import {
   buildDepositTransaction,
   friendlyTransactionError,
   hasDepositSelectorCollision,
+  isInternalAccountCalldataRejection,
   sendTransactionDirect,
   simulateAndSendTransaction,
   waitForTransactionReceipt,
@@ -20,6 +21,7 @@ import {
   mediaTypeForFile,
   publishFinding,
   signFindingAssignment,
+  utf8ToHex,
   waitForEthscriptionRecord,
   waitForVerifiedCustody,
   XPM_MEDIA_TYPE_CANDIDATES,
@@ -93,6 +95,7 @@ export default function EthscribeWorkbench({
   const [sourceUrl, setSourceUrl] = useState('');
   const [finding, setFinding] = useState(null);
   const [targetCheck, setTargetCheck] = useState(null);
+  const [manualCalldataCopied, setManualCalldataCopied] = useState(false);
 
   useEffect(() => {
     if (!submissionMode) return undefined;
@@ -144,6 +147,7 @@ export default function EthscribeWorkbench({
     setCustody(null);
     setFinding(null);
     setTargetCheck(null);
+    setManualCalldataCopied(false);
     if (!artifact) setSelectedTargetId('');
     setPhase('idle');
     setMessage('');
@@ -281,9 +285,21 @@ export default function EthscribeWorkbench({
         ? 'Ethscription created in your wallet. It is not submitted yet; the second transaction deposits this ID into the market.'
         : 'Ethscription verified in your wallet. It was not deposited or assigned to an expedition.');
     } catch (error) {
+      if (isInternalAccountCalldataRejection(error)) {
+        setManualCalldataCopied(false);
+        setPhase('manual-required');
+        setMessage('MetaMask blocks dapp-created calldata transactions to its own managed accounts. Complete the verified self-send inside MetaMask instead.');
+        return;
+      }
       setPhase('error');
       setMessage(friendlyTransactionError(error));
     }
+  };
+
+  const copyManualCalldata = async () => {
+    if (!inspection?.dataUri || !navigator.clipboard?.writeText) return;
+    await navigator.clipboard.writeText(utf8ToHex(inspection.dataUri));
+    setManualCalldataCopied(true);
   };
 
   const requestDeposit = async () => {
@@ -466,8 +482,31 @@ export default function EthscribeWorkbench({
         </div>
       )}
 
-      {(!inspection || !['inspecting', 'ready', 'duplicate', 'mismatch'].includes(phase)) && (
+      {(!inspection || !['inspecting', 'ready', 'duplicate', 'mismatch', 'manual-required'].includes(phase)) && (
         <StatusBanner phase={phase} message={message} transactionHash={displayTransactionHash && ['indexing', 'created', 'complete', 'depositing', 'reconciling', 'custody-verified', 'signing', 'assignment-error', 'submitted'].includes(phase) ? displayTransactionHash : ''} />
+      )}
+
+      {phase === 'manual-required' && inspection && account && (
+        <section className="ethscribe-manual-creation" aria-labelledby="manual-creation-title">
+          <div className="manual-creation-heading">
+            <span>METAMASK COMPATIBILITY</span>
+            <h4 id="manual-creation-title">FINISH INSIDE METAMASK</h4>
+          </div>
+          <p>{message} Transactions started from MetaMask's own Send screen are exempt from this website restriction, preserving your address as both creator and initial owner.</p>
+          <dl>
+            <div><dt>RECIPIENT</dt><dd><code>{account}</code></dd></div>
+            <div><dt>AMOUNT</dt><dd>0 ETH</dd></div>
+            <div><dt>HEX DATA</dt><dd>{inspection.calldataBytes.toLocaleString('en-US')} decoded bytes · copied exactly from this preflight</dd></div>
+          </dl>
+          <button type="button" onClick={copyManualCalldata}>{manualCalldataCopied ? 'COPIED' : 'COPY EXACT HEX DATA'} <ArrowIcon /></button>
+          <ol>
+            <li>In MetaMask, open Settings → Transactions and enable <strong>Show hex data</strong>.</li>
+            <li>Use MetaMask's Send action. Send 0 ETH from this account back to the same recipient shown above.</li>
+            <li>Paste the copied value into Hex data, review it, and confirm the transaction.</li>
+            <li>After confirmation, return here and press <strong>Test bytes</strong> again. The official indexer will identify the existing Ethscription and continue the Finding flow.</li>
+          </ol>
+          <small>Do not edit or re-encode the copied value. The Data URI prefix and every file byte are already included. <a href="https://support.metamask.io/configure/transactions/how-to-add-a-memo-to-a-transaction/" target="_blank" rel="noreferrer">MetaMask hex-data instructions</a>.</small>
+        </section>
       )}
 
       {existingRecord && (
