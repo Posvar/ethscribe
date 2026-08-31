@@ -18,6 +18,8 @@ The contract provides:
 - an opaque `contextHash` for linking public research records; and
 - two-step owner and fee-recipient changes.
 
+Every deployment starts paused. The owner must deliberately unpause after source verification and first-party custody reconciliation are ready.
+
 It intentionally does not provide:
 
 - proxy upgrades;
@@ -27,7 +29,7 @@ It intentionally does not provide:
 - arbitrary admin recovery of artifacts, bids, proceeds, or forced ETH; or
 - a way to disable ordinary user exits.
 
-The immutable market controls custody and settlement. Incentives remain a separate layer: the initial fee recipient should be an Ethscribe Safe, and future listings can snapshot a separately deployed rewards distributor as their fee recipient. A new market version is needed only if custody or settlement semantics change.
+The immutable market controls custody and settlement. Incentives remain a separate layer: the initial fee recipient can be a dedicated solo-operator treasury wallet, and future listings can snapshot a separately deployed rewards distributor as their fee recipient. A new market version is needed only if custody or settlement semantics change.
 
 ## Critical protocol boundary
 
@@ -94,44 +96,46 @@ Start a disposable Anvil node and deploy using one of its unlocked test accounts
 ..\.tools\foundry\anvil.exe --host 127.0.0.1 --port 8545
 
 ..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV1.s.sol:DeployEthscribeMarketV1 `
-  --rpc-url http://127.0.0.1:8545 `
+  --force --rpc-url http://127.0.0.1:8545 `
   --broadcast --unlocked --sender <ANVIL_TEST_ADDRESS> `
   --sig "run(address,address)" <OWNER_TEST_ADDRESS> <FEE_RECIPIENT_TEST_ADDRESS>
 ```
 
-### 2. Sepolia rehearsal
+### 2. Optional Sepolia rehearsal
 
-Fill out [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for Sepolia. First simulate without `--broadcast`:
+Sepolia is useful for exercising browser signing and the public Ethscriptions/indexer path, but it is not a security boundary and is not mandatory for a deployment that starts paused. If used, fill out [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for Sepolia. First simulate without `--broadcast`:
 
 ```powershell
 ..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV1.s.sol:DeployEthscribeMarketV1 `
-  --rpc-url <SEPOLIA_RPC_URL> --sender <DEPLOYER_ADDRESS> `
-  --sig "run(address,address)" <OWNER_SAFE> <FEE_RECIPIENT_SAFE>
+  --force --rpc-url <SEPOLIA_RPC_URL> --sender <DEPLOYER_ADDRESS> `
+  --sig "run(address,address)" <OWNER_WALLET> <FEE_RECIPIENT_WALLET>
 ```
 
 After reviewing the simulation, broadcast through the browser wallet:
 
 ```powershell
 ..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV1.s.sol:DeployEthscribeMarketV1 `
-  --rpc-url <SEPOLIA_RPC_URL> --broadcast --browser --sender <DEPLOYER_ADDRESS> `
-  --sig "run(address,address)" <OWNER_SAFE> <FEE_RECIPIENT_SAFE>
+  --force --rpc-url <SEPOLIA_RPC_URL> --broadcast --browser --sender <DEPLOYER_ADDRESS> `
+  --sig "run(address,address)" <OWNER_WALLET> <FEE_RECIPIENT_WALLET>
 ```
 
 The browser signer keeps signing authority in the wallet. Carefully inspect the chain, deploying account, and contract-creation transaction before approving.
 
+`--force` is intentional: it recompiles the deployment script and dependencies rather than trusting an earlier local artifact cache.
+
 ### 3. Mainnet candidate
 
-Mainnet deployment requires all checklist items, an independent contract review, verified source, a dedicated deployment wallet funded only for expected gas, and explicit confirmation of:
+Mainnet deployment requires all checklist items, verified source, a dedicated deployment wallet funded only for expected gas, and explicit confirmation of:
 
 - chain ID `1`;
 - the exact Git commit and compiler settings;
 - deployer address;
-- initial owner Safe;
-- initial fee-recipient Safe;
+- initial owner wallet;
+- initial fee-recipient wallet;
 - estimated gas and maximum fee; and
 - post-deployment verification calls.
 
-Do not transfer valuable Ethscriptions or accept offers until the website's official-indexer reconciliation is live and has been tested against the deployed address.
+The deployed contract begins paused. Do not unpause, transfer valuable Ethscriptions, or accept offers until the website's official-indexer reconciliation is live and has been tested against the deployed address. Independent review remains required before meaningful value is accepted.
 
 ## Version migration
 

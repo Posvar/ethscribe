@@ -432,7 +432,7 @@ Ethscribe changes the boundary in several ways:
 
 The immutable, non-proxy contract accepts and returns Ethscriptions, creates and cancels listings, holds escrow-first offers, accrues refunds and proceeds through pull payments, emits ESIP-2 transfers, applies a fixed 5% fee, and settles trades. It does not decide historical eligibility or activate Expedition records itself. The application observes settlement events and advances the prepared queue.
 
-The 5% fee recipient is a replaceable boundary, not upgrade authority over custody. V1 initially routes fees to an Ethscribe Safe. A later rewards distributor can become the recipient for newly created positions; active listings and offers retain the recipient they originally displayed. Exact proposer or validator splits inside each settlement require a separately deployed market version.
+The 5% fee recipient is a replaceable boundary, not upgrade authority over custody. The solo-operated beta can initially route fees to a dedicated treasury EOA. A later Safe or rewards distributor can become the recipient for newly created positions; active listings and offers retain the recipient they originally displayed. Exact proposer or validator splits inside each settlement require a separately deployed market version.
 
 Core evolution is versioned. If custody or settlement semantics change, V1 pauses new entry while withdrawals, offer cancellation, and ETH claims remain open; the site then directs new activity to a separately reviewed V2. No proxy administrator can rewrite the rules around artifacts already escrowed in V1.
 
@@ -489,10 +489,10 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 
 - Freeze `EthscribeMarketV1` invariants, offer states, and withdrawal behavior
 - Implement comprehensive contract tests
-- Rehearse the immutable deployment locally and on Sepolia
+- Rehearse the immutable deployment locally; optionally use Sepolia, or record a deliberate skip in favor of a paused mainnet deployment
 - Integrate official-indexer custody reconciliation into every first-party market action
 - Obtain independent contract review
-- Deploy the exact reviewed commit with a Safe as owner and initial fee recipient
+- Deploy the exact reviewed commit paused, with explicitly reviewed owner and fee-recipient wallets
 - Enable deposits and binding offers in the existing UI
 - Activate atomic settlement and fee routing
 - Run the first primary Accession auction
@@ -544,7 +544,7 @@ The protocol reaches Vn when the founder can stop proposing Hunts and handling o
 
 ## Initial economics
 
-V1 uses one visible 5% marketplace fee paid to a snapshotted fee recipient. The initial Safe treasury may follow this conceptual allocation:
+V1 uses one visible 5% marketplace fee paid to a snapshotted fee recipient. The initial solo treasury may follow this conceptual allocation:
 
 | Recipient | Percentage of sale |
 |---|---:|

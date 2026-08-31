@@ -152,6 +152,8 @@ contract EthscribeMarketV1InvariantTest is TestBase {
 
     function setUp() public {
         market = new EthscribeMarketV1(OWNER, FEE_RECIPIENT);
+        vm.prank(OWNER);
+        market.unpause();
         handler = new EthscribeMarketHandler(market);
         _targetContracts.push(address(handler));
     }

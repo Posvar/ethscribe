@@ -56,10 +56,10 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 
 - Freeze `EthscribeMarketV1` invariants, offer states, and withdrawal behavior.
 - Build comprehensive contract and integration tests.
-- Rehearse deployment locally and on Sepolia.
+- Rehearse deployment locally; use Sepolia when its public-chain exercise is worth the extra step, or record a deliberate skip in favor of a paused mainnet deployment.
 - Integrate official-indexer reconciliation into every first-party market action.
 - Obtain independent contract review.
-- Deploy the exact reviewed commit with a Safe as owner and initial fee recipient.
+- Deploy the exact reviewed commit paused, with explicitly reviewed owner and fee-recipient wallets.
 - Enable deposits, binding offers, refunds, settlement, and fee routing.
 - Complete the first primary Accession auction.
 

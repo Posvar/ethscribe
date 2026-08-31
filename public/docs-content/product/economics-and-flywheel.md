@@ -17,7 +17,7 @@ The loop only works if the research is worth returning for even when no trade oc
 
 The immutable marketplace candidate uses one visible 5% fee. On every settlement, 95% becomes claimable by the seller and 5% becomes claimable by the fee recipient frozen into that listing or offer.
 
-At launch, the fee recipient should be an Ethscribe Safe. The following remains a conceptual treasury allocation rather than a split enforced by `EthscribeMarketV1`:
+At launch, the solo-operated beta can use a dedicated treasury EOA. The following remains a conceptual treasury allocation rather than a split enforced by `EthscribeMarketV1`:
 
 | Recipient | Share of sale |
 |---|---:|

@@ -238,7 +238,7 @@ Native curator authorization can be considered in a later market version after t
 
 Every V1 settlement allocates 95% to the seller and 5% to the fee recipient snapshotted when the listing or offer was created. The fee itself and its denominator are immutable.
 
-The initial recipient should be an Ethscribe Safe. Later, the owner can propose a separate reward distributor and that recipient must accept the role. This lets future activity fund proposers, researchers, validators, and operations without placing custody under upgrade authority. Active positions keep their original recipient.
+The solo-operated beta can begin with a dedicated treasury EOA. Later, the owner can propose a Safe or separate reward distributor and that recipient must accept the role. This lets future activity fund proposers, researchers, validators, and operations without placing custody under upgrade authority. Active positions keep their original recipient.
 
 If exact per-sale recipient splits must execute inside settlement, that is a `MarketV2` change rather than a mutable V1 parameter.
 
@@ -249,13 +249,15 @@ The ittybits address is an upgradeable proxy. Ethscribe's candidate intentionall
 The candidate adopts:
 
 - an immutable, non-proxy vault and market;
-- a Safe for bounded configuration and emergency pause;
+- a dedicated owner EOA for the solo beta, with an optional later move to a Safe;
 - two-step ownership and fee-recipient changes;
 - withdrawals available during pause;
 - an immutable 5% fee; and
 - no admin function capable of transferring arbitrary deposits or bidder funds.
 
 Product evolution is versioned rather than performed behind a proxy. If settlement rules change, V1 can stop accepting new activity while its exits remain open, and users can voluntarily move to a separately deployed V2. Revenue-distribution changes generally require only a new fee recipient, not a new custody contract.
+
+Every deployment begins paused. Publishing and verifying the address therefore does not open deposits or trading; unpause is a separate owner action after the first-party integration is ready.
 
 ## Contract invariants
 
@@ -276,17 +278,17 @@ Implemented tests cover deposits, withdrawals, listings, offers, expiry, refunds
 
 Still required before mainnet value is accepted:
 
-- local and Sepolia deployment rehearsals;
+- a local deployment rehearsal, plus either an optional Sepolia rehearsal or a recorded decision to proceed with a paused mainnet deployment;
 - first-party official-indexer reconciliation tests;
 - an independent security review;
 - source verification and post-deployment checks; and
-- a production Safe for ownership and the initial fee recipient.
+- explicitly reviewed production owner and fee-recipient wallets.
 
 ## Delivery sequence
 
 1. Complete the local executable specification and deployment rehearsal.
 2. Integrate official-indexer reconciliation into the wallet and market interface.
-3. Deploy and exercise the exact candidate on Sepolia.
+3. Optionally deploy and exercise the exact candidate on Sepolia; otherwise record the decision to skip it and keep the mainnet deployment paused through verification and integration.
 4. Obtain an independent review and resolve findings.
 5. Deploy the immutable mainnet candidate from the reviewed commit.
 6. Verify source and enable low-value beta activity.

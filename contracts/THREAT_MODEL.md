@@ -32,11 +32,11 @@ The owner can pause or unpause entry and trading, start a two-step ownership tra
 - change the fixed 5% fee; or
 - renounce ownership and permanently strand the pause control.
 
-The owner should be a Safe, not a single-key EOA.
+For the solo-operated beta, the owner may be a dedicated, securely backed EOA. The authority can later move to a Safe through the inherited two-step ownership transfer without redeploying the market.
 
 ### Fee recipient
 
-The fee recipient receives only the 5% credits frozen into newly created listings and offers. A proposed replacement must accept the role. Existing positions retain their original recipient.
+The fee recipient receives only the 5% credits frozen into newly created listings and offers. A proposed replacement must accept the role. Existing positions retain their original recipient. A solo treasury EOA can be replaced later by a Safe or reward distributor.
 
 ## Defended failure modes
 
@@ -52,6 +52,7 @@ The fee recipient receives only the 5% credits frozen into newly created listing
 | Smart wallets excluded | No `tx.origin` checks |
 | Contract insolvency | Locked offers and claimable balances are tracked separately and invariant-tested |
 | Upgrade-key compromise | No proxy or implementation upgrade authority exists |
+| Unverified deployment receives deposits | Every deployment starts paused |
 
 ## Known limitations
 

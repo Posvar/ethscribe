@@ -169,6 +169,7 @@ contract EthscribeMarketV1 is Ownable2Step, Pausable, ReentrancyGuard {
         if (initialFeeRecipient == address(0)) revert ZeroAddress();
         feeRecipient = initialFeeRecipient;
         emit FeeRecipientChanged(address(0), initialFeeRecipient);
+        _pause();
     }
 
     /// @notice Records one or more packed 32-byte potential Ethscription IDs.

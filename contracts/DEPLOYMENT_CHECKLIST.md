@@ -8,6 +8,7 @@ Copy this checklist into the ignored `.secrets/` workspace for each rehearsal. D
 - [ ] Git commit recorded
 - [ ] Working tree clean except documented non-contract files
 - [ ] Contract: `EthscribeMarketV1`
+- [ ] Deployment simulation used `--force` to rebuild the script and dependencies
 - [ ] `MARKET_VERSION`: `1`
 - [ ] Solidity: `0.8.36`
 - [ ] OpenZeppelin Contracts: `5.7.0`
@@ -19,11 +20,11 @@ Copy this checklist into the ignored `.secrets/` workspace for each rehearsal. D
 
 - [ ] Deployer address recorded and independently checked
 - [ ] Initial owner address recorded and confirmed on the target chain
-- [ ] Initial owner is an Ethscribe Safe for a production deployment
+- [ ] Initial owner is a dedicated, securely backed wallet intentionally chosen for this deployment
 - [ ] Initial fee-recipient address recorded and confirmed
-- [ ] Fee recipient is a Safe or reviewed distributor for a production deployment
+- [ ] Fee recipient is the intended solo treasury, Safe, or reviewed distributor
 - [ ] No constructor address is zero
-- [ ] Deployer is not accidentally assigned as owner or fee recipient
+- [ ] Any reuse of the deployer as owner or fee recipient is intentional and explicitly confirmed
 
 ## Security gates
 
@@ -33,7 +34,7 @@ Copy this checklist into the ignored `.secrets/` workspace for each rehearsal. D
 - [ ] Default unit, fuzz, and invariant suite passes
 - [ ] CI-profile fuzz and invariant suite passes
 - [ ] Local Anvil broadcast and post-deployment checks pass
-- [ ] Sepolia broadcast and end-to-end deposit/withdraw/trade rehearsal pass
+- [ ] Sepolia rehearsal passed, or the explicit decision to skip it for a paused mainnet deployment is recorded
 - [ ] Official-indexer reconciliation is tested against the deployed address
 - [ ] Independent reviewer findings are resolved or explicitly accepted
 - [ ] Public source and threat model match the exact candidate
@@ -59,10 +60,11 @@ Copy this checklist into the ignored `.secrets/` workspace for each rehearsal. D
 - [ ] `FEE_BPS()` returns `500`
 - [ ] `BPS_DENOMINATOR()` returns `10000`
 - [ ] `TRANSFER_COOLDOWN_BLOCKS()` returns `5`
-- [ ] `owner()` returns the reviewed owner Safe
+- [ ] `owner()` returns the reviewed owner wallet
 - [ ] `feeRecipient()` returns the reviewed fee recipient
 - [ ] `pendingFeeRecipient()` is zero
-- [ ] `paused()` is reviewed for the intended launch state
+- [ ] `paused()` returns `true` immediately after deployment
+- [ ] Unpause remains a separate, deliberate post-integration transaction
 - [ ] Site configuration references the correct chain and address
 - [ ] No valuable artifact is deposited before UI reconciliation is live
 - [ ] Deployment record and verified-source link are published

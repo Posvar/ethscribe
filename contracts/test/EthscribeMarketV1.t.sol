@@ -56,6 +56,8 @@ contract EthscribeMarketV1Test is TestBase {
 
     function setUp() public {
         market = new EthscribeMarketV1(OWNER, FEE_RECIPIENT);
+        vm.prank(OWNER);
+        market.unpause();
         vm.deal(SELLER, 100 ether);
         vm.deal(BUYER, 100 ether);
         vm.deal(BIDDER, 100 ether);
@@ -68,6 +70,14 @@ contract EthscribeMarketV1Test is TestBase {
         assertEq(market.MARKET_VERSION(), 1, "market version");
         assertEq(market.FEE_BPS(), 500, "fee bps");
         assertEq(market.TRANSFER_COOLDOWN_BLOCKS(), 5, "cooldown");
+    }
+
+    function test_DeploymentStartsPaused() public {
+        EthscribeMarketV1 freshMarket = new EthscribeMarketV1(OWNER, FEE_RECIPIENT);
+        assertEq(freshMarket.paused(), true, "fresh deployment paused");
+
+        (bool success,) = address(freshMarket).call(abi.encodePacked(ID));
+        assertEq(success, false, "paused fallback rejects deposits");
     }
 
     function test_RecordsSingleAndPackedBatchDeposits() public {
