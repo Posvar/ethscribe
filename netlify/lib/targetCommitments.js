@@ -36,11 +36,19 @@ function normalizeHash(value) {
 }
 
 function readCommitments(env = process.env) {
-  let parsed;
-  try {
-    parsed = JSON.parse(env.EXPEDITION_001_TARGET_HASHES || '');
-  } catch {
-    throw new TargetCommitmentError(503, 'target_validation_unavailable', 'The sealed target validator is not configured. No transaction was prepared.');
+  const configured = env.EXPEDITION_001_TARGET_HASHES || '';
+  const candidates = [configured];
+  if (/^[a-zA-Z0-9+/]+={0,2}$/.test(configured)) {
+    candidates.push(Buffer.from(configured, 'base64').toString('utf8'));
+  }
+  let parsed = null;
+  for (const candidate of candidates) {
+    try {
+      parsed = JSON.parse(candidate);
+      break;
+    } catch {
+      // Continue to the base64-decoded representation when configured that way.
+    }
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new TargetCommitmentError(503, 'target_validation_unavailable', 'The sealed target validator is not configured. No transaction was prepared.');

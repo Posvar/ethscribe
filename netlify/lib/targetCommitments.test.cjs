@@ -21,6 +21,18 @@ test('returns exact eligibility without returning the expected commitment', () =
   assert.doesNotMatch(JSON.stringify(result), new RegExp(expectedHash));
 });
 
+test('reads a base64-encoded commitment map for shell-safe deployment configuration', () => {
+  const encodedEnv = {
+    EXPEDITION_001_TARGET_HASHES: Buffer.from(JSON.stringify({ 'november-20-xpm': expectedHash })).toString('base64'),
+  };
+  assert.deepEqual(verifyTargetCandidate({
+    targetId: 'november-20-xpm',
+    rawSha256: `0x${expectedHash}`,
+    byteLength: 4193,
+    dataUriPrefix: 'data:image/x-xpixmap;base64,',
+  }, encodedEnv), { eligible: true, validation: 'exact' });
+});
+
 test('fails closed for a wrong hash, byte length, or wrapper', () => {
   const base = {
     targetId: 'november-20-xpm',
