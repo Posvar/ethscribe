@@ -24,7 +24,7 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(screen.getByRole('link', { name: /open the expedition/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
   const brand = screen.getByRole('link', { name: /ethscribe home/i });
   expect(within(brand).getByText('ETHSCRI.BE')).toBeInTheDocument();
-  expect(brand.querySelector('img')).toHaveAttribute('src', '/ethscribe-icon.svg');
+  expect(brand.querySelector('img')).toHaveAttribute('src', '/icon.svg');
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Propose' })).toHaveAttribute('href', '#propose');
   expect(within(primaryNavigation).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', '/docs');

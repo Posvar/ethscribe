@@ -3,7 +3,7 @@
   "name": "Ethscribe — Ownable Digital Archaeology",
   "icons": [
     {
-      "src": "ethscribe-icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

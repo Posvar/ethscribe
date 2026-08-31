@@ -638,23 +638,23 @@ a {
 .brand img {
   filter: none;
   height: 42px;
-  image-rendering: pixelated;
+  image-rendering: auto;
   width: auto;
 }
 
 .brand-wordmark {
   color: white;
-  font-family: "Courier New", monospace;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
 footer img {
   filter: none;
   height: 32px;
-  image-rendering: pixelated;
+  image-rendering: auto;
   width: auto;
 }
 
