@@ -19,7 +19,9 @@ The site will be built and deployed before the marketplace contract. This provid
 
 ## Product promise
 
-> Find the bytes. Prove the history. Own the artifact.
+> Find the bytes. Establish the provenance. Own the artifact.
+
+Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
 
 An Accession represents ownership of a recognized Ethscription and its public provenance record. It does not represent copyright, authorship, or exclusive access to the underlying file.
 
@@ -164,6 +166,8 @@ The site launches with these top-level destinations:
 | `/expeditions/:slug` | Expedition brief, corpus timeline, artifact records, Findings, Field Notes, and later auction. |
 | `/findings/:id` | Artifact preview, byte facts, dossier, sources, revisions, challenges, and owner. |
 | `/collection` | Permanent Accessions and frozen provenance records. |
+| `/ethscribe` | Generic file inspection, existence check, creation, and vault deposit flow. |
+| `/wallet` | Connected wallet's directly owned Ethscriptions, vault positions, assignments, listings, bids, and proceeds. |
 | `/propose` | Structured proposal for a future Hunt. |
 | `/about` | Ethscriptions, byte-perfect verification, ownership limits, and curation policy. |
 | `/docs` | Git-backed project documentation and living whitepaper, using the same Markdown source as GitBook. |
@@ -176,7 +180,7 @@ Global navigation remains stable across routes: `Mission | Method | Expeditions 
 
 Project documentation is maintained as GitBook-compatible Markdown in `public/docs-content`, with `.gitbook.yaml` and `SUMMARY.md` defining the published structure. The application renders that same source at `/docs`, keeping the first-party site, Git history, and an optional GitBook publication synchronized without duplicate editing.
 
-The documentation covers the mission, protocol foundations, byte-perfect identity, evidence limits, Expedition mechanics, dossiers, curation, marketplace boundaries, economics, architecture, threat model, phased roadmap, autonomy plan, FAQ, and sources. It distinguishes shipped behavior from proposed phases and should be updated whenever a material trust assumption, contract parameter, or public claim changes.
+The documentation covers the mission, protocol foundations, byte-perfect identity, evidence limits, Expedition mechanics, dossiers, curation, marketplace boundaries, economics, phased roadmap, autonomy plan, FAQ, and sources. It distinguishes shipped behavior from proposed phases and should be updated whenever a material trust assumption, contract parameter, or public claim changes.
 
 ### Home page
 
@@ -244,22 +248,32 @@ Each Finding contains:
 - Curator decision and reason
 - Auction state when eligible
 
-### Submit Finding flow
+### Artifact intake and Finding flow
 
-Before the contract:
+The vault is expedition-agnostic. It stores Ethscription custody and market state; signed off-chain records connect an `ethscriptionId` to an Expedition and target.
+
+V1 supports three intake paths:
+
+1. **Inline Ethscribe + Submit.** From an artifact target, upload a file, verify its raw hash, create the Ethscription when needed, deposit it, and sign its target assignment and Dossier.
+2. **Generic Ethscribe.** Create and deposit an artifact without assigning it. It appears in `My Vault` and can be attached to an active target later.
+3. **Deposit an existing Ethscription.** Query assets owned by the connected wallet, select one or more, transfer them to the vault, and optionally assign them to targets.
+
+The safest creation flow initially uses two explicit transactions: create to the user's wallet, then transfer the resulting transaction-hash ID to the vault. The product presents one guided workflow while clearly showing both confirmations. Existing owned assets skip creation, and ESIP-5 supports bulk deposits.
+
+Inline target actions and the global `Ethscribe` action share the same transaction engine. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions are separate tabs; an assignment can be added or changed without another custody transaction.
+
+Before the contract, a Finding remains non-custodial:
 
 1. Connect wallet.
 2. Enter the Ethscription transaction hash.
-3. Application verifies that it exists and shows its content.
-4. Enter the historical claim.
-5. Add source URLs and notes.
-6. Sign the canonical dossier payload.
-7. Store the signed dossier through a Netlify Function.
+3. Verify and decode its content.
+4. Enter the historical claim and sources.
+5. Sign the canonical Dossier and target assignment.
+6. Store the records through a Netlify Function.
 
-After the contract:
+After the contract, the user can also deposit before or after assignment. The wallet dashboard reconciles potential-deposit events with the official indexer's `current_owner` and `previous_owner` fields before displaying `Escrow verified`.
 
-8. Deposit the Ethscription into the Hunt vault.
-9. Confirm the deposit and publish the Finding.
+If a target's raw bytes are known, the official API can quickly test known complete data-URI hashes. It cannot search by Ethscribe's wrapper-independent `rawSha256`; that requires the historical decoded-byte index. If target bytes are unknown, automatic matching begins only after a researcher submits candidate bytes in a Finding.
 
 ### Review flow
 
@@ -403,19 +417,24 @@ The official API's `content_sha` hashes the complete Data URI and cannot answer 
 
 ### Marketplace contract boundary
 
-The site is designed now around a small later contract, tentatively `HuntHouse`, with these responsibilities:
+The working contract name is `EthscribeMarketV1`. Its behavioral starting point is the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, bids, and 5% fee ceiling.
 
-- Register a Hunt and its timing
-- Accept and return Ethscriptions
-- Accept the curator's signed eligibility root
-- Accept bids on eligible Findings
-- Refund losing bids
-- Transfer the winning Ethscription
-- Split the 5% fee
-- Settle permissionlessly
-- Activate the next queued Hunt
+Ethscribe changes the boundary in several ways:
 
-Research data, comments, source URLs, ranking, and presentation remain off-chain and signed.
+- The vault remains unaware of Expeditions and targets.
+- Target assignments and Dossiers remain signed off-chain.
+- The interface reconciles every potential deposit against official indexer ownership.
+- Contract wallets are supported rather than excluded with `tx.origin`.
+- Seller proceeds and refunds use pull payments.
+- Pausing never disables ordinary artifact or ETH withdrawals.
+- Curated settlement anchors an opaque `contextHash` and frozen fee terms.
+- Pre-escrow standing bids are supported through buyer-finalized two-phase settlement.
+
+The contract accepts and returns Ethscriptions, creates and cancels listings, holds bids, refunds or accrues balances, emits ESIP-2 transfers, applies a fee no greater than 5%, and settles authorized Accession sales. It does not decide historical eligibility or activate Expedition records itself. The application observes settlement events and advances the prepared queue.
+
+A bid may exist before escrow, keyed by Ethscription ID and optionally a target owner. Because Solidity cannot read Ethscriptions ownership, the seller cannot unilaterally release those funds. The owner signals acceptance and deposits; after indexer confirmation and cooldown, the bidder finalizes. Automatic owner-only acceptance would require a trusted ownership attestation and is deferred.
+
+The detailed state model, invariants, attack analysis, and delivery sequence live in the public Docs under `Ownership and marketplace`.
 
 ## Delivery plan
 
@@ -462,7 +481,7 @@ Research data, comments, source URLs, ranking, and presentation remain off-chain
 
 ### Phase 4 — marketplace completion
 
-- Specify `HuntHouse` invariants and withdrawal behavior
+- Freeze `EthscribeMarketV1` invariants, bid states, and withdrawal behavior
 - Implement comprehensive contract tests
 - Obtain independent contract review
 - Deploy with conservative value limits
@@ -507,7 +526,7 @@ Add only when Accession value makes coordinated attacks economically rational:
 ### Vn — autonomous daily institution
 
 - One new multi-day Hunt opens each day
-- Settlement automatically activates the next community-selected Hunt
+- A settlement event automatically triggers activation of the next community-selected Hunt
 - Monthly Seasons create coherent exhibitions
 - Fees sustain Hunt authors, researchers, challengers, and operations
 - Multiple frontends and redundant dossier storage

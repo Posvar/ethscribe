@@ -59,7 +59,7 @@ Wallet-signed contribution history can be measured first. Nontransferable reputa
 
 Automation still needs initial inventory. The founder should prepare a queue of several well-researched expeditions before the first live auction. Each queued expedition includes a tested rubric, source pack, curator commitment, and timing parameters.
 
-Settlement can then activate the next prepared entry. Community proposals replenish the queue, while curation prevents it from becoming an unbounded upload feed.
+A settlement event can then trigger application automation to activate the next prepared entry. Community proposals replenish the queue, while curation prevents it from becoming an unbounded upload feed.
 
 ## Economic health metrics
 

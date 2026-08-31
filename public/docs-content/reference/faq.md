@@ -20,6 +20,12 @@ The protocol identifies the complete data URI. The same decoded bytes can potent
 
 No. The official API's content hash identifies complete protocol content. Ethscribe separately decodes supported content and hashes the artifact bytes.
 
+## Can Ethscribe recognize a matching artifact created outside the site?
+
+Yes. For a known complete data URI, the official API can find its `content_sha` immediately. Finding the same decoded bytes under every possible wrapper requires Ethscribe's raw-byte index. The artifact can be recognized and assigned to a target whether or not it was created through the site or deposited in the market contract.
+
+For a lost target, there is no expected byte hash to query. Someone must first submit candidate bytes and a provenance case as a Finding.
+
 ## Is Ethscribe's “earliest” claim complete today?
 
 Not until the protocol-wide raw-byte backfill covers all relevant creation paths and accepted ESIPs. The current interface can state whether a match is in the curated collection. Stronger chronology language is deliberately gated on index coverage.
@@ -39,6 +45,14 @@ A token would encourage speculation and sybil behavior before contribution quali
 ## What do I own if I buy an Accession?
 
 You own the recognized Ethscription under the protocol's transfer rules. You do not automatically acquire copyright, trademark, authorship, exclusive access to the bytes, or a license to commercialize the historical work.
+
+## Does the marketplace contract need to know about expeditions?
+
+No. The proposed vault stores Ethscription IDs, depositors, listings, bids, and payment state. Wallet-signed records connect those assets to expedition targets and Dossiers. A curated settlement may anchor an opaque context hash without teaching the contract historical taxonomy.
+
+## Can someone bid before an Ethscription is escrowed?
+
+Yes, but the safe V1 flow is two-phase. The bidder funds a standing bid; the owner signals acceptance and deposits; the indexer confirms custody; then the bidder finalizes. Solidity cannot inspect Ethscriptions ownership directly, so allowing a claimed owner to release the funds alone would let a former owner fake a deposit and steal a stale bid.
 
 ## Can a lost file have an expected hash?
 

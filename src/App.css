@@ -3221,3 +3221,20 @@ footer > span {
     font-size: 14px;
   }
 }
+
+/* The permanent mission line is deliberately longer than expedition titles. */
+.mission-hero h1 {
+  font-size: clamp(64px, 6.4vw, 104px);
+}
+
+@media (max-width: 1080px) {
+  .mission-hero h1 {
+    font-size: clamp(58px, 7.2vw, 80px);
+  }
+}
+
+@media (max-width: 760px) {
+  .mission-hero h1 {
+    font-size: clamp(52px, 13vw, 70px);
+  }
+}

@@ -1,6 +1,6 @@
 # Ethscribe
 
-Ownable digital archaeology: a curated archive and future marketplace for historically significant, byte-perfect digital artifacts inscribed on Ethereum.
+Ownable digital archaeology: Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
 
 The first release is intentionally site-first. It establishes the brand, the Genesis Hunt, archival sourcing, wallet-based researcher identity, and honest pre-contract participation flows. Custody, listings, and settlement arrive with the marketplace-contract milestone described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
 

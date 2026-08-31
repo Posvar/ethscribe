@@ -25,6 +25,7 @@ export const docsSections = [
       { title: 'Expeditions', slug: 'product/expeditions', file: 'product/expeditions.md' },
       { title: 'Findings and dossiers', slug: 'product/findings-and-dossiers', file: 'product/findings-and-dossiers.md' },
       { title: 'Curation and trust', slug: 'product/curation-and-trust', file: 'product/curation-and-trust.md' },
+      { title: 'Ethscribe, deposit, and assign', slug: 'product/artifact-intake', file: 'product/artifact-intake.md' },
       { title: 'Ownership and marketplace', slug: 'product/ownership-and-marketplace', file: 'product/ownership-and-marketplace.md' },
       { title: 'Economics and flywheel', slug: 'product/economics-and-flywheel', file: 'product/economics-and-flywheel.md' },
     ],
@@ -33,14 +34,6 @@ export const docsSections = [
     title: 'Expedition 001',
     items: [
       { title: 'The Lost Pixels of Satoshi', slug: 'expedition-001/the-lost-pixels-of-satoshi', file: 'expedition-001/the-lost-pixels-of-satoshi.md' },
-    ],
-  },
-  {
-    title: 'System design',
-    items: [
-      { title: 'Architecture', slug: 'system/architecture', file: 'system/architecture.md' },
-      { title: 'Data integrity and signatures', slug: 'system/data-integrity', file: 'system/data-integrity.md' },
-      { title: 'Threat model', slug: 'system/threat-model', file: 'system/threat-model.md' },
     ],
   },
   {

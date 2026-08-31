@@ -1,6 +1,6 @@
 # Path to autonomy
 
-Ethscribe should run like a durable institution, but autonomous cadence must be earned. A contract can open the next expedition automatically; it cannot automatically create a worthy historical question, a defensible rubric, or expert judgment.
+Ethscribe should run like a durable institution, but autonomous cadence must be earned. A settlement event can trigger the next expedition automatically; it cannot create a worthy historical question, a defensible rubric, or expert judgment.
 
 ## The prepared queue
 
@@ -23,11 +23,11 @@ Community proposes
   -> researchers improve the brief
   -> curator marks it Ready
   -> current expedition settles or concludes
-  -> contract activates next queue entry
+  -> automation activates next queue entry
   -> author and next-expedition pools receive defined funding
 ```
 
-Before the marketplace exists, the same state transition is performed transparently by the application. After launch, settlement can trigger activation under frozen queue rules.
+Before the marketplace exists, the state transition is performed transparently by the application. After launch, an indexed settlement event can trigger activation under frozen queue rules; the market contract itself does not store expedition taxonomy.
 
 ## Roles that can decentralize separately
 

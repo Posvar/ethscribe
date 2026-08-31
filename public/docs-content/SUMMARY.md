@@ -19,18 +19,13 @@
 * [Expeditions](product/expeditions.md)
 * [Findings and dossiers](product/findings-and-dossiers.md)
 * [Curation and trust](product/curation-and-trust.md)
+* [Ethscribe, deposit, and assign](product/artifact-intake.md)
 * [Ownership and marketplace](product/ownership-and-marketplace.md)
 * [Economics and flywheel](product/economics-and-flywheel.md)
 
 ## Expedition 001
 
 * [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md)
-
-## System design
-
-* [Architecture](system/architecture.md)
-* [Data integrity and signatures](system/data-integrity.md)
-* [Threat model](system/threat-model.md)
 
 ## Roadmap
 

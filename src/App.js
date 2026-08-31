@@ -185,8 +185,8 @@ function HomePage({ account, walletState, connectWallet, openParticipation }) {
         <section className="hero mission-hero">
           <div className="hero-copy">
             <p className="kicker"><span /> Ownable digital archaeology</p>
-            <h1>Recover digital history. Prove the exact bytes.</h1>
-            <p className="hero-intro">Ethscribe is a public fieldwork platform for finding, authenticating, preserving, and collecting culturally significant digital artifacts—from pre-internet software to the open web and onchain culture.</p>
+            <h1>Find the bytes. Establish the provenance. Own the artifact.</h1>
+            <p className="hero-intro">Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.</p>
             <div className="hero-actions">
               <a className="primary-action" href="#mission">Explore the mission <ArrowIcon /></a>
               <a className="text-action" href={EXPEDITION_PATH}>Enter Expedition 001</a>

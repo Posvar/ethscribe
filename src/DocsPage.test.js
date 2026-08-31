@@ -25,6 +25,7 @@ test('renders the Git-backed documentation with active navigation and parsed con
   expect(await screen.findByRole('heading', { name: 'Welcome to Ethscribe' })).toBeInTheDocument();
   expect(screen.getByText('public field guide')).toBeInTheDocument();
   expect(screen.getByRole('table')).toHaveTextContent('SHA-256');
+  expect(screen.queryByText('System design')).not.toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledWith('/docs-content/README.md', expect.objectContaining({ signal: expect.anything() }));
 });
 

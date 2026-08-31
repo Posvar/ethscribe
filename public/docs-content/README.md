@@ -1,12 +1,12 @@
 # Welcome to Ethscribe
 
-Ethscribe is a public fieldwork platform for recovering, authenticating, preserving, and collecting culturally significant digital artifacts.
+Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
 
 Its category is **ownable digital archaeology**.
 
 An Ethscribe expedition begins with a bounded historical question: which exact file mattered, where did it come from, and do its original bytes still survive? Researchers locate candidates, assemble evidence, and ethscribe exact payloads on Ethereum. Accepted artifacts enter a permanent public catalogue with an auditable provenance record and a transferable owner.
 
-> Find the bytes. Prove the history. Own the artifact.
+> Find the bytes. Establish the provenance. Own the artifact.
 
 ## The problem
 
@@ -53,5 +53,7 @@ Early historical eligibility is decided by a named curator applying a published 
 - Start with [Why Ethscribe exists](overview/why-ethscribe.md).
 - Understand the technical distinction in [Byte-perfect identity](foundations/byte-perfect-identity.md).
 - See the product loop in [Expeditions](product/expeditions.md).
+- Follow the three submission paths in [Ethscribe, deposit, and assign](product/artifact-intake.md).
+- Review the proposed contract in [Ownership and marketplace](product/ownership-and-marketplace.md).
 - Review the rollout in [Phased development](roadmap/phased-development.md).
 - Enter the live first hunt in [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md).

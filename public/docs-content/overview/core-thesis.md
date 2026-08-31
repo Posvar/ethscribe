@@ -60,7 +60,7 @@ The long-term goal is an institution whose ordinary cadence no longer requires i
 - Community proposals replenish the expedition queue.
 - Researchers and challengers improve evidence.
 - Curators rotate by domain.
-- Settlement activates the next expedition.
+- A settlement event triggers activation of the next expedition.
 - Fees fund contributors and operations.
 
 Autonomy is an outcome of a working flywheel, not a launch-day aesthetic.

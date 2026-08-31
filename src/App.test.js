@@ -11,7 +11,7 @@ afterEach(() => {
 
 test('renders a broad mission homepage with the first expedition separated', () => {
   render(<App />);
-  expect(screen.getByRole('heading', { name: /recover digital history/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /find the bytes.*establish the provenance/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /living museum built through public hunts/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /lost pixels of satoshi/i })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /open the expedition/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');

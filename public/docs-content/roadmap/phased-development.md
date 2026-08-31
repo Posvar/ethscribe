@@ -54,7 +54,7 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 
 **Outcome:** trusted eligibility connects to trustless custody and settlement.
 
-- Specify HuntHouse invariants and withdrawal behavior.
+- Freeze `EthscribeMarketV1` invariants, bid states, and withdrawal behavior.
 - Build comprehensive contract and integration tests.
 - Obtain independent contract review.
 - Deploy with conservative value limits.
@@ -97,7 +97,7 @@ Introduced only when value at risk attracts serious coordinated attacks:
 
 ## Vn — autonomous institution
 
-The mature system can open one new multi-day expedition each day while Seasons create larger exhibitions. Settlement activates a community-sourced queue, fees sustain contributors and operations, storage has redundant readers, and ordinary operation no longer requires the founder.
+The mature system can open one new multi-day expedition each day while Seasons create larger exhibitions. Settlement events advance a community-sourced queue, fees sustain contributors and operations, storage has redundant readers, and ordinary operation no longer requires the founder.
 
 Autonomy is achieved when stopping founder proposals and routine reviews does not stop cadence, quality, safety, or revenue.
 
