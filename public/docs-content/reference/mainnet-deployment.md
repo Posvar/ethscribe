@@ -36,11 +36,13 @@ There were no assets, listings, offers, or claimable balances at deployment. Unp
 
 ## Gates before unpause
 
-1. Integrate the deployed address into the first-party wallet and marketplace interface.
-2. Reconcile every potential deposit against the official Ethscriptions indexer.
-3. Complete integration tests against the deployed address.
+1. **Read integration complete:** expose the deployed address, paused state, fixed parameters, directly owned Ethscriptions, and potential custody positions in the first-party wallet view.
+2. **Read reconciliation complete:** label custody verified only when official-indexer ownership, previous owner, active contract deposit state, indexer health, and the five-block cooldown all agree.
+3. Add transactional controls and complete integration tests against the deployed address.
 4. Obtain an independent contract security review and resolve or explicitly accept findings.
 5. Publish the low-value launch procedure and recovery guidance.
 6. Reconfirm owner, fee recipient, bytecode, and paused state immediately before a separate unpause transaction.
+
+The live reader fails closed: an unavailable or lagging indexer, ownership mismatch, inactive contract record, unreadable contract state, or incomplete cooldown never receives a verified-custody label. No deposit, listing, offer, purchase, or withdrawal control is exposed while the release remains paused.
 
 Mainnet presence should not be interpreted as an audit, endorsement, or invitation to send Ethscriptions directly to the contract.

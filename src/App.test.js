@@ -83,7 +83,7 @@ test('expands secured and open artifact records directly in the timeline', async
 
   fireEvent.click(screen.getByRole('button', { name: /^xpm bitcoin\.xpm$/i }));
   expect(screen.getByText('bfc746462cabcd70c1f9fa909065bdd1b2fb4e73f5904de38c7c8c8326bb34b4')).toBeInTheDocument();
-  expect(screen.getByText(/contract pending/i)).toBeInTheDocument();
+  expect(screen.getByText(/contract deployed · writes paused/i)).toBeInTheDocument();
 });
 
 test('explains when a browser wallet is unavailable', () => {

@@ -2,6 +2,21 @@
   command = "npm run build"
   publish = "build"
 
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/market/status"
+  to = "/.netlify/functions/market-status"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/market/wallet"
+  to = "/.netlify/functions/market-wallet"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/api/ethscriptions/:id"
   to = "https://api.ethscriptions.com/v2/ethscriptions/:id"

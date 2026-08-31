@@ -40,7 +40,7 @@ No one layer substitutes for the others.
 
 ## Current status
 
-The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. The immutable marketplace is deployed to Ethereum mainnet, source-verified, and paused. It is not independently audited or open for valuable custody; signed submission persistence, first-party indexer reconciliation, interface integration, and review remain required before unpause.
+The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. The immutable marketplace is deployed to Ethereum mainnet, source-verified, and paused. A read-only wallet view now exposes live contract status, directly owned Ethscriptions, and fail-closed custody reconciliation against the official indexer. It is not independently audited or open for valuable custody; signed submission persistence, transaction controls, full integration testing, and review remain required before unpause.
 
 The current trust model is straightforward:
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import DocsPage from './DocsPage';
+import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, huntStats, lostArtifact, timelineEvents } from './huntData';
 
@@ -47,8 +48,8 @@ function walletLabel(account, walletState) {
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, connectWallet, expedition = false, docs = false }) {
-  const awayFromHome = expedition || docs;
+function SiteHeader({ account, walletState, connectWallet, expedition = false, docs = false, wallet = false }) {
+  const awayFromHome = expedition || docs || wallet;
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -79,10 +80,17 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, d
           <a href={awayFromHome ? '/#propose' : '#propose'}>Propose</a>
           <a className={docs ? 'nav-active' : ''} href="/docs" aria-current={docs ? 'page' : undefined}>Docs</a>
         </nav>
-        <button className="wallet-button desktop-wallet" type="button" onClick={connectWallet}>
-          <WalletIcon />
-          {walletLabel(account, walletState)}
-        </button>
+        {account ? (
+          <a className={`wallet-button desktop-wallet${wallet ? ' wallet-active' : ''}`} href="/wallet" aria-current={wallet ? 'page' : undefined}>
+            <WalletIcon />
+            {walletLabel(account, walletState)}
+          </a>
+        ) : (
+          <button className="wallet-button desktop-wallet" type="button" onClick={connectWallet}>
+            <WalletIcon />
+            {walletLabel(account, walletState)}
+          </button>
+        )}
         <button
           className="mobile-menu-toggle"
           type="button"
@@ -95,11 +103,19 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, d
         </button>
         {menuOpen && (
           <nav className="mobile-menu" id="mobile-navigation" aria-label="Mobile navigation">
-            <button className="mobile-wallet-action" type="button" onClick={connectFromMenu}>
-              <WalletIcon />
-              <span>{walletLabel(account, walletState)}</span>
-              <ArrowIcon />
-            </button>
+            {account ? (
+              <a className={`mobile-wallet-action${wallet ? ' nav-active' : ''}`} href="/wallet" onClick={closeMenu}>
+                <WalletIcon />
+                <span>{walletLabel(account, walletState)}</span>
+                <ArrowIcon />
+              </a>
+            ) : (
+              <button className="mobile-wallet-action" type="button" onClick={connectFromMenu}>
+                <WalletIcon />
+                <span>{walletLabel(account, walletState)}</span>
+                <ArrowIcon />
+              </button>
+            )}
             <a href={awayFromHome ? '/#mission' : '#mission'} onClick={closeMenu}>Mission</a>
             <a href={awayFromHome ? '/#method' : '#method'} onClick={closeMenu}>Method</a>
             <a className={expedition ? 'nav-active' : ''} href={awayFromHome ? '/#expeditions' : '#expeditions'} onClick={closeMenu}>Expeditions</a>
@@ -276,8 +292,8 @@ function ArtifactDetail({ artifact, onDocumentRecovery }) {
         {artifact.status === 'open' && (
           <div className="contract-placeholder">
             <span>ETHSCRIBE + SUBMIT</span>
-            <p>This is where the wallet transaction and expedition submission flow will appear when the marketplace contract is ready.</p>
-            <strong>CONTRACT PENDING</strong>
+            <p>The immutable V1 contract is deployed and source-verified on Ethereum mainnet. Submission stays unavailable while the contract is deliberately paused and the transaction experience is completed.</p>
+            <strong>CONTRACT DEPLOYED · WRITES PAUSED</strong>
           </div>
         )}
 
@@ -470,7 +486,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
               <div className="progress-fraction"><strong>{huntStats.secured}</strong><span>/ {huntStats.known}</span></div>
               <p className="progress-label">known byte-perfect files secured in this collection</p>
               <div className="progress-track" aria-label={`${huntStats.secured} of ${huntStats.known} artifacts secured`}><span style={{ width: `${(huntStats.secured / huntStats.known) * 100}%` }} /></div>
-              <p className="progress-sync-note">CURATED MANIFEST TODAY · CONTRACT-INDEXED WHEN THE MARKETPLACE LAUNCHES</p>
+              <p className="progress-sync-note">CURATED MANIFEST TODAY · DEPLOYED MARKET READS LIVE · WRITES PAUSED</p>
               <dl className="progress-breakdown">
                 <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured}</dd></div><div><dt>NEEDS ETHSCRIBING</dt><dd>{huntStats.open}</dd></div>
                 <div><dt>BYTES UNKNOWN</dt><dd>{huntStats.lost}</dd></div><div><dt>MAPPED COMPONENTS</dt><dd>{huntStats.components}</dd></div>
@@ -565,28 +581,38 @@ function SiteFooter({ expedition = false }) {
 
 function App() {
   const [account, setAccount] = useState('');
+  const [chainId, setChainId] = useState('');
   const [walletState, setWalletState] = useState('idle');
   const [modal, setModal] = useState(null);
   const [savedMessage, setSavedMessage] = useState('');
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const isExpedition = pathname === EXPEDITION_PATH;
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
+  const isWallet = pathname === '/wallet';
 
   useEffect(() => {
     if (isDocs) return;
-    document.title = isExpedition
-      ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
-      : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition]);
+    document.title = isWallet
+      ? 'Wallet — Ethscribe'
+      : isExpedition
+        ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
+        : 'Ethscribe — Ownable Digital Archaeology';
+  }, [isDocs, isExpedition, isWallet]);
 
   useEffect(() => {
     const ethereum = window.ethereum;
     if (!ethereum) return undefined;
 
     ethereum.request({ method: 'eth_accounts' }).then((accounts) => setAccount(accounts?.[0] || '')).catch(() => {});
+    ethereum.request({ method: 'eth_chainId' }).then(setChainId).catch(() => {});
     const handleAccountsChanged = (accounts) => setAccount(accounts?.[0] || '');
+    const handleChainChanged = (nextChainId) => setChainId(nextChainId || '');
     ethereum.on?.('accountsChanged', handleAccountsChanged);
-    return () => ethereum.removeListener?.('accountsChanged', handleAccountsChanged);
+    ethereum.on?.('chainChanged', handleChainChanged);
+    return () => {
+      ethereum.removeListener?.('accountsChanged', handleAccountsChanged);
+      ethereum.removeListener?.('chainChanged', handleChainChanged);
+    };
   }, []);
 
   const connectWallet = async () => {
@@ -600,12 +626,30 @@ function App() {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const nextAccount = accounts?.[0] || '';
       setAccount(nextAccount);
+      window.ethereum.request({ method: 'eth_chainId' }).then(setChainId).catch(() => {});
       setWalletState('idle');
       return nextAccount;
     } catch (error) {
       setWalletState('idle');
       if (error?.code !== 4001) setModal('wallet-error');
       return '';
+    }
+  };
+
+  const switchToMainnet = async () => {
+    if (!window.ethereum) {
+      setModal('wallet');
+      return;
+    }
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x1' }],
+      });
+      setChainId('0x1');
+    } catch (error) {
+      if (error?.code !== 4001) setModal('network-error');
     }
   };
 
@@ -635,12 +679,22 @@ function App() {
   };
 
   const pageProps = { account, walletState, connectWallet, openParticipation };
+  const headerProps = { account, walletState, connectWallet };
 
   return (
     <>
       {isDocs
         ? <DocsPage header={<SiteHeader {...pageProps} docs />} footer={<SiteFooter />} />
-        : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
+        : isWallet
+          ? <WalletPage
+              account={account}
+              chainId={chainId}
+              connectWallet={connectWallet}
+              switchToMainnet={switchToMainnet}
+              header={<SiteHeader {...headerProps} wallet />}
+              footer={<SiteFooter />}
+            />
+          : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
       {modal && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setModal(null)}>
           <section className="participation-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -648,6 +702,7 @@ function App() {
 
             {modal === 'wallet' && <><p className="kicker"><span /> Wallet required</p><h2 id="modal-title">Bring an Ethereum wallet.</h2><p>Ethscribe uses a wallet as your researcher identity. Install a browser wallet, then return to connect—no funds or signatures are requested by this preview.</p><a className="primary-action" href="https://ethereum.org/en/wallets/find-wallet/" target="_blank" rel="noreferrer">Find a wallet <ArrowIcon /></a></>}
             {modal === 'wallet-error' && <><p className="kicker"><span /> Connection error</p><h2 id="modal-title">The wallet did not connect.</h2><p>Check that your wallet is unlocked and connected to this browser, then try again.</p><button className="primary-action" type="button" onClick={connectWallet}>Try again <ArrowIcon /></button></>}
+            {modal === 'network-error' && <><p className="kicker"><span /> Network change failed</p><h2 id="modal-title">Ethereum mainnet was not selected.</h2><p>The wallet view remains read-only, but marketplace transactions will require Ethereum mainnet. Switch networks in your wallet and try again.</p><button className="primary-action" type="button" onClick={switchToMainnet}>Try again <ArrowIcon /></button></>}
 
             {modal === 'finding' && (
               <><p className="kicker"><span /> Pre-contract recovery notebook</p><h2 id="modal-title">Document a possible recovery.</h2>
@@ -673,7 +728,7 @@ function App() {
             )}
 
             {savedMessage && <p className="saved-message" role="status">{savedMessage}</p>}
-            {account && modal !== 'wallet' && modal !== 'wallet-error' && <p className="connected-as">RESEARCHER {shortAddress(account)}</p>}
+            {account && modal !== 'wallet' && modal !== 'wallet-error' && modal !== 'network-error' && <p className="connected-as">RESEARCHER {shortAddress(account)}</p>}
           </section>
         </div>
       )}

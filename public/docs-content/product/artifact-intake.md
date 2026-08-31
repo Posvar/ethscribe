@@ -80,6 +80,12 @@ The wallet dashboard combines three sources:
 
 Only positions where the indexer confirms contract custody and the previous owner matches the depositor receive `Escrow verified`. Potential or invalid deposits stay visible as diagnostic records but cannot be presented as saleable inventory.
 
+### Current read-only release
+
+The live `/wallet` route implements the safe inspection subset of this design. It reads fixed market state from Ethereum mainnet, lists directly owned Ethscriptions from the official API, and checks each custody candidate against both sources. The reader also requires a healthy indexer and the five-block transfer cooldown before displaying verified custody. It deliberately exposes no deposit, listing, offer, purchase, or withdrawal transaction while the market is paused.
+
+This release does not yet include signed target assignments, decoded-byte indexing, or write controls. Those omissions are visible product states, not inferred from an empty custody list.
+
 ## Withdrawal guarantee
 
 The depositor can withdraw an uncommitted artifact without curator permission. Withdrawal cancels its listing and safely releases or cancels associated market state. An artifact may be temporarily locked only during a narrowly defined settlement transition that already has a funded counterparty and an expiry.
