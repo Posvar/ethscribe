@@ -5,6 +5,7 @@ import {
   buildDepositTransaction,
   friendlyTransactionError,
   hasDepositSelectorCollision,
+  sendTransactionDirect,
   simulateAndSendTransaction,
   waitForTransactionReceipt,
 } from './marketTransactions';
@@ -261,11 +262,11 @@ export default function EthscribeWorkbench({
     const creator = account;
     setConfirmation('');
     setPhase('creating');
-    setMessage('Simulating the exact creation transaction before opening the wallet.');
+    setMessage('Opening the exact creation transaction in your wallet.');
 
     try {
       const request = buildCreateEthscriptionTransaction(creator, inspection.dataUri);
-      const hash = await simulateAndSendTransaction(provider, request);
+      const hash = await sendTransactionDirect(provider, request);
       setTransactionHash(hash);
       setPhase('indexing');
       setMessage('Ethereum received the transaction. Waiting for its receipt and official Ethscription recognition.');
@@ -560,7 +561,7 @@ export default function EthscribeWorkbench({
                 ? 'I reviewed the exact file hash, full Data URI prefix, recipient, and understand that a competing transaction can still win before mine is indexed.'
                 : 'I reviewed the exact Ethscription ID and market destination and understand that this transfers custody.'}</span>
             </label>
-            <button type="button" className="primary-action" disabled={!confirmed} onClick={confirmation === 'create' ? createEthscription : depositEthscription}>Simulate + open wallet <ArrowIcon /></button>
+            <button type="button" className="primary-action" disabled={!confirmed} onClick={confirmation === 'create' ? createEthscription : depositEthscription}>{confirmation === 'create' ? 'Open wallet' : 'Simulate + open wallet'} <ArrowIcon /></button>
           </section>
         </div>
       )}

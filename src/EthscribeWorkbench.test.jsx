@@ -41,7 +41,7 @@ test('reduces successful target validation to one ready checkpoint with optional
   const provider = {
     request: jest.fn(async ({ method }) => {
       if (method === 'eth_chainId') return '0x1';
-      if (method === 'eth_estimateGas') throw new Error('External transactions to internal accounts cannot include data');
+      if (method === 'eth_sendTransaction') throw Object.assign(new Error('User rejected the request'), { code: 4001 });
       throw new Error(`Unexpected wallet method: ${method}`);
     }),
   };
@@ -67,9 +67,11 @@ test('reduces successful target validation to one ready checkpoint with optional
 
   fireEvent.click(screen.getByRole('button', { name: /1 of 2 · ethscribe to my wallet/i }));
   fireEvent.click(screen.getByRole('checkbox'));
-  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^open wallet/i }));
 
-  expect(await screen.findByText(/preserving your wallet as creator/i)).toBeInTheDocument();
+  expect(await screen.findByText(/transaction was cancelled in the wallet/i)).toBeInTheDocument();
+  expect(provider.request).toHaveBeenCalledTimes(2);
+  expect(provider.request.mock.calls.map(([request]) => request.method)).toEqual(['eth_chainId', 'eth_sendTransaction']);
   expect(screen.getByText('READY TO ETHSCRIBE')).toBeInTheDocument();
   expect(screen.queryByText('CHECK INCOMPLETE')).not.toBeInTheDocument();
 });

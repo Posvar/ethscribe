@@ -5,6 +5,7 @@ import {
   friendlyTransactionError,
   hasDepositSelectorCollision,
   reconciliationTimedOut,
+  sendTransactionDirect,
   simulateAndSendTransaction,
   waitForTransactionReceipt,
 } from './marketTransactions';
@@ -55,6 +56,23 @@ test('simulates on mainnet before asking the wallet to send', async () => {
   expect(calls.map(({ method }) => method)).toEqual(['eth_chainId', 'eth_estimateGas', 'eth_sendTransaction']);
   expect(calls[1].params[0]).toEqual(transaction);
   expect(calls[2].params[0]).toEqual(transaction);
+});
+
+test('sends Ethscription creation without making optional gas estimation a gate', async () => {
+  const calls = [];
+  const transaction = { from: account, to: account, value: '0x0', data: '0x1234' };
+  const provider = {
+    request: jest.fn(({ method, params }) => {
+      calls.push({ method, params });
+      if (method === 'eth_chainId') return Promise.resolve('0x1');
+      if (method === 'eth_sendTransaction') return Promise.resolve(`0x${'56'.repeat(32)}`);
+      return Promise.reject(new Error('unexpected method'));
+    }),
+  };
+
+  await expect(sendTransactionDirect(provider, transaction)).resolves.toBe(`0x${'56'.repeat(32)}`);
+  expect(calls.map(({ method }) => method)).toEqual(['eth_chainId', 'eth_sendTransaction']);
+  expect(calls[1].params[0]).toEqual(transaction);
 });
 
 test('waits for a successful receipt and explains common wallet failures', async () => {

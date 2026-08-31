@@ -80,19 +80,36 @@ function requireProvider(provider) {
   }
 }
 
-export async function simulateAndSendTransaction(provider, transaction) {
+async function requireMainnet(provider) {
   requireProvider(provider);
   const chainId = await provider.request({ method: 'eth_chainId' });
   if (String(chainId).toLowerCase() !== MAINNET_CHAIN_ID) {
     throw new Error('Switch the wallet to Ethereum mainnet before continuing.');
   }
+}
 
-  await provider.request({ method: 'eth_estimateGas', params: [transaction] });
-  const transactionHash = await provider.request({ method: 'eth_sendTransaction', params: [transaction] });
+function requireTransactionHash(transactionHash) {
   if (!/^0x[a-fA-F0-9]{64}$/.test(transactionHash || '')) {
     throw new Error('The wallet did not return a valid transaction hash.');
   }
   return transactionHash;
+}
+
+// Ethscription creation is an intentionally unusual EOA-to-itself calldata
+// transaction. The official creation UI treats gas estimation as optional cost
+// information and does not block the wallet request when estimation fails.
+export async function sendTransactionDirect(provider, transaction) {
+  await requireMainnet(provider);
+  const transactionHash = await provider.request({ method: 'eth_sendTransaction', params: [transaction] });
+  return requireTransactionHash(transactionHash);
+}
+
+export async function simulateAndSendTransaction(provider, transaction) {
+  await requireMainnet(provider);
+
+  await provider.request({ method: 'eth_estimateGas', params: [transaction] });
+  const transactionHash = await provider.request({ method: 'eth_sendTransaction', params: [transaction] });
+  return requireTransactionHash(transactionHash);
 }
 
 function wait(milliseconds) {
