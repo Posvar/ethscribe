@@ -9,6 +9,11 @@ const commits = {
   versionThree: 'd77eac25b2ecd8e6ff5619cfa57d0ebc0682ed09',
 };
 
+const founderOwnership = {
+  creator: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37',
+  currentOwner: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37',
+};
+
 const xpmArtifact = ({ id, date, release, filename, dimensions, bytes, sha256, keccak256, commit, note }) => ({
   id,
   date,
@@ -39,6 +44,7 @@ export const artifacts = [
     keccak256: '151de5b1b8bdf8c2f55bb1c2964234fd3577fb986262422fa51f2be8f04882e7',
     format: 'ICO',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'A',
     sourceLabel: 'Bitcoin v0.1.0 release archive',
     sourceUrl: 'https://satoshi.nakamotoinstitute.org/code/',
@@ -109,6 +115,7 @@ export const artifacts = [
     keccak256: 'e9013c996b5b93a67948ee9125b371fb1f60e02cbb92bbc391d4d37234e44701',
     format: 'PNG',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'B',
     sourceLabel: 'Archived bitcoin.org download',
     sourceUrl: 'https://web.archive.org/web/20101222204928id_/http://www.bitcoin.org/download/bitcoin16.4.png',
@@ -131,6 +138,7 @@ export const artifacts = [
     keccak256: '66a825c8c805b8a159d8a1fbc2afdbbe7d49070f798130c76d8b5cbd36000985',
     format: 'PNG',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'B',
     sourceLabel: 'Archived bitcoin.org download',
     sourceUrl: 'https://web.archive.org/web/20101222205043id_/http://www.bitcoin.org/download/bitcoin20.4.png',
@@ -153,6 +161,7 @@ export const artifacts = [
     keccak256: '9c9765dbfe125adece8bfa4ff4a8843f314648b126df0346068e1d383e05858c',
     format: 'PNG',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'B',
     sourceLabel: 'Archived bitcoin.org download',
     sourceUrl: 'https://web.archive.org/web/20101222205146id_/http://www.bitcoin.org/download/bitcoin32.5.png',
@@ -175,6 +184,7 @@ export const artifacts = [
     keccak256: 'b1a62fe1d55bd5b9f598d83d6beee76391864d41ab4da6b45a322c86bd9ffcf6',
     format: 'PNG',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'B',
     sourceLabel: 'Archived bitcoin.org download',
     sourceUrl: 'https://web.archive.org/web/20101222205116id_/http://www.bitcoin.org/download/bitcoin48.5.png',
@@ -214,6 +224,7 @@ export const artifacts = [
     keccak256: 'c7e2340e6767a965a71567b0130fb1e78e19217ce99627c3cc377d3be29edb14',
     format: 'ICO',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'A',
     sourceLabel: 'Bitcoin source v0.2.13',
     sourceUrl: rawGit(commits.juneRelease, 'rc/bitcoin.ico'),
@@ -236,6 +247,7 @@ export const artifacts = [
     keccak256: 'f6e52214c206c9b007177b804bb561818fa3dfb31a652d5884d1d00563276234',
     format: 'ICO',
     status: 'secured',
+    ...founderOwnership,
     evidence: 'A',
     sourceLabel: 'Bitcoin source v0.2.13',
     sourceUrl: rawGit(commits.juneRelease, 'rc/favicon.ico'),

@@ -66,7 +66,7 @@ The wallet experience queries the official API by `current_owner` and shows Eths
 2. Select one or more owned assets.
 3. Transfer them to the vault, using ESIP-5 bulk transfer where appropriate.
 4. Wait for indexer reconciliation and the contract cooldown.
-5. Keep them unassigned, attach them to targets, list them, or respond to standing bids.
+5. Keep them unassigned, attach them to targets, list them, or accept bids after escrow is verified.
 
 This mirrors the useful ittybits custody experience while adding byte identity and expedition assignment above it.
 

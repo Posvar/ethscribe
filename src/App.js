@@ -37,8 +37,36 @@ function formatBytes(bytes) {
   return bytes ? `${bytes.toLocaleString('en-US')} bytes` : 'Unknown';
 }
 
+function isSmallArtifact(artifact) {
+  const dimensions = artifact.dimensions?.match(/\d+/g)?.map(Number) || [];
+  return dimensions.length > 0 && Math.max(...dimensions.slice(0, 2)) <= 80;
+}
+
+function walletLabel(account, walletState) {
+  if (account) return shortAddress(account);
+  return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
+}
+
 function SiteHeader({ account, walletState, connectWallet, expedition = false, docs = false }) {
   const awayFromHome = expedition || docs;
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
+  const connectFromMenu = async () => {
+    closeMenu();
+    await connectWallet();
+  };
 
   return (
     <div className="header-stack">
@@ -51,10 +79,34 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, d
           <a href={awayFromHome ? '/#propose' : '#propose'}>Propose</a>
           <a className={docs ? 'nav-active' : ''} href="/docs" aria-current={docs ? 'page' : undefined}>Docs</a>
         </nav>
-        <button className="wallet-button" type="button" onClick={connectWallet}>
+        <button className="wallet-button desktop-wallet" type="button" onClick={connectWallet}>
           <WalletIcon />
-          {account ? shortAddress(account) : walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet'}
+          {walletLabel(account, walletState)}
         </button>
+        <button
+          className="mobile-menu-toggle"
+          type="button"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => setMenuOpen((isOpen) => !isOpen)}
+        >
+          <span /><span /><span />
+        </button>
+        {menuOpen && (
+          <nav className="mobile-menu" id="mobile-navigation" aria-label="Mobile navigation">
+            <button className="mobile-wallet-action" type="button" onClick={connectFromMenu}>
+              <WalletIcon />
+              <span>{walletLabel(account, walletState)}</span>
+              <ArrowIcon />
+            </button>
+            <a href={awayFromHome ? '/#mission' : '#mission'} onClick={closeMenu}>Mission</a>
+            <a href={awayFromHome ? '/#method' : '#method'} onClick={closeMenu}>Method</a>
+            <a className={expedition ? 'nav-active' : ''} href={awayFromHome ? '/#expeditions' : '#expeditions'} onClick={closeMenu}>Expeditions</a>
+            <a href={awayFromHome ? '/#propose' : '#propose'} onClick={closeMenu}>Propose</a>
+            <a className={docs ? 'nav-active' : ''} href="/docs" onClick={closeMenu}>Docs</a>
+          </nav>
+        )}
       </header>
       {expedition && (
         <nav className="expedition-context-bar" aria-label="Current expedition">
@@ -81,9 +133,9 @@ function ArtifactPreview({ artifact, className = '' }) {
   return <div className={`file-preview ${className}`}><img src={artifact.previewUrl} alt={`${artifact.filename} historical artifact`} /></div>;
 }
 
-function HashFact({ label, value, unknown = 'Unknown until the original bytes are recovered' }) {
+function RecordFact({ label, value, unknown = 'Unknown until the original bytes are recovered', className = '' }) {
   return (
-    <div className="hash-fact">
+    <div className={`record-fact ${className}`}>
       <dt>{label}</dt>
       <dd className={!value ? 'unknown-hash' : ''}>{value || unknown}</dd>
     </div>
@@ -91,16 +143,54 @@ function HashFact({ label, value, unknown = 'Unknown until the original bytes ar
 }
 
 function ArtifactDetail({ artifact, onDocumentRecovery }) {
+  const [chainRecord, setChainRecord] = useState(null);
+  const [recordState, setRecordState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
   const statusCopy = {
     secured: 'ETHSCRIBED · VERIFIED MATCH',
     open: 'KNOWN BYTES · NEEDS ETHSCRIBING',
     lost: 'ORIGINAL BYTES UNKNOWN',
   };
+  const creator = chainRecord?.creator || artifact.creator;
+  const currentOwner = chainRecord?.current_owner || artifact.currentOwner;
+
+  useEffect(() => {
+    let active = true;
+
+    if (!artifact.ethscriptionId || typeof fetch !== 'function') {
+      setChainRecord(null);
+      setRecordState(artifact.ethscriptionId ? 'fallback' : 'idle');
+      return () => { active = false; };
+    }
+
+    setChainRecord(null);
+    setRecordState('loading');
+    fetch(`/api/ethscriptions/${artifact.ethscriptionId}`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Ethscriptions API returned ${response.status}`);
+        return response.json();
+      })
+      .then((payload) => {
+        if (!active) return;
+        setChainRecord(payload.result || payload);
+        setRecordState('live');
+      })
+      .catch(() => {
+        if (active) setRecordState('fallback');
+      });
+
+    return () => { active = false; };
+  }, [artifact.ethscriptionId]);
 
   return (
     <article className={`artifact-detail detail-${artifact.status}`} aria-live="polite">
       <div className="artifact-detail-visual">
         <ArtifactPreview artifact={artifact} />
+        {artifact.status !== 'lost' && (
+          <p className="display-scale-note">
+            {isSmallArtifact(artifact) ? 'PREVIEW ENLARGED WITH NEAREST-NEIGHBOR SCALING' : 'PREVIEW SCALED FOR INSPECTION'}<br />
+            NATIVE {artifact.dimensions}
+          </p>
+        )}
         <span className="evidence-grade">EVIDENCE {artifact.evidence}</span>
       </div>
       <div className="artifact-detail-copy">
@@ -117,17 +207,67 @@ function ArtifactDetail({ artifact, onDocumentRecovery }) {
           </div>
         )}
 
-        <dl className="artifact-facts">
-          <div><dt>FORMAT</dt><dd>{artifact.format}</dd></div>
-          <div><dt>DIMENSIONS</dt><dd>{artifact.dimensions}</dd></div>
-          <div><dt>RAW SIZE</dt><dd>{formatBytes(artifact.bytes)}</dd></div>
-          <HashFact label="RAW FILE SHA-256" value={artifact.sha256} />
-          <HashFact label="RAW FILE KECCAK-256" value={artifact.keccak256} />
-          <div><dt>COLLECTION STATUS</dt><dd>{artifact.ethscriptionNumber ? `Ethscription #${artifact.ethscriptionNumber}` : 'Not yet in this collection'}</dd></div>
-          {artifact.contentSha && <HashFact label="DATA URI CONTENT_SHA" value={artifact.contentSha} />}
-          {artifact.ethscribedAt && <div><dt>ETHSCRIBED</dt><dd>{artifact.ethscribedAt}</dd></div>}
-          {artifact.blockNumber && <div><dt>ETHEREUM BLOCK</dt><dd>{artifact.blockNumber}</dd></div>}
-        </dl>
+        <div className="artifact-record-sections">
+          <section className="artifact-record-section">
+            <h4><span>01</span> File information</h4>
+            <dl className="artifact-record-grid compact-record-grid">
+              <RecordFact label="FORMAT" value={artifact.format} />
+              <RecordFact label="NATIVE DIMENSIONS" value={artifact.dimensions} />
+              <RecordFact label="RAW FILE SIZE" value={formatBytes(artifact.bytes)} />
+            </dl>
+          </section>
+
+          <section className="artifact-record-section">
+            <h4><span>02</span> Hashing</h4>
+            <dl className="artifact-record-grid">
+              <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
+            </dl>
+            <p className="record-section-note">This is the canonical Ethscribe artifact identity. It compares the decoded file bytes independently of MIME type or Data URI wrapper.</p>
+          </section>
+
+          <section className="artifact-record-section">
+            <h4><span>03</span> Ethscription transaction</h4>
+            {artifact.ethscriptionId ? (
+              <dl className="artifact-record-grid">
+                <div className="record-fact record-fact-wide">
+                  <dt>ETHSCRIPTION ID / CREATION TRANSACTION</dt>
+                  <dd className="linked-record-value">
+                    <a href={`https://etherscan.io/tx/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">{artifact.ethscriptionId}</a>
+                    <span><a href={`https://ethscriptions.com/ethscriptions/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">View Ethscription <ArrowIcon /></a></span>
+                  </dd>
+                </div>
+                <RecordFact label="ETHSCRIBED" value={artifact.ethscribedAt} />
+                <RecordFact label="PROTOCOL CONTENT SHA-256 (FULL DATA URI)" value={artifact.contentSha} className="record-fact-wide" />
+              </dl>
+            ) : (
+              <p className="empty-record">No accepted Ethscription is attached to this artifact target yet.</p>
+            )}
+            {artifact.contentSha && <p className="record-section-note">The protocol content hash identifies the complete UTF-8 Data URI. It is distinct from the decoded-file hash above.</p>}
+          </section>
+
+          <section className="artifact-record-section">
+            <h4><span>04</span> Ownership</h4>
+            {artifact.ethscriptionId ? (
+              <>
+                <dl className="artifact-record-grid ownership-grid">
+                  <div className="record-fact">
+                    <dt>CREATOR / ETHSCRIBING WALLET</dt>
+                    <dd>{creator ? <a href={`https://etherscan.io/address/${creator}`} target="_blank" rel="noreferrer">{creator}</a> : 'Checking official indexer…'}</dd>
+                  </div>
+                  <div className="record-fact">
+                    <dt>CURRENT OWNER</dt>
+                    <dd>{currentOwner ? <a href={`https://etherscan.io/address/${currentOwner}`} target="_blank" rel="noreferrer">{currentOwner}</a> : 'Checking official indexer…'}</dd>
+                  </div>
+                </dl>
+                <p className={`ownership-source ownership-${recordState}`}>
+                  {recordState === 'live' ? 'LIVE OWNERSHIP · OFFICIAL ETHSCRIPTIONS INDEXER' : recordState === 'loading' ? 'CHECKING CURRENT OWNERSHIP…' : 'RECORDED OWNERSHIP · LIVE CHECK TEMPORARILY UNAVAILABLE'}
+                </p>
+              </>
+            ) : (
+              <p className="empty-record">Ownership begins when a matching file is Ethscribed and accepted into the expedition record.</p>
+            )}
+          </section>
+        </div>
 
         {artifact.format === 'XPM' && artifact.status !== 'lost' && (
           <div className="artifact-prefix"><span>RECOMMENDED DATA URI</span><code>data:image/x-xpixmap;base64,&lt;exact XPM bytes&gt;</code></div>
@@ -143,9 +283,6 @@ function ArtifactDetail({ artifact, onDocumentRecovery }) {
 
         <div className="artifact-links">
           <a href={artifact.sourceUrl} target="_blank" rel="noreferrer">Inspect primary source <ArrowIcon /></a>
-          {artifact.ethscriptionId && (
-            <a href={`https://ethscriptions.com/ethscriptions/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">View Ethscription <ArrowIcon /></a>
-          )}
           {artifact.status === 'lost' && (
             <button type="button" onClick={onDocumentRecovery}>Document a possible recovery <ArrowIcon /></button>
           )}
@@ -257,10 +394,32 @@ function HomePage({ account, walletState, connectWallet, openParticipation }) {
 }
 
 function ExpeditionPage({ account, walletState, connectWallet, openParticipation }) {
-  const [selectedArtifactId, setSelectedArtifactId] = useState(lostArtifact.id);
+  const requestedArtifactId = new URLSearchParams(window.location.search).get('artifact');
+  const [selectedArtifactId, setSelectedArtifactId] = useState(
+    artifactById(requestedArtifactId) ? requestedArtifactId : lostArtifact.id,
+  );
+
+  useEffect(() => {
+    if (!artifactById(requestedArtifactId)) return undefined;
+
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById(`record-${requestedArtifactId}`)?.scrollIntoView?.({ block: 'start' });
+    }, 0);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [requestedArtifactId]);
 
   const selectArtifact = (artifactId) => {
-    setSelectedArtifactId((current) => current === artifactId ? null : artifactId);
+    setSelectedArtifactId((current) => {
+      const nextArtifactId = current === artifactId ? null : artifactId;
+      const nextUrl = new URL(window.location.href);
+
+      if (nextArtifactId) nextUrl.searchParams.set('artifact', nextArtifactId);
+      else nextUrl.searchParams.delete('artifact');
+      window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+
+      return nextArtifactId;
+    });
   };
 
   return (
@@ -398,7 +557,7 @@ function ExpeditionPage({ account, walletState, connectWallet, openParticipation
 function SiteFooter({ expedition = false }) {
   return (
     <footer>
-      <img src="/ethscribe-icon.svg" alt="Ethscribe" /><p>Recover the artifact. Prove the bytes. Own the history.</p>
+      <img src="/ethscribe-icon.svg" alt="Ethscribe" /><p>Find the bytes. Establish the provenance. Own the artifact.</p>
       <div><a href="/">Mission</a><a href={expedition ? '#timeline' : EXPEDITION_PATH}>Expedition 001</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
     </footer>
   );

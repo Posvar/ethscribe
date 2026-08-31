@@ -389,6 +389,10 @@
   margin-top: 0;
 }
 
+.timeline-expanded {
+  scroll-margin-top: 135px;
+}
+
 .state-lost {
   background: white;
   color: var(--ink);
@@ -730,6 +734,11 @@ footer img {
   stroke: currentColor;
   stroke-width: 1.5;
   width: 18px;
+}
+
+.mobile-menu-toggle,
+.mobile-menu {
+  display: none;
 }
 
 .hero {
@@ -1982,6 +1991,8 @@ footer > span {
   background-image: linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
   background-size: 22px 22px;
   display: flex;
+  flex-direction: column;
+  gap: 24px;
   justify-content: center;
   min-height: 430px;
   padding: 50px;
@@ -2013,6 +2024,23 @@ footer > span {
   max-height: 270px;
   max-width: 90%;
   object-fit: contain;
+}
+
+.artifact-detail-visual .file-preview img {
+  height: auto;
+  width: min(82%, 270px);
+}
+
+.display-scale-note {
+  color: #aaa8a0;
+  font-family: "Courier New", monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.65;
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .xpm-preview {
@@ -2137,6 +2165,152 @@ footer > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.artifact-record-sections {
+  border: 1px solid var(--line);
+}
+
+.artifact-record-section + .artifact-record-section {
+  border-top: 1px solid var(--line);
+}
+
+.artifact-record-section > h4 {
+  align-items: center;
+  background: #ece7dc;
+  display: flex;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 400;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+}
+
+.artifact-record-section > h4 span {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.artifact-record-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.compact-record-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.record-fact {
+  border-right: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  min-width: 0;
+  padding: 16px;
+}
+
+.record-fact:nth-child(2n),
+.compact-record-grid .record-fact:last-child {
+  border-right: 0;
+}
+
+.compact-record-grid .record-fact:nth-child(2) {
+  border-right: 1px solid var(--line);
+}
+
+.record-fact-wide {
+  border-right: 0;
+  grid-column: 1 / -1;
+}
+
+.record-fact dt {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
+}
+
+.record-fact dd {
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  line-height: 1.55;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.record-fact a {
+  text-decoration-color: #918f87;
+  text-underline-offset: 3px;
+}
+
+.linked-record-value {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.linked-record-value > a {
+  overflow-wrap: anywhere;
+}
+
+.linked-record-value span a {
+  align-items: center;
+  display: inline-flex;
+  font-size: 8px;
+  font-weight: 700;
+  gap: 5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.linked-record-value svg {
+  fill: none;
+  height: 12px;
+  stroke: currentColor;
+  width: 12px;
+}
+
+.record-section-note,
+.empty-record {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+  padding: 13px 16px 15px;
+}
+
+.empty-record {
+  color: #69675f;
+  font-style: italic;
+}
+
+.ownership-source {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+  padding: 11px 16px;
+}
+
+.ownership-live::before {
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  content: "";
+  display: inline-block;
+  height: 6px;
+  margin-right: 8px;
+  width: 6px;
 }
 
 .artifact-prefix {
@@ -2383,6 +2557,101 @@ footer > span {
     display: none;
   }
 
+  .desktop-wallet {
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    align-items: center;
+    background: transparent;
+    border: 1px solid #55544f;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+    width: 44px;
+  }
+
+  .mobile-menu-toggle span {
+    background: white;
+    display: block;
+    height: 1px;
+    transition: transform 160ms ease, opacity 160ms ease;
+    width: 19px;
+  }
+
+  .mobile-menu-toggle[aria-expanded="true"] span:first-child {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .mobile-menu-toggle[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-menu-toggle[aria-expanded="true"] span:last-child {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .mobile-menu {
+    background: var(--ink);
+    border-top: 1px solid #383834;
+    box-shadow: 0 18px 28px rgba(0, 0, 0, 0.28);
+    display: flex;
+    flex-direction: column;
+    left: 0;
+    padding: 18px 4.5vw 25px;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 30;
+  }
+
+  .mobile-menu > a {
+    border-bottom: 1px solid #3c3b37;
+    color: white;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 17px 3px;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .mobile-menu > a.nav-active {
+    color: var(--signal);
+  }
+
+  .mobile-wallet-action {
+    align-items: center;
+    background: var(--signal);
+    border: 0;
+    color: var(--ink);
+    cursor: pointer;
+    display: grid;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 10px;
+    grid-template-columns: auto 1fr auto;
+    letter-spacing: 0.06em;
+    margin-bottom: 9px;
+    min-height: 50px;
+    padding: 0 15px;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .mobile-wallet-action svg {
+    fill: none;
+    height: 17px;
+    stroke: currentColor;
+    width: 17px;
+  }
+
   .hero {
     grid-template-columns: 1fr 0.8fr;
   }
@@ -2462,14 +2731,13 @@ footer > span {
     font-size: 15px;
   }
 
-  .wallet-button {
-    font-size: 9px;
-    min-height: 37px;
-    padding: 0 12px;
+  .mobile-menu-toggle {
+    height: 38px;
+    width: 42px;
   }
 
-  .wallet-button svg {
-    display: none;
+  .mobile-menu {
+    padding: 14px 20px 22px;
   }
 
   .hero {
@@ -2625,6 +2893,20 @@ footer > span {
 
   .artifact-facts {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .artifact-record-grid,
+  .compact-record-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .record-fact,
+  .compact-record-grid .record-fact:nth-child(2) {
+    border-right: 0;
+  }
+
+  .record-fact-wide {
+    grid-column: auto;
   }
 
   .artifact-links {

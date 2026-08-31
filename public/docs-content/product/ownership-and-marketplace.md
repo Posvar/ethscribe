@@ -85,7 +85,7 @@ The working name is `EthscribeMarketV1`. It combines a minimal ESIP-2 vault with
 - Create and cancel fixed-price listings.
 - Buy a verified escrow position.
 - Place, replace, expire, and withdraw funded bids.
-- Support bids placed before escrow under the safe two-phase model below.
+- Use seller-scoped funded bids; the first-party interface enables them only after official-indexer reconciliation confirms escrow.
 - Accrue seller proceeds and refunds as pull payments.
 - Apply a fee no greater than 5%.
 - Commit an optional curated-sale `contextHash`.
@@ -123,7 +123,7 @@ Bid
   bidId
   bidder
   ethscriptionId
-  targetOwner
+  seller
   amount
   expiry
   state
@@ -182,40 +182,33 @@ verified escrow
 
 Checks-effects-interactions ordering and pull payments prevent external recipients from interrupting the state transition.
 
-## Bidding on an artifact before escrow
+## V1 bidding: escrow first
 
-It is technically possible to hold a bid against a known `ethscriptionId` before the contract owns it. The ittybits implementation does **not** currently do this: its `_enterBidForIttybit` rejects the bid unless its potential-deposit mapping already contains the targeted seller and ID.
+The first-party V1 interface accepts a funded bid only after the official API confirms that the marketplace contract is the Ethscription's `current_owner` and the recorded seller is its `previous_owner`. The contract cannot perform that API check; every bid therefore names the seller and Ethscription ID explicitly, and direct callers are responsible for the same verification. This follows the useful boundary in ittybits and keeps every financial settlement inside one understandable state machine:
 
-The difficulty is settlement, not bid storage. Ethereum contracts cannot query who currently owns an Ethscription. If a contract paid whenever the targeted address merely submitted the ID as calldata, a former owner could fake a deposit after transferring the real artifact away. The outgoing ESIP-2 event would be ignored by indexers, but the ETH payment would already have occurred inside the EVM.
+```text
+owner deposits
+  -> official API confirms escrow
+  -> bidder funds an offer
+  -> seller accepts or bidder withdraws
+  -> payment accrues and artifact transfers
+```
 
-### Recommended V1: buyer-finalized standing bid
+A recognized artifact that is not escrowed may still show a nonbinding **Register interest** action. That can collect a wallet signature or notification preference off-chain, but it does not lock ETH, advertise an executable bid, or imply that the current owner has agreed to sell.
 
-Ethscribe can safely support the desired experience with two-phase completion:
+### Why funded pre-escrow bids are deferred
 
-1. A bidder funds a standing bid for `(ethscriptionId, targetOwner, expiry)`.
-2. The bid appears on the recognized artifact page even though the asset is not escrowed.
-3. The target owner signals acceptance and transfers the Ethscription to the vault.
-4. The site waits for indexer confirmation that the contract is current owner and the target owner is previous owner.
-5. After the cooldown, the bidder finalizes settlement.
-6. The contract accrues payment and emits the ESIP-2 transfer to the bidder.
+Storing a bid against any known `ethscriptionId` is easy. Settling it safely is not. Solidity cannot query current Ethscriptions ownership. A former owner can submit convincing-looking deposit calldata after transferring the real artifact away; the protocol indexer would ignore the invalid outgoing transfer, but an incautious contract could already have released the buyer's ETH.
 
-The seller cannot unilaterally release the bid funds. The bidder's final transaction is the onchain confirmation that the verified deposit exists. If the bidder does not finalize before the acceptance window expires, the seller can withdraw the artifact and the bidder can recover the ETH.
+A buyer-finalized, two-phase flow can avoid that theft: the owner deposits, the app confirms custody through the official API, and the bidder later finalizes. It is technically viable, but it adds acceptance windows, cancellation rules, stale-owner handling, bidder liveness, and additional reconciliation states. That is too much surface area for the first marketplace release.
 
-This adds one interaction but requires no ownership oracle and prevents a stale owner from stealing a standing bid.
+### Does this require a separate indexer?
 
-### Later alternative: attested automatic settlement
+No separately operated marketplace indexer is required for the escrow-first V1. The app can read contract events and query the official Ethscriptions API before displaying `Escrow verified`. It must handle API delay or downtime conservatively, but it does not need to reconstruct the full protocol itself.
 
-A trusted indexer signer or decentralized oracle could attest that the contract owns the asset and identify its valid previous owner. Anyone could then finalize using that EIP-712 attestation. This gives the seller the one-sided “deposit and accept” experience, but it moves a trust assumption into financial settlement and is therefore deferred.
+The future wrapper-independent raw-byte index is a different concern. Ethscribe eventually needs that archaeology index to determine the earliest decoded-byte match across MIME types and Data URI wrappers. Pre-escrow bidding neither creates nor removes that requirement.
 
-### Open bids without a target owner
-
-An open artifact bid can target only `ethscriptionId`, allowing whichever verified owner escrows it to respond. It uses the same buyer-finalized flow. The interface must distinguish:
-
-- **Owner-targeted bid** — intended for the currently indexed owner;
-- **Open artifact bid** — intended for any future verified depositor; and
-- **Escrow bid** — the artifact is already verified in the vault.
-
-Every bid has an expiry and immediate bidder withdrawal while it is not in an accepted settlement window.
+A later release can revisit funded pre-escrow bids if demonstrated demand justifies the extra state machine. An ownership attestation or buyer-finalized settlement must be explicit before that design handles value.
 
 ## Curated Accession sales
 
@@ -274,7 +267,7 @@ If a proxy is retained, its admin, implementation, delay, and upgrade history mu
 6. Settlement clears market state before accruing payment and emitting transfer.
 7. Fee basis points never exceed the immutable ceiling.
 8. Curator authority cannot move artifacts or funds.
-9. A pre-escrow seller cannot release bid funds without bidder finalization or a separately disclosed ownership attestation.
+9. A bid names its intended seller and Ethscription ID explicitly; the contract never substitutes an ownership claim for the bidder.
 10. Invalid potential deposits never appear as verified inventory in the first-party interface.
 
 ## Test plan before deployment
@@ -283,7 +276,7 @@ If a proxy is retained, its admin, implementation, delay, and upgrade history mu
 - Fuzz tests for balance conservation and state exclusivity.
 - Invariant tests across batch operations and replacement bids.
 - Adversarial tests with fake deposits from many claimed owners.
-- Former-owner attacks against pre-escrow bids.
+- Former-owner and fake-deposit attacks against escrow verification.
 - Reentrancy and reverting-recipient tests.
 - Pause, expiry, and emergency-withdrawal tests.
 - ESIP-2 event-order and five-block cooldown integration tests.
@@ -296,9 +289,9 @@ If a proxy is retained, its admin, implementation, delay, and upgrade history mu
 2. Build an executable Foundry specification around the invariants.
 3. Implement the ESIP-2 vault and wallet inventory first.
 4. Add fixed-price listings and escrow-only bids.
-5. Add buyer-finalized pre-escrow standing bids.
-6. Integrate signed `contextHash` authorizations for Accessions.
-7. Run fork tests against the ittybits behavioral reference.
-8. Obtain independent review and deploy with conservative limits.
+5. Integrate signed `contextHash` authorizations for Accessions.
+6. Run fork tests against the ittybits behavioral reference.
+7. Obtain independent review and deploy with conservative limits.
+8. Reconsider funded pre-escrow bids only after the core market has real demand.
 
-The contract is ready for implementation only after the pre-escrow state transitions, expiry behavior, fee authorization, and upgrade posture are frozen in tests.
+The contract is ready for implementation only after escrow verification, bid expiry, fee authorization, and upgrade posture are frozen in tests.

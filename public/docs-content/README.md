@@ -40,7 +40,7 @@ No one layer substitutes for the others.
 
 ## Current status
 
-The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, and collection status are available now. The signed submission backend and marketplace contract are intentionally phased later, after the research workflow has been tested in public.
+The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. The signed submission backend and marketplace contract are intentionally phased later, after the research workflow has been tested in public.
 
 The current trust model is straightforward:
 

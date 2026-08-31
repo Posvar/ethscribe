@@ -85,3 +85,12 @@ An accepted result is an Ethscribe Accession, not a declaration of copyright or 
 - [Ethscriptions protocol specification](https://docs.ethscriptions.com/overview/protocol-specification)
 
 The timeline is a living research interface. Its per-artifact records are the authoritative place for expected hashes, Ethscription links, source locations, and unresolved questions.
+
+Each expanded record separates four kinds of information:
+
+1. **File information** — format, native dimensions, and byte length.
+2. **Hashing** — the canonical SHA-256 of the decoded raw file.
+3. **Ethscription transaction** — creation transaction ID, timestamp, protocol content hash, and explorer links.
+4. **Ownership** — creator and current owner, refreshed from the official Ethscriptions API when the record opens.
+
+Tiny raster assets are enlarged with nearest-neighbor scaling for inspection. Their native dimensions remain labeled, and the scaled preview never substitutes for the historical file.

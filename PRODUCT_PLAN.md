@@ -428,11 +428,13 @@ Ethscribe changes the boundary in several ways:
 - Seller proceeds and refunds use pull payments.
 - Pausing never disables ordinary artifact or ETH withdrawals.
 - Curated settlement anchors an opaque `contextHash` and frozen fee terms.
-- Pre-escrow standing bids are supported through buyer-finalized two-phase settlement.
+- Funded V1 bids are available only after official-indexer reconciliation confirms escrow.
 
 The contract accepts and returns Ethscriptions, creates and cancels listings, holds bids, refunds or accrues balances, emits ESIP-2 transfers, applies a fee no greater than 5%, and settles authorized Accession sales. It does not decide historical eligibility or activate Expedition records itself. The application observes settlement events and advances the prepared queue.
 
-A bid may exist before escrow, keyed by Ethscription ID and optionally a target owner. Because Solidity cannot read Ethscriptions ownership, the seller cannot unilaterally release those funds. The owner signals acceptance and deposits; after indexer confirmation and cooldown, the bidder finalizes. Automatic owner-only acceptance would require a trusted ownership attestation and is deferred.
+Recognized artifacts that are not escrowed may collect nonbinding, wallet-signed interest, but V1 does not lock funds against them. Because Solidity cannot read Ethscriptions ownership, funded pre-escrow bidding would require buyer-finalized settlement or a disclosed ownership attestation, plus additional cancellation and stale-owner states. It is deferred until real usage justifies that complexity.
+
+The escrow-first marketplace does not require Ethscribe to operate a separate protocol indexer. The app can read contract events and reconcile custody through the official Ethscriptions API, failing closed when that API is delayed or unavailable. Ethscribe's future wrapper-independent raw-byte index remains a separate archaeology requirement; marketplace bidding neither creates nor removes it.
 
 The detailed state model, invariants, attack analysis, and delivery sequence live in the public Docs under `Ownership and marketplace`.
 

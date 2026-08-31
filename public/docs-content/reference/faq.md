@@ -52,7 +52,11 @@ No. The proposed vault stores Ethscription IDs, depositors, listings, bids, and 
 
 ## Can someone bid before an Ethscription is escrowed?
 
-Yes, but the safe V1 flow is two-phase. The bidder funds a standing bid; the owner signals acceptance and deposits; the indexer confirms custody; then the bidder finalizes. Solidity cannot inspect Ethscriptions ownership directly, so allowing a claimed owner to release the funds alone would let a former owner fake a deposit and steal a stale bid.
+Not with funds in V1. A recognized, non-escrowed artifact may collect a nonbinding interest signal, but executable offers begin only after the official API confirms contract custody. Funded pre-escrow bids are technically possible with a two-phase flow, but Solidity cannot inspect Ethscriptions ownership directly and the added stale-owner, cancellation, and bidder-finalization states are deferred until demand justifies them.
+
+## Does the marketplace require a separate indexer?
+
+Not for escrow-first V1. The app reads market contract events and uses the official Ethscriptions API to reconcile `current_owner` and `previous_owner` before showing verified custody. Ethscribe's future decoded-byte index is still needed for wrapper-independent archaeological claims, but that is separate from bidding and settlement.
 
 ## Can a lost file have an expected hash?
 
