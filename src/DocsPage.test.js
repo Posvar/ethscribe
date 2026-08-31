@@ -4,6 +4,18 @@ import App from './App';
 jest.mock('./XpmPreview', () => function MockXpmPreview() {
   return <div data-testid="xpm-preview" />;
 });
+jest.mock('./useEthscribeWallet', () => ({
+  useEthscribeWallet: () => ({
+    account: '',
+    chainId: '',
+    walletState: 'idle',
+    walletName: '',
+    provider: null,
+    connectWallet: jest.fn(),
+    switchToMainnet: jest.fn(),
+    openAccountModal: jest.fn(),
+  }),
+}));
 const originalFetch = global.fetch;
 
 afterEach(() => {

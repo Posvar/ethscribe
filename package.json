@@ -2,19 +2,23 @@
   "name": "ethscribe",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
+    "@rainbow-me/rainbowkit": "^2.2.11",
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@tanstack/react-query": "^5.100.10",
     "ethers": "^6.17.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
+    "viem": "^2.49.0",
+    "wagmi": "^2.19.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "vite",
+    "build": "vite build",
     "test": "react-scripts test",
     "test:functions": "node --test netlify/lib/*.test.cjs",
     "eject": "react-scripts eject"
@@ -36,5 +40,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "react-scripts": "5.0.1",
+    "vite": "^8.2.2"
   }
 }

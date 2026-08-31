@@ -1,21 +1,36 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from './App';
+import { useEthscribeWallet } from './useEthscribeWallet';
 
 jest.mock('./XpmPreview', () => function MockXpmPreview() {
   return <div data-testid="xpm-preview" />;
 });
+jest.mock('./useEthscribeWallet', () => ({ useEthscribeWallet: jest.fn() }));
 
 const originalFetch = global.fetch;
-const originalEthereum = window.ethereum;
+const connectWallet = jest.fn();
+const switchToMainnet = jest.fn();
+const openAccountModal = jest.fn();
 
 beforeEach(() => {
   global.fetch = jest.fn().mockRejectedValue(new Error('offline test'));
+  connectWallet.mockReset();
+  switchToMainnet.mockReset();
+  openAccountModal.mockReset();
+  useEthscribeWallet.mockReturnValue({
+    account: '',
+    chainId: '',
+    walletState: 'idle',
+    walletName: '',
+    provider: null,
+    connectWallet,
+    switchToMainnet,
+    openAccountModal,
+  });
 });
 
 afterEach(() => {
   global.fetch = originalFetch;
-  if (originalEthereum) window.ethereum = originalEthereum;
-  else delete window.ethereum;
   window.history.pushState({}, '', '/');
 });
 
@@ -130,16 +145,22 @@ test('renders a compact newest-first Expeditions archive with a dedicated propos
 
 test('publishes a wallet-signed expedition proposal inline and clears the form', async () => {
   const account = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
-  window.ethereum = {
+  const provider = {
     request: jest.fn(async ({ method }) => {
-      if (method === 'eth_accounts' || method === 'eth_requestAccounts') return [account];
-      if (method === 'eth_chainId') return '0x1';
       if (method === 'personal_sign') return `0x${'12'.repeat(65)}`;
       throw new Error(`Unexpected wallet method: ${method}`);
     }),
-    on: jest.fn(),
-    removeListener: jest.fn(),
   };
+  useEthscribeWallet.mockReturnValue({
+    account,
+    chainId: '0x1',
+    walletState: 'idle',
+    walletName: 'MetaMask',
+    provider,
+    connectWallet,
+    switchToMainnet,
+    openAccountModal,
+  });
   global.fetch = jest.fn(async (url, options = {}) => {
     if (url === '/api/proposals' && options.method === 'POST') {
       const { proposal } = JSON.parse(options.body);
@@ -167,8 +188,8 @@ test('publishes a wallet-signed expedition proposal inline and clears the form',
   expect(screen.getByLabelText(/expedition title/i)).toHaveValue('');
 });
 
-test('explains when a browser wallet is unavailable', () => {
+test('opens the RainbowKit wallet chooser when connection is requested', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: /connect wallet/i }));
-  expect(screen.getByRole('heading', { name: /bring an ethereum wallet/i })).toBeInTheDocument();
+  expect(connectWallet).toHaveBeenCalledTimes(1);
 });

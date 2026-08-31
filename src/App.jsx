@@ -11,6 +11,7 @@ import {
   publishExpeditionProposal,
   signExpeditionProposal,
 } from './proposalApi';
+import { useEthscribeWallet } from './useEthscribeWallet';
 
 const EXPEDITION_PATH = '/expeditions/lost-pixels-of-satoshi';
 const referenceImage = artifactById('new-png-48').previewUrl;
@@ -49,12 +50,12 @@ function isSmallArtifact(artifact) {
   return dimensions.length > 0 && Math.max(...dimensions.slice(0, 2)) <= 80;
 }
 
-function walletLabel(account, walletState) {
-  if (account) return shortAddress(account);
+function walletLabel(account, walletState, walletName) {
+  if (account) return walletName ? `${walletName} · ${shortAddress(account)}` : shortAddress(account);
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, connectWallet, expedition = false, expeditions = false, docs = false, wallet = false, ethscribe = false }) {
+function SiteHeader({ account, walletState, walletName, connectWallet, expedition = false, expeditions = false, docs = false, wallet = false, ethscribe = false }) {
   const awayFromHome = expedition || expeditions || docs || wallet || ethscribe;
   const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -89,12 +90,12 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, e
         {account ? (
           <a className={`wallet-button desktop-wallet${wallet ? ' wallet-active' : ''}`} href="/wallet" aria-current={wallet ? 'page' : undefined}>
             <WalletIcon />
-            {walletLabel(account, walletState)}
+            {walletLabel(account, walletState, walletName)}
           </a>
         ) : (
           <button className="wallet-button desktop-wallet" type="button" onClick={connectWallet}>
             <WalletIcon />
-            {walletLabel(account, walletState)}
+            {walletLabel(account, walletState, walletName)}
           </button>
         )}
         <button
@@ -112,13 +113,13 @@ function SiteHeader({ account, walletState, connectWallet, expedition = false, e
             {account ? (
               <a className={`mobile-wallet-action${wallet ? ' nav-active' : ''}`} href="/wallet" onClick={closeMenu}>
                 <WalletIcon />
-                <span>{walletLabel(account, walletState)}</span>
+                <span>{walletLabel(account, walletState, walletName)}</span>
                 <ArrowIcon />
               </a>
             ) : (
               <button className="mobile-wallet-action" type="button" onClick={connectFromMenu}>
                 <WalletIcon />
-                <span>{walletLabel(account, walletState)}</span>
+                <span>{walletLabel(account, walletState, walletName)}</span>
                 <ArrowIcon />
               </button>
             )}
@@ -359,10 +360,10 @@ function MethodSection() {
   );
 }
 
-function HomePage({ account, walletState, connectWallet }) {
+function HomePage({ account, walletState, walletName, connectWallet }) {
   return (
     <div className="site-shell home-page">
-      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} />
       <main id="top">
         <section className="hero mission-hero">
           <div className="hero-copy">
@@ -427,10 +428,10 @@ function HomePage({ account, walletState, connectWallet }) {
   );
 }
 
-function ExpeditionsPage({ account, walletState, connectWallet }) {
+function ExpeditionsPage({ account, walletState, walletName, connectWallet }) {
   return (
     <div className="site-shell expeditions-page">
-      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} expeditions />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expeditions />
       <main id="top">
         <section className="expeditions-index-hero">
           <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
@@ -481,7 +482,7 @@ function friendlyProposalError(error) {
   return error?.message || 'The proposal could not be published.';
 }
 
-function ProposeExpeditionPage({ account, walletState, connectWallet, provider }) {
+function ProposeExpeditionPage({ account, walletState, walletName, connectWallet, provider }) {
   const [proposals, setProposals] = useState([]);
   const [listState, setListState] = useState('loading');
   const [submitState, setSubmitState] = useState('idle');
@@ -530,7 +531,7 @@ function ProposeExpeditionPage({ account, walletState, connectWallet, provider }
 
   return (
     <div className="site-shell propose-expedition-page">
-      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} expeditions />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expeditions />
       <main id="top">
         <section className="proposal-page-hero">
           <div>
@@ -612,7 +613,7 @@ function ProposeExpeditionPage({ account, walletState, connectWallet, provider }
   );
 }
 
-function ExpeditionPage({ account, walletState, connectWallet, chainId, switchToMainnet, provider }) {
+function ExpeditionPage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider }) {
   const requestedArtifactId = new URLSearchParams(window.location.search).get('artifact');
   const [selectedArtifactId, setSelectedArtifactId] = useState(
     artifactById(requestedArtifactId) ? requestedArtifactId : lostArtifact.id,
@@ -643,7 +644,7 @@ function ExpeditionPage({ account, walletState, connectWallet, chainId, switchTo
 
   return (
     <div className="site-shell expedition-page">
-      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} expedition />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expedition />
       <main id="top">
         <section className="expedition-hero" id="expedition">
           <div className="expedition-hero-copy">
@@ -782,12 +783,12 @@ function ExpeditionPage({ account, walletState, connectWallet, chainId, switchTo
   );
 }
 
-function EthscribePage({ account, walletState, connectWallet, chainId, switchToMainnet, provider }) {
+function EthscribePage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider }) {
   const submissionTargets = [...artifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
 
   return (
     <div className="site-shell ethscribe-page">
-      <SiteHeader account={account} walletState={walletState} connectWallet={connectWallet} ethscribe />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} ethscribe />
       <main id="top">
         <section className="ethscribe-page-hero">
           <div>
@@ -821,9 +822,16 @@ function SiteFooter({ expedition = false }) {
 }
 
 function App() {
-  const [account, setAccount] = useState('');
-  const [chainId, setChainId] = useState('');
-  const [walletState, setWalletState] = useState('idle');
+  const walletSession = useEthscribeWallet();
+  const {
+    account,
+    chainId,
+    walletState,
+    walletName,
+    provider,
+    connectWallet,
+    openAccountModal,
+  } = walletSession;
   const [modal, setModal] = useState(null);
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const isExpedition = pathname === EXPEDITION_PATH;
@@ -848,55 +856,9 @@ function App() {
         : 'Ethscribe — Ownable Digital Archaeology';
   }, [isDocs, isEthscribe, isExpedition, isExpeditions, isProposal, isWallet]);
 
-  useEffect(() => {
-    const ethereum = window.ethereum;
-    if (!ethereum) return undefined;
-
-    ethereum.request({ method: 'eth_accounts' }).then((accounts) => setAccount(accounts?.[0] || '')).catch(() => {});
-    ethereum.request({ method: 'eth_chainId' }).then(setChainId).catch(() => {});
-    const handleAccountsChanged = (accounts) => setAccount(accounts?.[0] || '');
-    const handleChainChanged = (nextChainId) => setChainId(nextChainId || '');
-    ethereum.on?.('accountsChanged', handleAccountsChanged);
-    ethereum.on?.('chainChanged', handleChainChanged);
-    return () => {
-      ethereum.removeListener?.('accountsChanged', handleAccountsChanged);
-      ethereum.removeListener?.('chainChanged', handleChainChanged);
-    };
-  }, []);
-
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      setModal('wallet');
-      return '';
-    }
-
-    try {
-      setWalletState('connecting');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const nextAccount = accounts?.[0] || '';
-      setAccount(nextAccount);
-      window.ethereum.request({ method: 'eth_chainId' }).then(setChainId).catch(() => {});
-      setWalletState('idle');
-      return nextAccount;
-    } catch (error) {
-      setWalletState('idle');
-      if (error?.code !== 4001) setModal('wallet-error');
-      return '';
-    }
-  };
-
   const switchToMainnet = async () => {
-    if (!window.ethereum) {
-      setModal('wallet');
-      return;
-    }
-
     try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x1' }],
-      });
-      setChainId('0x1');
+      await walletSession.switchToMainnet();
     } catch (error) {
       if (error?.code !== 4001) setModal('network-error');
     }
@@ -905,12 +867,13 @@ function App() {
   const pageProps = {
     account,
     walletState,
+    walletName,
     connectWallet,
     chainId,
     switchToMainnet,
-    provider: window.ethereum,
+    provider,
   };
-  const headerProps = { account, walletState, connectWallet };
+  const headerProps = { account, walletState, walletName, connectWallet };
 
   return (
     <>
@@ -922,7 +885,9 @@ function App() {
               chainId={chainId}
               connectWallet={connectWallet}
               switchToMainnet={switchToMainnet}
-              provider={window.ethereum}
+              provider={provider}
+              walletName={walletName}
+              openAccountModal={openAccountModal}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />
@@ -938,8 +903,6 @@ function App() {
           <section className="participation-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" type="button" onClick={() => setModal(null)} aria-label="Close">×</button>
 
-            {modal === 'wallet' && <><p className="kicker"><span /> Wallet required</p><h2 id="modal-title">Bring an Ethereum wallet.</h2><p>Ethscribe uses a wallet as your researcher identity. Install a browser wallet, then return to connect—no funds or signatures are requested by this preview.</p><a className="primary-action" href="https://ethereum.org/en/wallets/find-wallet/" target="_blank" rel="noreferrer">Find a wallet <ArrowIcon /></a></>}
-            {modal === 'wallet-error' && <><p className="kicker"><span /> Connection error</p><h2 id="modal-title">The wallet did not connect.</h2><p>Check that your wallet is unlocked and connected to this browser, then try again.</p><button className="primary-action" type="button" onClick={connectWallet}>Try again <ArrowIcon /></button></>}
             {modal === 'network-error' && <><p className="kicker"><span /> Network change failed</p><h2 id="modal-title">Ethereum mainnet was not selected.</h2><p>The wallet view remains read-only, but marketplace transactions will require Ethereum mainnet. Switch networks in your wallet and try again.</p><button className="primary-action" type="button" onClick={switchToMainnet}>Try again <ArrowIcon /></button></>}
 
           </section>

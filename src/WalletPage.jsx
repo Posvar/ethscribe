@@ -97,6 +97,8 @@ export default function WalletPage({
   connectWallet,
   switchToMainnet,
   provider,
+  walletName,
+  openAccountModal,
   header,
   footer,
 }) {
@@ -302,8 +304,11 @@ export default function WalletPage({
           ) : (
             <>
               <div className="wallet-section-heading wallet-account-heading">
-                <div><p className="kicker"><span /> Connected researcher</p><h2>{shortAddress(account)}</h2><a href={`https://etherscan.io/address/${account}`} target="_blank" rel="noreferrer">View address on Etherscan</a></div>
-                {!onMainnet && <button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button>}
+                <div><p className="kicker"><span /> Connected with {walletName || 'Ethereum wallet'}</p><h2>{shortAddress(account)}</h2><a href={`https://etherscan.io/address/${account}`} target="_blank" rel="noreferrer">View address on Etherscan</a></div>
+                <div className="wallet-account-actions">
+                  {openAccountModal && <button className="wallet-manage" type="button" onClick={openAccountModal}>MANAGE WALLET</button>}
+                  {!onMainnet && <button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button>}
+                </div>
               </div>
 
               <TransactionStatus transaction={transaction} onDismiss={() => setTransaction(null)} />
