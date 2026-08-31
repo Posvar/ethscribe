@@ -4,7 +4,7 @@ Digital history is not decided by wallet count. V1 therefore uses a legible trus
 
 > Trusted curation, trustless ownership and settlement.
 
-Community work discovers, documents, corroborates, and challenges. A named curator wallet or Safe decides whether a Finding satisfies the frozen rubric. The later contract controls assets and funds without giving the curator unilateral custody.
+Community work discovers, documents, corroborates, and challenges. A named curator wallet or Safe decides whether a Finding satisfies the frozen rubric. The marketplace candidate controls assets and funds without giving the curator unilateral custody.
 
 ## Why votes cannot authenticate history
 

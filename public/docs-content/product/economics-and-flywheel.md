@@ -13,9 +13,11 @@ Good expedition idea
 
 The loop only works if the research is worth returning for even when no trade occurs.
 
-## Proposed V1 fee
+## V1 market fee
 
-The initial marketplace proposal uses one visible 5% fee:
+The immutable marketplace candidate uses one visible 5% fee. On every settlement, 95% becomes claimable by the seller and 5% becomes claimable by the fee recipient frozen into that listing or offer.
+
+At launch, the fee recipient should be an Ethscribe Safe. The following remains a conceptual treasury allocation rather than a split enforced by `EthscribeMarketV1`:
 
 | Recipient | Share of sale |
 |---|---:|
@@ -25,7 +27,7 @@ The initial marketplace proposal uses one visible 5% fee:
 | Expedition proposal author | 0.5% |
 | Research/community reserve | 0.5% |
 
-These percentages are proposed parameters, not a present promise. They become binding only when encoded in a published contract and frozen for an active auction.
+These internal percentages are proposed policy, not V1 settlement parameters. Once participation is understood, a separate public rewards distributor can receive fees from newly created market positions and make allocations auditable. Exact per-sale native splits would require a later market version.
 
 ## Incentives by role
 

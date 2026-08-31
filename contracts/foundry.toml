@@ -1,0 +1,29 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+cache_path = "cache"
+solc_version = "0.8.36"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 10_000
+bytecode_hash = "ipfs"
+cbor_metadata = true
+remappings = ["@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/"]
+allow_paths = ["node_modules"]
+
+[fuzz]
+runs = 1_024
+
+[invariant]
+runs = 256
+depth = 64
+fail_on_revert = false
+
+[profile.ci.fuzz]
+runs = 10_000
+
+[profile.ci.invariant]
+runs = 1_000
+depth = 128

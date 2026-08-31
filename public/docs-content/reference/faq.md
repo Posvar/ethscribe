@@ -48,7 +48,7 @@ You own the recognized Ethscription under the protocol's transfer rules. You do 
 
 ## Does the marketplace contract need to know about expeditions?
 
-No. The proposed vault stores Ethscription IDs, depositors, listings, bids, and payment state. Wallet-signed records connect those assets to expedition targets and Dossiers. A curated settlement may anchor an opaque context hash without teaching the contract historical taxonomy.
+No. The V1 candidate stores Ethscription IDs, depositors, listings, offers, and payment state. Wallet-signed records connect those assets to expedition targets and Dossiers. A sale may anchor an opaque context hash without teaching the contract historical taxonomy or making the hash itself proof of curatorial approval.
 
 ## Can someone bid before an Ethscription is escrowed?
 

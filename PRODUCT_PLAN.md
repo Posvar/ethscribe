@@ -2,8 +2,8 @@
 
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
-**Status:** Site-first MVP/V1 plan  
-**Updated:** August 30, 2026
+**Status:** Public site live; marketplace V1 pre-deployment candidate
+**Updated:** August 31, 2026
 
 ## Executive summary
 
@@ -13,9 +13,9 @@ The first version should be Web3-native without pretending to be trustless in th
 
 > **MVP/V1 trust model: trusted curation, trustless ownership and settlement.**
 
-Wallets identify participants. Ethscriptions contain the artifacts. Dossiers are off-chain but wallet-signed. Community activity surfaces evidence and finalists. A named curator wallet or Safe decides factual eligibility against a public rubric. Later, a small marketplace contract will enforce custody, bids, settlement, withdrawals, and fees.
+Wallets identify participants. Ethscriptions contain the artifacts. Dossiers are off-chain but wallet-signed. Community activity surfaces evidence and finalists. A named curator wallet or Safe decides factual eligibility against a public rubric. The immutable marketplace candidate enforces custody, offers, settlement, withdrawals, and fees without attempting to decide historical truth.
 
-The site will be built and deployed before the marketplace contract. This provides a real public product, lets the first hunts establish the interaction model, and prevents contract design from freezing assumptions that have not yet been tested.
+The site was built and deployed before the marketplace contract. The contract candidate now keeps the custody boundary small while application and incentive assumptions continue to develop outside it.
 
 ## Product promise
 
@@ -37,7 +37,7 @@ Ethscription uniqueness applies to the complete data URI. Ethscribe must separat
 2. **Evidence before popularity.** Votes surface work; they do not manufacture historical truth.
 3. **One clear object per hunt.** V1 produces at most one Accession, or `No Accession`.
 4. **Transparent centralization.** Early curator decisions are signed, explained, and public.
-5. **Trustless where money moves.** The later contract controls custody and settlement; the curator cannot redirect assets or bids.
+5. **Trustless where money moves.** The marketplace contract controls custody and settlement; the curator cannot redirect assets or offers.
 6. **Research remains editable.** Dossiers can improve until a deadline; frozen versions and later corrections remain auditable.
 7. **No token in V1.** Reputation and financial incentives are added only after actual behavior identifies a need.
 8. **No fake functionality.** The live shell clearly distinguishes available features from upcoming contract actions.
@@ -417,7 +417,7 @@ The official API's `content_sha` hashes the complete Data URI and cannot answer 
 
 ### Marketplace contract boundary
 
-The working contract name is `EthscribeMarketV1`. Its behavioral starting point is the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, bids, and 5% fee ceiling.
+The implementation candidate is `EthscribeMarketV1`. Its behavioral starting point is the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, offers, and 5% fee ceiling.
 
 Ethscribe changes the boundary in several ways:
 
@@ -428,9 +428,13 @@ Ethscribe changes the boundary in several ways:
 - Seller proceeds and refunds use pull payments.
 - Pausing never disables ordinary artifact or ETH withdrawals.
 - Curated settlement anchors an opaque `contextHash` and frozen fee terms.
-- Funded V1 bids are available only after official-indexer reconciliation confirms escrow.
+- Funded V1 offers are available in the first-party interface only after official-indexer reconciliation confirms escrow.
 
-The contract accepts and returns Ethscriptions, creates and cancels listings, holds bids, refunds or accrues balances, emits ESIP-2 transfers, applies a fee no greater than 5%, and settles authorized Accession sales. It does not decide historical eligibility or activate Expedition records itself. The application observes settlement events and advances the prepared queue.
+The immutable, non-proxy contract accepts and returns Ethscriptions, creates and cancels listings, holds escrow-first offers, accrues refunds and proceeds through pull payments, emits ESIP-2 transfers, applies a fixed 5% fee, and settles trades. It does not decide historical eligibility or activate Expedition records itself. The application observes settlement events and advances the prepared queue.
+
+The 5% fee recipient is a replaceable boundary, not upgrade authority over custody. V1 initially routes fees to an Ethscribe Safe. A later rewards distributor can become the recipient for newly created positions; active listings and offers retain the recipient they originally displayed. Exact proposer or validator splits inside each settlement require a separately deployed market version.
+
+Core evolution is versioned. If custody or settlement semantics change, V1 pauses new entry while withdrawals, offer cancellation, and ETH claims remain open; the site then directs new activity to a separately reviewed V2. No proxy administrator can rewrite the rules around artifacts already escrowed in V1.
 
 Recognized artifacts that are not escrowed may collect nonbinding, wallet-signed interest, but V1 does not lock funds against them. Because Solidity cannot read Ethscriptions ownership, funded pre-escrow bidding would require buyer-finalized settlement or a disclosed ownership attestation, plus additional cancellation and stale-owner states. It is deferred until real usage justifies that complexity.
 
@@ -483,11 +487,13 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 
 ### Phase 4 — marketplace completion
 
-- Freeze `EthscribeMarketV1` invariants, bid states, and withdrawal behavior
+- Freeze `EthscribeMarketV1` invariants, offer states, and withdrawal behavior
 - Implement comprehensive contract tests
+- Rehearse the immutable deployment locally and on Sepolia
+- Integrate official-indexer custody reconciliation into every first-party market action
 - Obtain independent contract review
-- Deploy with conservative value limits
-- Enable deposits and binding bids in the existing UI
+- Deploy the exact reviewed commit with a Safe as owner and initial fee recipient
+- Enable deposits and binding offers in the existing UI
 - Activate atomic settlement and fee routing
 - Run the first primary Accession auction
 
@@ -532,13 +538,13 @@ Add only when Accession value makes coordinated attacks economically rational:
 - Monthly Seasons create coherent exhibitions
 - Fees sustain Hunt authors, researchers, challengers, and operations
 - Multiple frontends and redundant dossier storage
-- Governance is limited to parameters, safety, and upgrades
+- Governance is limited to parameters, safety, and adoption of new contract versions
 
 The protocol reaches Vn when the founder can stop proposing Hunts and handling ordinary reviews without the cadence, quality, or revenue loop stopping.
 
 ## Initial economics
 
-V1 uses one visible 5% marketplace fee. The initial conceptual split is:
+V1 uses one visible 5% marketplace fee paid to a snapshotted fee recipient. The initial Safe treasury may follow this conceptual allocation:
 
 | Recipient | Percentage of sale |
 |---|---:|
@@ -548,7 +554,7 @@ V1 uses one visible 5% marketplace fee. The initial conceptual split is:
 | Hunt proposal author | 0.5% |
 | Research/community reserve | 0.5% |
 
-The community reserve accumulates until there is enough activity to define fair distribution rules. No token or promised yield is required.
+The individual percentages are treasury policy rather than splits enforced inside `EthscribeMarketV1`. A later fee-recipient contract can make rewards claimable without upgrading the custody contract. The community reserve accumulates until there is enough activity to define fair distribution rules. No token or promised yield is required.
 
 ## Genesis Season
 

@@ -24,3 +24,20 @@ yarn-error.log*
 
 # Local Netlify folder
 .netlify
+
+# Local contract toolchain and build artifacts
+/.tools/
+/contracts/cache/
+/contracts/node_modules/
+/contracts/out/
+/contracts/broadcast/
+/contracts/snapshots/
+
+# Private deployment workspace — never commit signing material
+/.secrets/
+.env
+.env.*
+!.env.example
+*.key
+*.keystore
+*.pem

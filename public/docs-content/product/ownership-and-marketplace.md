@@ -67,9 +67,9 @@ An emergency pause may stop new deposits, listings, bids, and sales. It must not
 
 Global administration must not alter the price, fee, or recipients of an active sale. Each listing or accepted curator authorization commits to its own terms and expiry.
 
-## Proposed V1 contract boundary
+## V1 contract candidate
 
-The working name is `EthscribeMarketV1`. It combines a minimal ESIP-2 vault with fixed-price sales, funded offers, and curated-sale authorization.
+The public implementation candidate is [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts). It combines a minimal ESIP-2 vault with fixed-price sales and funded escrow-first offers. It is not yet audited or deployed.
 
 ### Vault responsibilities
 
@@ -78,17 +78,18 @@ The working name is `EthscribeMarketV1`. It combines a minimal ESIP-2 vault with
 - Emit ESIP-2 transfers for withdrawal and settlement.
 - Cancel attached listings when an item leaves.
 - Preserve depositor withdrawal without curator cooperation.
-- Expose batch reads for wallet inventory.
+- Expose public state for wallet inventory and indexed event reconciliation.
 
 ### Market responsibilities
 
 - Create and cancel fixed-price listings.
 - Buy a verified escrow position.
-- Place, replace, expire, and withdraw funded bids.
+- Place and cancel independently identified funded offers.
+- Prevent an expired offer from being accepted while preserving the bidder's cancellation path.
 - Use seller-scoped funded bids; the first-party interface enables them only after official-indexer reconciliation confirms escrow.
 - Accrue seller proceeds and refunds as pull payments.
-- Apply a fee no greater than 5%.
-- Commit an optional curated-sale `contextHash`.
+- Apply an immutable 5% fee.
+- Emit an optional opaque `contextHash` supplied with the market position.
 
 ### Responsibilities kept off-chain
 
@@ -100,32 +101,35 @@ The working name is `EthscribeMarketV1`. It combines a minimal ESIP-2 vault with
 - proposal queues; and
 - historical corrections.
 
-## Proposed storage model
+## Implemented storage model
 
-The exact packing can change during implementation, but the semantic model is:
+The candidate uses the following semantic model:
 
 ```text
 PotentialDeposit
-  depositor
-  ethscriptionId
   receivedBlock
-  state
+  depositGenerationNonce
+  active
 
 Listing
-  seller
-  ethscriptionId
   price
+  depositGenerationNonce
+  listingNonce
   onlyBuyer
   expiry
+  feeRecipient
   contextHash
 
-Bid
-  bidId
+Offer
+  offerId
   bidder
-  ethscriptionId
   seller
+  ethscriptionId
   amount
+  depositGenerationNonce
   expiry
+  feeRecipient
+  contextHash
   state
 
 claimable[address]
@@ -155,7 +159,7 @@ ethscriptions_protocol_TransferEthscriptionForPreviousOwner(
 )
 ```
 
-Withdrawing cancels the depositor's listing and releases market locks under explicit rules. It never deletes another seller's or bidder's unrelated position.
+Withdrawing cancels the depositor's listing. Existing funded offers become unexecutable against that deposit generation, but each bidder retains an unconditional cancellation and claim path. A withdrawal never deletes another wallet's offer or credit.
 
 ## Creating through the site
 
@@ -210,7 +214,7 @@ The future wrapper-independent raw-byte index is a different concern. Ethscribe 
 
 A later release can revisit funded pre-escrow bids if demonstrated demand justifies the extra state machine. An ownership attestation or buyer-finalized settlement must be explicit before that design handles value.
 
-## Curated Accession sales
+## Linking a sale to an Accession record
 
 Generic deposits and trades need no curator. A sale that becomes an official Accession should carry an opaque authorization commitment such as:
 
@@ -226,72 +230,67 @@ contextHash = keccak256(
 )
 ```
 
-The contract does not interpret the historical fields. It verifies a curator authorization or finalized root, freezes the associated fee terms, and emits the commitment at settlement. The public Dossier explains the bytes behind the hash.
+V1 does not verify a curator signature or finalized root. It stores and emits the opaque `contextHash` supplied by the listing or offer creator. The first-party application decides whether that hash corresponds to a recognized, signed Accession record and must never imply that arbitrary contract calldata received curatorial approval.
 
-## Fee model
+Native curator authorization can be considered in a later market version after the signed-research format is proven in public.
 
-The initial ceiling remains 5%. A generic secondary trade can route a simple protocol fee. A curated primary Accession sale may use the documented split:
+## Fee and incentive boundary
 
-| Recipient | Share of sale |
-|---|---:|
-| Seller | 95.0% |
-| Ethscribe operations | 3.0% |
-| Next-expedition pool | 1.0% |
-| Expedition proposal author | 0.5% |
-| Research/community reserve | 0.5% |
+Every V1 settlement allocates 95% to the seller and 5% to the fee recipient snapshotted when the listing or offer was created. The fee itself and its denominator are immutable.
 
-Recipients and basis points are committed when the curated sale opens. No admin can rewrite them after a bid is funded.
+The initial recipient should be an Ethscribe Safe. Later, the owner can propose a separate reward distributor and that recipient must accept the role. This lets future activity fund proposers, researchers, validators, and operations without placing custody under upgrade authority. Active positions keep their original recipient.
 
-## Upgrade and administration recommendation
+If exact per-sale recipient splits must execute inside settlement, that is a `MarketV2` change rather than a mutable V1 parameter.
 
-The ittybits address is an upgradeable proxy. Ethscribe should decide this boundary explicitly instead of inheriting it accidentally.
+## Immutability, administration, and migration
 
-The preferred V1 posture is:
+The ittybits address is an upgradeable proxy. Ethscribe's candidate intentionally chooses a different boundary: immutable custody with explicit version migration.
 
-- an immutable or minimally upgradeable vault core;
+The candidate adopts:
+
+- an immutable, non-proxy vault and market;
 - a Safe for bounded configuration and emergency pause;
-- a delay on fee or implementation changes;
+- two-step ownership and fee-recipient changes;
 - withdrawals available during pause;
-- a hard 5% fee ceiling; and
+- an immutable 5% fee; and
 - no admin function capable of transferring arbitrary deposits or bidder funds.
 
-If a proxy is retained, its admin, implementation, delay, and upgrade history must be visible in the interface.
+Product evolution is versioned rather than performed behind a proxy. If settlement rules change, V1 can stop accepting new activity while its exits remain open, and users can voluntarily move to a separately deployed V2. Revenue-distribution changes generally require only a new fee recipient, not a new custody contract.
 
 ## Contract invariants
 
 1. A potential depositor can never transfer another depositor's valid artifact through contract state alone.
 2. Pausing cannot trap an ordinary withdrawal or claimable ETH.
-3. `address(this).balance` always covers locked bids plus claimable balances.
-4. Each bid can be settled, refunded, or active—never more than one.
-5. A listing or bid expiry cannot be extended without the funder's authorization.
+3. `address(this).balance` always covers locked offers plus claimable balances.
+4. Each offer can be accepted, cancelled, or active—never more than one.
+5. A listing or offer expiry cannot be extended without the funder's authorization.
 6. Settlement clears market state before accruing payment and emitting transfer.
-7. Fee basis points never exceed the immutable ceiling.
+7. Fee basis points remain exactly 500.
 8. Curator authority cannot move artifacts or funds.
-9. A bid names its intended seller and Ethscription ID explicitly; the contract never substitutes an ownership claim for the bidder.
+9. An offer names its intended seller and Ethscription ID explicitly; the contract never substitutes an ownership claim for the bidder.
 10. Invalid potential deposits never appear as verified inventory in the first-party interface.
 
-## Test plan before deployment
+## Test and release status
 
-- Unit tests for every deposit, withdrawal, listing, bid, expiry, refund, and fee path.
-- Fuzz tests for balance conservation and state exclusivity.
-- Invariant tests across batch operations and replacement bids.
-- Adversarial tests with fake deposits from many claimed owners.
-- Former-owner and fake-deposit attacks against escrow verification.
-- Reentrancy and reverting-recipient tests.
-- Pause, expiry, and emergency-withdrawal tests.
-- ESIP-2 event-order and five-block cooldown integration tests.
-- Indexer reconciliation tests using a local fork or official indexer fixture.
-- Independent review before mainnet value is accepted.
+Implemented tests cover deposits, withdrawals, listings, offers, expiry, refunds, fees, fake depositors, smart wallets, reverting recipients, pause exits, deposit-generation replay, ESIP-2 event shape, and the five-block cooldown. Stateful invariants exercise randomized market sequences and reconcile every ordinary-flow wei against locked offers and claimable balances.
+
+Still required before mainnet value is accepted:
+
+- local and Sepolia deployment rehearsals;
+- first-party official-indexer reconciliation tests;
+- an independent security review;
+- source verification and post-deployment checks; and
+- a production Safe for ownership and the initial fee recipient.
 
 ## Delivery sequence
 
-1. Freeze functional requirements and exact bid state machine.
-2. Build an executable Foundry specification around the invariants.
-3. Implement the ESIP-2 vault and wallet inventory first.
-4. Add fixed-price listings and escrow-only bids.
-5. Integrate signed `contextHash` authorizations for Accessions.
-6. Run fork tests against the ittybits behavioral reference.
-7. Obtain independent review and deploy with conservative limits.
-8. Reconsider funded pre-escrow bids only after the core market has real demand.
+1. Complete the local executable specification and deployment rehearsal.
+2. Integrate official-indexer reconciliation into the wallet and market interface.
+3. Deploy and exercise the exact candidate on Sepolia.
+4. Obtain an independent review and resolve findings.
+5. Deploy the immutable mainnet candidate from the reviewed commit.
+6. Verify source and enable low-value beta activity.
+7. Route future fees to a separate rewards layer only after contribution rules are proven.
+8. Reconsider funded pre-escrow bids or native per-sale splits only after real demand.
 
-The contract is ready for implementation only after escrow verification, bid expiry, fee authorization, and upgrade posture are frozen in tests.
+The candidate is ready for local and testnet rehearsal. It is not yet approved for mainnet value.

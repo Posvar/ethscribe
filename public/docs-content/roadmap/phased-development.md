@@ -54,14 +54,18 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 
 **Outcome:** trusted eligibility connects to trustless custody and settlement.
 
-- Freeze `EthscribeMarketV1` invariants, bid states, and withdrawal behavior.
+- Freeze `EthscribeMarketV1` invariants, offer states, and withdrawal behavior.
 - Build comprehensive contract and integration tests.
+- Rehearse deployment locally and on Sepolia.
+- Integrate official-indexer reconciliation into every first-party market action.
 - Obtain independent contract review.
-- Deploy with conservative value limits.
-- Enable deposits, binding bids, refunds, settlement, and fee routing.
+- Deploy the exact reviewed commit with a Safe as owner and initial fee recipient.
+- Enable deposits, binding offers, refunds, settlement, and fee routing.
 - Complete the first primary Accession auction.
 
-**Release gate:** every asset and fund path is tested, failure recovery does not require curator goodwill, and the live UI is reconciled to contract state.
+**Current status:** the immutable contract candidate, unit/fuzz/invariant suite, threat model, and local deployment path exist. It is not audited or publicly deployed.
+
+**Release gate:** every asset and fund path is tested, failure recovery does not require curator goodwill, and the live UI is reconciled to contract and official-indexer state.
 
 ## V2 — optimistic curation
 

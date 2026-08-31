@@ -47,4 +47,4 @@ Ethscribe's `.gitbook.yaml`, `README.md`, and `SUMMARY.md` follow GitBook's Git 
 
 ## Documentation status
 
-This documentation describes the current proposal and phased architecture as of 30 August 2026. Statements labeled “proposed,” “planned,” or “later” are not deployed contract behavior. Live product and contract surfaces take precedence over roadmap prose once released, and material changes should be reflected here with repository history.
+This documentation describes the phased architecture and pre-deployment marketplace candidate as of 31 August 2026. Statements labeled “proposed,” “planned,” or “later” are not deployed contract behavior. Live product and contract surfaces take precedence over roadmap prose once released, and material changes should be reflected here with repository history.
