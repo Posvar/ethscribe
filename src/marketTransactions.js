@@ -128,7 +128,7 @@ export function friendlyTransactionError(error) {
   const message = typeof error?.message === 'string' ? error.message : '';
   if (/user rejected|user denied/i.test(message)) return 'The transaction was cancelled in the wallet.';
   if (/External transactions to internal accounts cannot include data/i.test(message)) {
-    return 'MetaMask blocks websites from sending calldata to an address managed by the same MetaMask wallet. Direct Ethscription creation uses exactly that transaction shape, so reconnecting or changing networks will not fix it. Your byte preflight passed and no transaction was sent. Ethscribe is preparing a MetaMask-compatible ESIP-3 creation path.';
+    return 'The connected browser provider rejected the direct self-addressed calldata transaction used to create an Ethscription. Reconnecting or changing networks will not change this wallet policy. Your byte preflight passed and no transaction was sent. Ethscribe must open the transaction through a compatible wallet connection while preserving your wallet as creator.';
   }
   if (/pause/i.test(message)) return 'The market is paused. No Ethscription was deposited.';
   if (/insufficient funds/i.test(message)) return 'The wallet does not have enough ETH for gas.';

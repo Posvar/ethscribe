@@ -69,7 +69,7 @@ test('reduces successful target validation to one ready checkpoint with optional
   fireEvent.click(screen.getByRole('checkbox'));
   fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
 
-  expect(await screen.findByText(/MetaMask-compatible ESIP-3 creation path/i)).toBeInTheDocument();
+  expect(await screen.findByText(/preserving your wallet as creator/i)).toBeInTheDocument();
   expect(screen.getByText('READY TO ETHSCRIBE')).toBeInTheDocument();
   expect(screen.queryByText('CHECK INCOMPLETE')).not.toBeInTheDocument();
 });
