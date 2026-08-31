@@ -1,6 +1,6 @@
 # Ethscribe contracts
 
-`EthscribeMarketV1` is an immutable ESIP-2 vault and ETH marketplace for Ethscriptions. V1 is deployed to Ethereum mainnet, source-verified, and paused. It has not received an independent audit and is not yet open for valuable custody or trading.
+`EthscribeMarketV1` is an immutable ESIP-2 vault and ETH marketplace for Ethscriptions. V1 is deployed to Ethereum mainnet and source-verified. A disposable custody round trip completed through the production UI on August 31, 2026. It has not received an independent audit and is not approved for valuable custody or trading.
 
 ## Mainnet deployment
 
@@ -11,7 +11,7 @@
 - Sourcify verification: [`exact_match`](https://repo.sourcify.dev/contracts/full_match/1/0x44c241ac86724D64a33558b03A637a63D9a30B02/metadata.json)
 - Initial state: paused
 
-The machine-readable record is [deployments/mainnet.json](deployments/mainnet.json). Deployment does not authorize deposits: the interface and official-indexer reconciliation are implemented behind a closed operational gate, while an independent review, the [controlled custody pilot](CUSTODY_PILOT_CHECKLIST.md), and a separate deliberate unpause remain release gates.
+The machine-readable deployment record is [deployments/mainnet.json](deployments/mainnet.json), and the first production custody exercise is recorded in [deployments/custody-pilot-001.json](deployments/custody-pilot-001.json). The owner deliberately left the contract unpaused and the interface pilot gate enabled after that test. This does not substitute for an independent review or authorize valuable custody or trading.
 
 ## Version 1 boundary
 

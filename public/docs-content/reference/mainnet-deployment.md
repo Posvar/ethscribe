@@ -2,7 +2,7 @@
 
 `EthscribeMarketV1` is deployed to Ethereum mainnet at [`0x44c241ac86724D64a33558b03A637a63D9a30B02`](https://etherscan.io/address/0x44c241ac86724D64a33558b03A637a63D9a30B02).
 
-> **Current release state:** deployed, immutable, source-verified, and paused. The contract has not received an independent audit and is not yet approved for valuable artifact custody or trading.
+> **Current release state:** deployed, immutable, source-verified, and custody round-trip tested. The owner deliberately left the contract unpaused and pilot interface enabled after the August 31, 2026 exercise. The contract has not received an independent audit and is not approved for valuable artifact custody or trading. Consult the live wallet status before relying on operational state.
 
 ## Deployment record
 
@@ -40,7 +40,7 @@ There were no assets, listings, offers, or claimable balances at deployment. Unp
 2. **Read reconciliation complete:** label custody verified only when official-indexer ownership, previous owner, active contract deposit state, indexer health, and the five-block cooldown all agree.
 3. **Custody slice complete and locked:** the interface validates, simulates, sends, and reconciles deposit and withdrawal transactions behind an operational flag; a disposable fork test exercises the deployed address.
 4. Obtain an independent contract security review and resolve or explicitly accept findings.
-5. Execute and publish the [controlled low-value custody pilot](custody-pilot.md).
+5. **Custody pilot complete:** execute and publish the [controlled low-value custody pilot](custody-pilot.md).
 6. Reconfirm owner, fee recipient, bytecode, and paused state immediately before each separately authorized unpause transaction.
 
 The live reader fails closed: an unavailable or lagging indexer, ownership mismatch, inactive contract record, unreadable contract state, or incomplete cooldown never receives a verified-custody label. The transaction interface has a second operational gate independent of the contract pause. Its production default is closed; no listing, offer, purchase, or claim control is implemented yet.

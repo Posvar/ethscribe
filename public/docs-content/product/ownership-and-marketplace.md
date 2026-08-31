@@ -69,7 +69,7 @@ Global administration must not alter the price, fee, or recipients of an active 
 
 ## V1 contract deployment
 
-The public implementation is [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts). It combines a minimal ESIP-2 vault with fixed-price sales and funded escrow-first offers. The immutable contract is [deployed to Ethereum mainnet](../reference/mainnet-deployment.md), source-verified, and paused. It is not independently audited or open for valuable custody.
+The public implementation is [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts). It combines a minimal ESIP-2 vault with fixed-price sales and funded escrow-first offers. The immutable contract is [deployed to Ethereum mainnet](../reference/mainnet-deployment.md), source-verified, and custody round-trip tested. It is not independently audited or approved for valuable custody.
 
 ### Vault responsibilities
 
@@ -295,4 +295,4 @@ Still required before mainnet value is accepted:
 7. Route future fees to a separate rewards layer only after contribution rules are proven.
 8. Reconsider funded pre-escrow bids or native per-sale splits only after real demand.
 
-The contract is live on mainnet but paused. It is not yet approved for valuable custody or trading.
+The contract is live on mainnet. Following the first successful custody pilot, the owner deliberately left it unpaused with the pilot interface enabled. This state is not approval for valuable custody or trading; the live wallet status is authoritative.

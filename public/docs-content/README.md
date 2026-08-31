@@ -40,7 +40,7 @@ No one layer substitutes for the others.
 
 ## Current status
 
-The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. The immutable marketplace is deployed to Ethereum mainnet, source-verified, and paused. The wallet exposes live contract status, directly owned Ethscriptions, fail-closed custody reconciliation, and a simulated Deposit → Verify → Withdraw transaction slice behind a closed operational gate. It is not independently audited or open for valuable custody; signed submission persistence, external review, and the controlled pilot remain required before any marketplace launch.
+The public site and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. The immutable marketplace is deployed to Ethereum mainnet and source-verified. On August 31, 2026, one disposable Ethscription completed Deposit → Verify → Withdraw through the production wallet with fail-closed contract/indexer reconciliation. The owner deliberately left the contract unpaused and the pilot UI gate enabled afterward. It is not independently audited or approved for valuable custody or trading; signed submission persistence, external review, and settlement testing remain required before any marketplace launch.
 
 The current trust model is straightforward:
 

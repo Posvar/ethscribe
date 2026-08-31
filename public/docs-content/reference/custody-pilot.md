@@ -2,7 +2,21 @@
 
 The first mainnet transaction exercise is deliberately limited to one disposable, low-value Ethscription moving into and back out of the immutable V1 market. It is not a marketplace launch.
 
-> **Current state:** the deposit and withdrawal interface is implemented behind an operational gate. The production contract remains paused and the gate defaults closed. Do not send an Ethscription directly to the market before the review and pilot window are explicitly announced.
+> **Current state:** Pilot 001 completed successfully on August 31, 2026. The owner deliberately left the contract unpaused and the interface gate enabled afterward. This is not a marketplace launch or approval for valuable custody. Contract activity is public and discoverable onchain even when site traffic is low.
+
+## Pilot 001 execution record
+
+| Item | Record |
+|---|---|
+| Test wallet | `jeremy.eth` / `0x1f01D99a90AD0C752e7765de29c386a169BD9E37` |
+| Ethscription | `0x5a57d369ff4b6c34c6da3459cef71e534bfae6cdabb245805c177691481e534f` / #6304100 |
+| Unpause | [`0x6200a5…e52f`](https://etherscan.io/tx/0x6200a5c92430236e464812541ed071b093224744b86c3cef5feee08fc035e52f), block 25,877,344 |
+| Deposit | [`0xfcd8e9…674c`](https://etherscan.io/tx/0xfcd8e9f1d16dbccac8a8d4251af1eba46c779d11b2ee9c793fe9b9a221c1674c), block 25,877,362, nonce 1 |
+| Withdrawal | [`0x3620aa…7342`](https://etherscan.io/tx/0x3620aa99638e596abbe8d7c48b6afb33fa90f9829d040bbd96176eda1a7f7342), block 25,877,374 |
+
+The production UI performed both wallet transactions. After the deposit receipt, contract state and the official indexer agreed that the market held the artifact, and the five-block cooldown completed. After withdrawal, the official indexer returned ownership to `jeremy.eth`, the contract deposit became inactive, escrow disappeared from the wallet, and contract balance, locked offers, claims, and liabilities were all zero.
+
+The recommended procedure below pauses immediately after deposit. At the owner's direction, Pilot 001 instead remained unpaused through withdrawal and afterward. That deliberate deviation is recorded here; obscurity of the website is not a security boundary.
 
 ## Why two gates exist
 

@@ -63,7 +63,7 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 - Enable deposits, binding offers, refunds, settlement, and fee routing.
 - Complete the first primary Accession auction.
 
-**Current status:** the immutable contract, unit/fuzz/invariant suite, threat model, and deployment record are public. V1 is deployed to Ethereum mainnet, source-verified, and paused. The wallet integrates fail-closed official-indexer reconciliation plus a simulated Deposit → Verify → Withdraw slice behind a closed operational gate, and a disposable fork test exercises that lifecycle against the deployed address. Independent review, the controlled mainnet custody pilot, settlement controls, and the low-value settlement procedure remain incomplete; the contract is not open for valuable custody.
+**Current status:** the immutable contract, unit/fuzz/invariant suite, threat model, and deployment record are public. V1 is deployed to Ethereum mainnet and source-verified. The wallet integrates fail-closed official-indexer reconciliation, and the first disposable Deposit → Verify → Withdraw pilot completed through the production UI on August 31, 2026. The owner left the contract unpaused and pilot interface enabled afterward. Independent review, settlement controls, and the low-value settlement procedure remain incomplete; the contract is not approved for valuable custody.
 
 **Release gate:** every asset and fund path is tested, failure recovery does not require curator goodwill, and the live UI is reconciled to contract and official-indexer state.
 

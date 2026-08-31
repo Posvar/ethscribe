@@ -1,0 +1,41 @@
+{
+  "network": "ethereum-mainnet",
+  "chainId": 1,
+  "date": "2026-08-31",
+  "market": "0x44c241ac86724D64a33558b03A637a63D9a30B02",
+  "testWallet": "0x1f01D99a90AD0C752e7765de29c386a169BD9E37",
+  "ethscriptionId": "0x5a57d369ff4b6c34c6da3459cef71e534bfae6cdabb245805c177691481e534f",
+  "ethscriptionNumber": 6304100,
+  "depositNonce": 1,
+  "transactions": {
+    "unpause": {
+      "hash": "0x6200a5c92430236e464812541ed071b093224744b86c3cef5feee08fc035e52f",
+      "block": 25877344,
+      "gasUsed": 24936,
+      "status": 1
+    },
+    "deposit": {
+      "hash": "0xfcd8e9f1d16dbccac8a8d4251af1eba46c779d11b2ee9c793fe9b9a221c1674c",
+      "block": 25877362,
+      "gasUsed": 71247,
+      "status": 1
+    },
+    "withdrawal": {
+      "hash": "0x3620aa99638e596abbe8d7c48b6afb33fa90f9829d040bbd96176eda1a7f7342",
+      "block": 25877374,
+      "gasUsed": 44692,
+      "status": 1
+    }
+  },
+  "finalState": {
+    "officialCurrentOwner": "0x1f01D99a90AD0C752e7765de29c386a169BD9E37",
+    "depositActive": false,
+    "marketBalanceWei": "0",
+    "lockedOfferTotalWei": "0",
+    "totalClaimableWei": "0",
+    "totalLiabilitiesWei": "0",
+    "paused": false,
+    "transactionUiEnabled": true
+  },
+  "notes": "The owner directed that the contract remain unpaused after the successful custody round trip. This pilot did not test listing, offer, purchase, settlement, or claims."
+}
