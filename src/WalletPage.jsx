@@ -84,11 +84,14 @@ function AssetPreview({ record }) {
 
 function InventoryCard({ record, escrow = false, action = null }) {
   const custody = record.custody;
+  const indexerSyncing = ['indexer_lagging', 'indexer_unavailable'].includes(custody?.status);
   const custodyLabel = custody?.verified
     ? 'VERIFIED IN MARKET CUSTODY'
     : custody?.status === 'cooldown'
       ? 'CONFIRMING CUSTODY'
-      : 'CUSTODY CHECK PENDING';
+      : indexerSyncing
+        ? 'INDEXER SYNCING'
+        : 'CUSTODY CHECK PENDING';
 
   return (
     <article className="wallet-inventory-card">
@@ -180,6 +183,12 @@ export default function WalletPage({
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!account || loading || status?.indexer?.healthy !== false || transaction?.phase === 'reconciling') return undefined;
+    const timer = setTimeout(() => refresh({ quiet: true }), 12_000);
+    return () => clearTimeout(timer);
+  }, [account, inventory?.checkedAt, loading, refresh, status?.checkedAt, status?.indexer?.healthy, transaction?.phase]);
 
   useEffect(() => {
     if (!account || transaction?.phase !== 'reconciling') return undefined;
@@ -330,7 +339,16 @@ export default function WalletPage({
 
   const withdrawAction = (record) => {
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
-    if (!record.custody?.verified) return { disabled: true, label: 'WAITING FOR VERIFICATION', hint: record.custody?.reason || 'Contract and indexer custody must agree first.' };
+    if (!record.custody?.verified) {
+      const indexerSyncing = ['indexer_lagging', 'indexer_unavailable'].includes(record.custody?.status);
+      return {
+        disabled: true,
+        label: indexerSyncing ? 'INDEXER SYNCING' : 'WAITING FOR VERIFICATION',
+        hint: indexerSyncing
+          ? 'Ownership is unchanged. Withdrawal unlocks automatically when the official index catches up.'
+          : record.custody?.reason || 'Contract and indexer custody must agree first.',
+      };
+    }
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Withdrawals use Ethereum mainnet.' };
     if (!market?.transactionsEnabled || !market?.exitsEnabled) return { disabled: true, label: 'WITHDRAW UI LOCKED', hint: 'The tested transaction interface has not been operationally enabled.' };
     return {

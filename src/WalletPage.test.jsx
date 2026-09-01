@@ -210,6 +210,52 @@ test('withdraws verified custody back to the connected wallet while intake is pa
   expect(await screen.findByText(/withdrawal verified\. the official indexer/i)).toBeInTheDocument();
 });
 
+test('presents temporary indexer lag as syncing rather than uncertain custody', async () => {
+  const syncingMarket = {
+    ...market,
+    paused: false,
+    transactionsEnabled: true,
+    intakeEnabled: false,
+    exitsEnabled: true,
+    indexer: { healthy: false, blocksBehind: 2 },
+  };
+  global.fetch = jest.fn(() => Promise.resolve({
+    ok: true,
+    json: async () => ({
+      result: {
+        owner: owner.toLowerCase(),
+        market: syncingMarket,
+        directlyOwned: [],
+        escrow: [{
+          transactionHash: ethscriptionId,
+          ethscriptionNumber: 174464,
+          blockTimestamp: 1687470000,
+          mimetype: 'image/png',
+          custody: {
+            verified: false,
+            status: 'indexer_lagging',
+            reason: 'Official indexer is 2 blocks behind.',
+          },
+        }],
+        pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+        checkedAt: '2026-09-01T12:00:00.000Z',
+      },
+    }),
+  }));
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  expect((await screen.findAllByText('INDEXER SYNCING')).length).toBe(2);
+  expect(screen.getByText(/ownership is unchanged\. withdrawal unlocks automatically/i)).toBeInTheDocument();
+});
+
 test('stops reconciliation if the connected account changes after confirmation', async () => {
   const activeMarket = {
     ...market,

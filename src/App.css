@@ -4153,23 +4153,23 @@ footer > span {
 
 .wallet-inventory-grid {
   display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .wallet-inventory-card {
   border: 1px solid var(--ink);
   min-width: 0;
-  padding: 24px;
+  padding: 14px;
 }
 
 .wallet-asset-preview {
   align-items: center;
-  background: #171817;
+  aspect-ratio: 1;
+  background: white;
   display: flex;
-  height: 310px;
   justify-content: center;
-  margin: -24px -24px 24px;
+  margin: -14px -14px 16px;
   overflow: hidden;
   position: relative;
 }
@@ -4187,14 +4187,15 @@ footer > span {
 }
 
 .wallet-asset-preview .wallet-asset-xpm canvas {
-  max-height: 250px;
-  max-width: 250px;
-  width: min(78%, 250px);
+  max-height: 78%;
+  max-width: 78%;
+  width: 78%;
 }
 
 .wallet-asset-audio,
 .wallet-asset-fallback {
   align-items: center;
+  background: #171817;
   color: white;
   display: flex;
   flex-direction: column;
@@ -4219,10 +4220,10 @@ footer > span {
 }
 
 .wallet-card-heading {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   gap: 15px;
-  justify-content: space-between;
 }
 
 .wallet-card-heading p,
@@ -4235,7 +4236,8 @@ footer > span {
 
 .wallet-card-heading span {
   border: 1px solid var(--ink);
-  padding: 7px 9px;
+  font-size: 8px;
+  padding: 6px 8px;
 }
 
 .wallet-card-heading .custody-verified {
@@ -4248,9 +4250,10 @@ footer > span {
 
 .wallet-inventory-card h3 {
   font-family: Georgia, serif;
-  font-size: 29px;
+  font-size: clamp(20px, 1.7vw, 25px);
   font-weight: normal;
-  margin: 38px 0 25px;
+  margin: 22px 0 16px;
+  overflow-wrap: anywhere;
 }
 
 .wallet-inventory-card dl {
@@ -4261,15 +4264,15 @@ footer > span {
 .wallet-inventory-card dl > div {
   border-bottom: 1px solid #a6a298;
   display: grid;
-  gap: 20px;
-  grid-template-columns: 140px minmax(0, 1fr);
-  padding: 13px 0;
+  gap: 4px;
+  grid-template-columns: 1fr;
+  padding: 9px 0;
 }
 
 .wallet-inventory-card dt,
 .wallet-inventory-card dd {
   font-family: "Courier New", monospace;
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.45;
   margin: 0;
 }
@@ -4312,8 +4315,8 @@ footer > span {
   border-top: 1px solid var(--ink);
   display: grid;
   gap: 10px;
-  margin-top: 25px;
-  padding-top: 20px;
+  margin-top: 16px;
+  padding-top: 14px;
 }
 
 .wallet-custody-action button {
@@ -4324,12 +4327,12 @@ footer > span {
   cursor: pointer;
   display: flex;
   font-family: "Courier New", monospace;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 700;
   gap: 10px;
   justify-content: space-between;
-  min-height: 44px;
-  padding: 0 15px;
+  min-height: 40px;
+  padding: 0 11px;
 }
 
 .wallet-custody-action button:disabled {
@@ -4347,7 +4350,7 @@ footer > span {
 
 .wallet-custody-action small {
   color: #5c5952;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.45;
 }
 
@@ -4692,8 +4695,8 @@ footer > span {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-.wallet-inventory-grid {
-    grid-template-columns: 1fr;
+  .wallet-inventory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .wallet-preflight-heading {
@@ -4724,6 +4727,10 @@ footer > span {
   }
 
   .market-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-inventory-grid {
     grid-template-columns: 1fr;
   }
 
@@ -4774,10 +4781,6 @@ footer > span {
   .wallet-inventory-tabs button + button {
     border-left: 0;
     border-top: 1px solid var(--ink);
-  }
-
-  .wallet-asset-preview {
-    height: 250px;
   }
 
   .wallet-pagination {
