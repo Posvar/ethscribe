@@ -1,4 +1,4 @@
-const { loadEthscriptionMedia } = require('../lib/ethscriptionMedia');
+const { loadEthscriptionMedia, previewContentSecurityPolicy } = require('../lib/ethscriptionMedia');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') return { statusCode: 405, body: 'Method not allowed' };
@@ -19,7 +19,7 @@ exports.handler = async (event) => {
       headers: {
         'content-type': media.contentType,
         'cache-control': 'public, max-age=31536000, immutable',
-        'content-security-policy': "default-src 'none'; sandbox",
+        'content-security-policy': previewContentSecurityPolicy(media.contentType),
         'cross-origin-resource-policy': 'same-origin',
         'x-content-type-options': 'nosniff',
       },

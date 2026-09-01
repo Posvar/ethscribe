@@ -114,11 +114,62 @@ test('expands secured and open artifact records directly in the timeline', async
   fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /choose how to test your candidate/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /upload exact file/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /use existing ethscription/i })).toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
   expect(screen.queryByText(/data uri media type/i)).not.toBeInTheDocument();
   expect(screen.getByText(/read-only byte check/i)).toBeInTheDocument();
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', { name: /use existing ethscription/i }));
+  expect(screen.getByText(/connect the wallet that owns the ethscription/i)).toBeInTheDocument();
 }, 10_000);
+
+test('loads existing wallet Ethscriptions from an expedition target', async () => {
+  const account = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
+  const id = `0x${'44'.repeat(32)}`;
+  useEthscribeWallet.mockReturnValue({
+    account,
+    chainId: '0x1',
+    walletState: 'idle',
+    walletName: 'MetaMask',
+    ensName: 'jeremy.eth',
+    provider: null,
+    connectWallet,
+    switchToMainnet,
+    openAccountModal,
+  });
+  global.fetch = jest.fn(async (url) => {
+    if (url === '/api/findings') return { ok: true, json: async () => ({ result: [] }) };
+    if (url === '/api/market/status') return { ok: true, json: async () => ({ result: { paused: false, transactionsEnabled: true, intakeEnabled: true, indexer: { healthy: true } } }) };
+    if (String(url).startsWith('/api/market/wallet?owner=')) {
+      return { ok: true, json: async () => ({ result: {
+        directlyOwned: [{ transactionHash: id, ethscriptionNumber: 12345, mimetype: 'image/x-xpixmap' }],
+        escrow: [],
+        pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+      } }) };
+    }
+    if (url === `/api/ethscriptions/${id}`) {
+      return { ok: true, json: async () => ({ result: {
+        transaction_hash: id,
+        ethscription_number: 12345,
+        current_owner: account,
+        mimetype: 'image/x-xpixmap',
+        content_uri: 'data:image/x-xpixmap;base64,WA==',
+      } }) };
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi');
+  render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
+  fireEvent.click(screen.getByRole('button', { name: /use existing ethscription/i }));
+  const picker = await screen.findByLabelText(/existing ethscription/i);
+  expect(await screen.findByRole('option', { name: /ethscription #12345.*my wallet/i })).toBeInTheDocument();
+  fireEvent.change(picker, { target: { value: id } });
+  expect(await screen.findByText(/01 · ethscription in my wallet/i)).toBeInTheDocument();
+});
 
 test('offers a standalone personal Ethscribe flow with expedition handoff explained', () => {
   window.history.pushState({}, '', '/ethscribe');

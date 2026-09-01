@@ -6,6 +6,7 @@ import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
 import { fetchVerifiedFindings, mergeVerifiedFindings, statsForArtifacts } from './findingApi';
+import { fetchWalletInventory } from './marketApi';
 import {
   buildExpeditionProposal,
   fetchExpeditionProposals,
@@ -51,12 +52,13 @@ function isSmallArtifact(artifact) {
   return dimensions.length > 0 && Math.max(...dimensions.slice(0, 2)) <= 80;
 }
 
-function walletLabel(account, walletState, walletName) {
-  if (account) return walletName ? `${walletName} · ${shortAddress(account)}` : shortAddress(account);
+function walletLabel(account, walletState, walletName, ensName) {
+  const identity = ensName || shortAddress(account);
+  if (account) return walletName ? `${walletName} · ${identity}` : identity;
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, walletName, connectWallet, expedition = false, expeditions = false, docs = false, wallet = false, ethscribe = false }) {
+function SiteHeader({ account, walletState, walletName, ensName, connectWallet, expedition = false, expeditions = false, docs = false, wallet = false, ethscribe = false }) {
   const awayFromHome = expedition || expeditions || docs || wallet || ethscribe;
   const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -91,12 +93,12 @@ function SiteHeader({ account, walletState, walletName, connectWallet, expeditio
         {account ? (
           <a className={`wallet-button desktop-wallet${wallet ? ' wallet-active' : ''}`} href="/wallet" aria-current={wallet ? 'page' : undefined}>
             <WalletIcon />
-            {walletLabel(account, walletState, walletName)}
+            {walletLabel(account, walletState, walletName, ensName)}
           </a>
         ) : (
           <button className="wallet-button desktop-wallet" type="button" onClick={connectWallet}>
             <WalletIcon />
-            {walletLabel(account, walletState, walletName)}
+            {walletLabel(account, walletState, walletName, ensName)}
           </button>
         )}
         <button
@@ -114,13 +116,13 @@ function SiteHeader({ account, walletState, walletName, connectWallet, expeditio
             {account ? (
               <a className={`mobile-wallet-action${wallet ? ' nav-active' : ''}`} href="/wallet" onClick={closeMenu}>
                 <WalletIcon />
-                <span>{walletLabel(account, walletState, walletName)}</span>
+                <span>{walletLabel(account, walletState, walletName, ensName)}</span>
                 <ArrowIcon />
               </a>
             ) : (
               <button className="mobile-wallet-action" type="button" onClick={connectFromMenu}>
                 <WalletIcon />
-                <span>{walletLabel(account, walletState, walletName)}</span>
+                <span>{walletLabel(account, walletState, walletName, ensName)}</span>
                 <ArrowIcon />
               </button>
             )}
@@ -202,6 +204,100 @@ function RecordFact({ label, value, unknown = 'Unknown until the original bytes 
       <dt>{label}</dt>
       <dd className={!value ? 'unknown-hash' : ''}>{value || unknown}</dd>
     </div>
+  );
+}
+
+function TargetSubmission({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished }) {
+  const [source, setSource] = useState('upload');
+  const [selectedEthscriptionId, setSelectedEthscriptionId] = useState('');
+  const [ownedRecords, setOwnedRecords] = useState([]);
+  const [inventoryState, setInventoryState] = useState('idle');
+
+  useEffect(() => {
+    if (source !== 'existing' || !account) return undefined;
+    let active = true;
+    setInventoryState('loading');
+
+    fetchWalletInventory(account)
+      .then((inventory) => {
+        if (!active) return;
+        const records = [
+          ...(inventory.escrow || [])
+            .filter((record) => record.custody?.verified)
+            .map((record) => ({ ...record, location: 'MARKETPLACE CUSTODY' })),
+          ...(inventory.directlyOwned || [])
+            .map((record) => ({ ...record, location: 'MY WALLET' })),
+        ];
+        const unique = records.filter((record, index) => records.findIndex(
+          (candidate) => candidate.transactionHash?.toLowerCase() === record.transactionHash?.toLowerCase(),
+        ) === index);
+        setOwnedRecords(unique);
+        setInventoryState('ready');
+      })
+      .catch(() => {
+        if (active) setInventoryState('error');
+      });
+
+    return () => { active = false; };
+  }, [account, source]);
+
+  const chooseSource = (nextSource) => {
+    setSource(nextSource);
+    setSelectedEthscriptionId('');
+  };
+
+  return (
+    <section className="target-submission" aria-labelledby={`submission-title-${artifact.id}`}>
+      <div className="target-submission-heading">
+        <div><span>SUBMIT A FINDING</span><h3 id={`submission-title-${artifact.id}`}>Choose how to test your candidate.</h3></div>
+        <p>Upload the exact historical file, or test an Ethscription your wallet already controls. Both paths check the same sealed expedition target before any transaction is prepared.</p>
+      </div>
+      <div className="target-submission-source" role="group" aria-label="Choose a Finding source">
+        <button type="button" className={source === 'upload' ? 'active' : ''} onClick={() => chooseSource('upload')}>UPLOAD EXACT FILE</button>
+        <button type="button" className={source === 'existing' ? 'active' : ''} onClick={() => chooseSource('existing')}>USE EXISTING ETHSCRIPTION</button>
+      </div>
+
+      {source === 'existing' && !account && (
+        <div className="target-submission-connect">
+          <p>Connect the wallet that owns the Ethscription or deposited it into marketplace custody.</p>
+          <button className="primary-action" type="button" onClick={connectWallet}>Connect wallet <ArrowIcon /></button>
+        </div>
+      )}
+
+      {source === 'existing' && account && (
+        <label className="target-ethscription-picker">
+          <span>EXISTING ETHSCRIPTION</span>
+          <select value={selectedEthscriptionId} onChange={(event) => setSelectedEthscriptionId(event.target.value)} disabled={inventoryState === 'loading'}>
+            <option value="">{inventoryState === 'loading' ? 'Loading your Ethscriptions…' : 'Choose an Ethscription'}</option>
+            {ownedRecords.map((record) => (
+              <option value={record.transactionHash} key={record.transactionHash}>
+                Ethscription #{record.ethscriptionNumber} · {record.mimetype || 'unknown media'} · {record.location}
+              </option>
+            ))}
+          </select>
+          <small>{inventoryState === 'error'
+            ? 'Your Ethscriptions could not be loaded from the official index. Try this path again shortly.'
+            : inventoryState === 'ready' && ownedRecords.length === 0
+              ? 'No eligible Ethscriptions were found in this wallet or its verified marketplace custody.'
+              : 'Includes directly held Ethscriptions and artifacts already verified in marketplace custody.'}</small>
+        </label>
+      )}
+
+      {(source === 'upload' || selectedEthscriptionId) && (
+        <EthscribeWorkbench
+          key={`${artifact.id}-${source}-${selectedEthscriptionId}`}
+          mode="target"
+          artifact={artifact}
+          existingEthscriptionId={source === 'existing' ? selectedEthscriptionId : ''}
+          account={account}
+          chainId={chainId}
+          connectWallet={connectWallet}
+          switchToMainnet={switchToMainnet}
+          provider={provider}
+          onFindingPublished={onFindingPublished}
+        />
+      )}
+    </section>
   );
 }
 
@@ -350,8 +446,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
         </div>
 
         {(artifact.status === 'open' || artifact.status === 'lost') && (
-          <EthscribeWorkbench
-            mode="target"
+          <TargetSubmission
             artifact={artifact}
             account={account}
             chainId={chainId}
@@ -867,6 +962,7 @@ function App() {
     chainId,
     walletState,
     walletName,
+    ensName,
     provider,
     connectWallet,
     openAccountModal,
@@ -932,6 +1028,7 @@ function App() {
     account,
     walletState,
     walletName,
+    ensName,
     connectWallet,
     chainId,
     switchToMainnet,
@@ -940,7 +1037,7 @@ function App() {
     resolvedStats,
     onFindingPublished: recordPublishedFinding,
   };
-  const headerProps = { account, walletState, walletName, connectWallet };
+  const headerProps = { account, walletState, walletName, ensName, connectWallet };
 
   return (
     <>
@@ -954,6 +1051,7 @@ function App() {
               switchToMainnet={switchToMainnet}
               provider={provider}
               walletName={walletName}
+              ensName={ensName}
               openAccountModal={openAccountModal}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}

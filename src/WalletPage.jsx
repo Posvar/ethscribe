@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import EthscribeWorkbench from './EthscribeWorkbench';
 import XpmPreview from './XpmPreview';
-import { artifacts, lostArtifact } from './huntData';
 import { fetchMarketStatus, fetchWalletInventory } from './marketApi';
 import {
   MAINNET_CHAIN_ID,
@@ -35,8 +33,6 @@ function formatDate(timestamp) {
   }).format(new Date(timestamp * 1000));
 }
 
-const expeditionTargets = [...artifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
-
 function TransactionStatus({ transaction, onDismiss }) {
   if (!transaction) return null;
   const action = transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal';
@@ -59,24 +55,57 @@ function TransactionStatus({ transaction, onDismiss }) {
   );
 }
 
+function TextAssetPreview({ source, label }) {
+  const [preview, setPreview] = useState({ state: 'loading', text: '' });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch(source, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Text preview returned ${response.status}`);
+        return response.text();
+      })
+      .then((text) => setPreview({ state: 'ready', text }))
+      .catch((previewError) => {
+        if (previewError.name !== 'AbortError') setPreview({ state: 'error', text: '' });
+      });
+
+    return () => controller.abort();
+  }, [source]);
+
+  if (preview.state !== 'ready') {
+    return <div className="wallet-asset-fallback"><span>{preview.state === 'error' ? 'TEXT PREVIEW UNAVAILABLE' : 'LOADING TEXT…'}</span></div>;
+  }
+
+  return <pre className="wallet-asset-text" aria-label={`${label} text preview`}>{preview.text}</pre>;
+}
+
 function AssetPreview({ record }) {
   const source = record.transactionHash ? `/api/ethscriptions/media/${record.transactionHash}` : '';
   const mimetype = (record.mimetype || '').toLowerCase();
+  const mediaType = mimetype.split(';')[0].trim();
   const label = `Ethscription #${record.ethscriptionNumber ?? ''}`.trim();
 
   if (!source) {
     return <div className="wallet-asset-fallback"><span>PREVIEW UNAVAILABLE</span><strong>{record.mimetype || 'UNKNOWN MEDIA'}</strong></div>;
   }
-  if (['image/x-xpixmap', 'image/x-xpm', 'image/xpm', 'text/x-xpm'].includes(mimetype)) {
+  if (['image/x-xpixmap', 'image/x-xpm', 'image/xpm', 'text/x-xpm'].includes(mediaType)) {
     return <XpmPreview source={source} label={`${label} XPM preview`} className="wallet-asset-xpm" />;
   }
-  if (mimetype.startsWith('image/')) {
+  if (mediaType.startsWith('image/')) {
     return <img src={source} alt={`${label} preview`} loading="lazy" />;
   }
-  if (mimetype.startsWith('audio/')) {
+  if (mediaType === 'text/html' || mediaType === 'application/xhtml+xml') {
+    return <iframe src={source} title={`${label} HTML preview`} loading="lazy" sandbox="" referrerPolicy="no-referrer" />;
+  }
+  if (mediaType === 'text/plain') {
+    return <TextAssetPreview source={source} label={label} />;
+  }
+  if (mediaType.startsWith('audio/')) {
     return <div className="wallet-asset-audio"><span>AUDIO ETHSCRIPTION</span><audio controls preload="none" src={source}>Your browser cannot play this audio Ethscription.</audio></div>;
   }
-  if (mimetype.startsWith('video/')) {
+  if (mediaType.startsWith('video/')) {
     return <video controls preload="metadata" src={source}>Your browser cannot play this video Ethscription.</video>;
   }
   return <div className="wallet-asset-fallback"><span>DIGITAL ARTIFACT</span><strong>{record.mimetype || 'UNKNOWN MEDIA'}</strong></div>;
@@ -124,6 +153,7 @@ export default function WalletPage({
   switchToMainnet,
   provider,
   walletName,
+  ensName,
   openAccountModal,
   header,
   footer,
@@ -135,13 +165,12 @@ export default function WalletPage({
   const [confirmation, setConfirmation] = useState(null);
   const [riskAccepted, setRiskAccepted] = useState(false);
   const [transaction, setTransaction] = useState(null);
-  const [preflightTargetId, setPreflightTargetId] = useState('');
-  const [preflightSource, setPreflightSource] = useState('upload');
-  const [preflightEthscriptionId, setPreflightEthscriptionId] = useState('');
   const [inventoryView, setInventoryView] = useState('escrow');
   const [pageKeys, setPageKeys] = useState({ directPageKey: '', escrowPageKey: '' });
   const [pageHistory, setPageHistory] = useState({ direct: [], escrow: [] });
+  const [addressCopied, setAddressCopied] = useState(false);
   const previousAccount = useRef(account);
+  const copyResetTimer = useRef(null);
 
   const refresh = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) {
@@ -177,8 +206,10 @@ export default function WalletPage({
     setPageKeys({ directPageKey: '', escrowPageKey: '' });
     setPageHistory({ direct: [], escrow: [] });
     setInventoryView('escrow');
-    setPreflightEthscriptionId('');
+    setAddressCopied(false);
   }, [account]);
+
+  useEffect(() => () => clearTimeout(copyResetTimer.current), []);
 
   useEffect(() => {
     refresh();
@@ -267,6 +298,26 @@ export default function WalletPage({
   const visibleNextPageKey = inventoryView === 'escrow'
     ? inventory?.pagination?.escrowNextPageKey
     : inventory?.pagination?.directlyOwnedNextPageKey;
+
+  const copyAddress = async () => {
+    if (!account) return;
+    try {
+      await navigator.clipboard.writeText(account);
+    } catch {
+      const copyField = document.createElement('textarea');
+      copyField.value = account;
+      copyField.setAttribute('readonly', '');
+      copyField.style.position = 'fixed';
+      copyField.style.opacity = '0';
+      document.body.appendChild(copyField);
+      copyField.select();
+      document.execCommand('copy');
+      copyField.remove();
+    }
+    setAddressCopied(true);
+    clearTimeout(copyResetTimer.current);
+    copyResetTimer.current = setTimeout(() => setAddressCopied(false), 2_000);
+  };
 
   const showNextInventoryPage = () => {
     if (!visibleHasMore || !visibleNextPageKey) return;
@@ -398,7 +449,14 @@ export default function WalletPage({
           ) : (
             <>
               <div className="wallet-section-heading wallet-account-heading">
-                <div><p className="kicker"><span /> Connected with {walletName || 'Ethereum wallet'}</p><h2>{shortAddress(account)}</h2><a href={`https://etherscan.io/address/${account}`} target="_blank" rel="noreferrer">View address on Etherscan</a></div>
+                <div>
+                  <p className="kicker"><span /> Connected with {walletName || 'Ethereum wallet'}</p>
+                  <h2>{ensName || shortAddress(account)}</h2>
+                  <div className="wallet-address-line">
+                    <a href={`https://etherscan.io/address/${account}`} target="_blank" rel="noreferrer">{shortAddress(account)}</a>
+                    <button type="button" onClick={copyAddress}>{addressCopied ? 'COPIED' : 'COPY ADDRESS'}</button>
+                  </div>
+                </div>
                 <div className="wallet-account-actions">
                   {openAccountModal && <button className="wallet-manage" type="button" onClick={openAccountModal}>MANAGE WALLET</button>}
                   {!onMainnet && <button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button>}
@@ -412,48 +470,6 @@ export default function WalletPage({
                 <strong>{market?.transactionsEnabled ? market?.paused ? 'TRANSACTIONS READY · INTAKE PAUSED' : 'CONTROLLED INTAKE OPEN' : 'TRANSACTION CONTROLS LOCKED'}</strong>
                 <p>Deposits require the operational gate, an unpaused contract, Ethereum mainnet, and a current official indexer. Verified withdrawals remain contract-available during a pause.</p>
               </div>
-
-              <section className="wallet-expedition-preflight" aria-labelledby="wallet-preflight-title">
-                <div className="wallet-preflight-heading">
-                  <div><span>EXPEDITION SUBMISSION</span><h2 id="wallet-preflight-title">Test before you deposit.</h2></div>
-                  <p>Run read-only checks against a local file or an Ethscription already in your wallet. Testing sends no transaction.</p>
-                </div>
-                <div className="wallet-preflight-source" role="group" aria-label="Choose what to test">
-                  <button type="button" className={preflightSource === 'upload' ? 'active' : ''} onClick={() => { setPreflightSource('upload'); setPreflightEthscriptionId(''); }}>UPLOAD A FILE</button>
-                  <button type="button" className={preflightSource === 'wallet' ? 'active' : ''} onClick={() => setPreflightSource('wallet')}>ETHSCRIPTION IN MY WALLET</button>
-                </div>
-                {preflightSource === 'wallet' && (
-                  <label className="wallet-target-select">
-                    <span>MY ETHSCRIPTION</span>
-                    <select value={preflightEthscriptionId} onChange={(event) => setPreflightEthscriptionId(event.target.value)}>
-                      <option value="">Choose an Ethscription in your wallet</option>
-                      {direct.map((record) => <option value={record.transactionHash} key={record.transactionHash}>Ethscription #{record.ethscriptionNumber} · {record.mimetype || 'unknown media'}</option>)}
-                    </select>
-                    <small>{direct.length > 0 ? 'Only Ethscriptions currently held by this wallet appear here.' : 'No Ethscriptions on this inventory page are held directly by your wallet.'}</small>
-                  </label>
-                )}
-                <label className="wallet-target-select">
-                  <span>EXPEDITION 001 TARGET</span>
-                  <select value={preflightTargetId} onChange={(event) => setPreflightTargetId(event.target.value)}>
-                    <option value="">Choose a target to test</option>
-                    {expeditionTargets.map((target) => <option value={target.id} key={target.id}>{target.date} · {target.filename} · {target.release}</option>)}
-                  </select>
-                  <small>The expected hash and source remain sealed while an exact-byte target is open.</small>
-                </label>
-                {preflightTargetId && (preflightSource === 'upload' || preflightEthscriptionId) && (
-                  <EthscribeWorkbench
-                    key={`${preflightTargetId}-${preflightSource}-${preflightEthscriptionId}`}
-                    mode="target"
-                    artifact={expeditionTargets.find((target) => target.id === preflightTargetId)}
-                    existingEthscriptionId={preflightSource === 'wallet' ? preflightEthscriptionId : ''}
-                    account={account}
-                    chainId={chainId}
-                    connectWallet={connectWallet}
-                    switchToMainnet={switchToMainnet}
-                    provider={provider}
-                  />
-                )}
-              </section>
 
               <div className="wallet-inventory-section">
                 <div className="wallet-inventory-title"><div><span>01</span><h2>Your Ethscriptions</h2></div><strong>{loading ? '—' : `${visibleRecords.length}${visibleHasMore ? '+' : ''}`}</strong></div>

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadEthscriptionMedia, parseDataUri } = require('./ethscriptionMedia');
+const { loadEthscriptionMedia, parseDataUri, previewContentSecurityPolicy } = require('./ethscriptionMedia');
 
 test('decodes base64 and percent-encoded Ethscription media', () => {
   const base64 = parseDataUri('data:image/png;base64,aGVsbG8=');
@@ -29,4 +29,12 @@ test('rejects malformed and oversized previews', () => {
   assert.throws(() => parseDataUri('data:image/png;base64,%%%'), /invalid_base64/);
   const oversized = Buffer.alloc(2_000_001).toString('base64');
   assert.throws(() => parseDataUri(`data:image/png;base64,${oversized}`), /unsupported_preview_size/);
+});
+
+test('allows static HTML presentation without allowing executable content', () => {
+  const policy = previewContentSecurityPolicy('text/html');
+  assert.match(policy, /style-src 'unsafe-inline'/);
+  assert.match(policy, /sandbox/);
+  assert.doesNotMatch(policy, /script-src/);
+  assert.equal(previewContentSecurityPolicy('image/png'), "default-src 'none'; sandbox");
 });

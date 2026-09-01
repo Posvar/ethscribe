@@ -65,12 +65,69 @@ test('shows live paused-market state and read-only wallet inventory', async () =
   expect(screen.getByText('CURRENT')).toBeInTheDocument();
   expect(screen.getByText('IN MY WALLET')).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /two records must agree/i })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /test before you deposit/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /upload a file/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /ethscription in my wallet/i })).toBeInTheDocument();
-  expect(screen.getByLabelText(/expedition 001 target/i)).toHaveTextContent('bitcoin20.xpm');
+  expect(screen.queryByRole('heading', { name: /test before you deposit/i })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /deposit test locked/i })).toBeDisabled();
   await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(`/api/market/wallet?owner=${owner}`, { headers: { accept: 'application/json' } }));
+});
+
+test('renders HTML in a sandbox and plain UTF-8 content as text', async () => {
+  const htmlId = '0x94dcc6fda79f0360b17e5a347bb1aa86e3a67d611a3044787dbf036c42ac7476';
+  const textId = '0x16757df96b89db333c32af3d768ee1aa5dec34f0adf2ac435d9f9a45282db6b9';
+  global.fetch = jest.fn((path) => {
+    if (path === `/api/ethscriptions/media/${textId}`) {
+      return Promise.resolve({ ok: true, text: async () => 'a222330b-ce29-49a0-8723-9b1258b1522f' });
+    }
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({
+        result: {
+          owner: owner.toLowerCase(),
+          market: { ...market, transactionsEnabled: true, exitsEnabled: true },
+          directlyOwned: [],
+          escrow: [
+            { transactionHash: htmlId, ethscriptionNumber: 5563238, blockTimestamp: 1687470000, mimetype: 'text/html', custody: { verified: true, status: 'verified' } },
+            { transactionHash: textId, ethscriptionNumber: 5584922, blockTimestamp: 1687470000, mimetype: 'text/plain;utf8', custody: { verified: true, status: 'verified' } },
+          ],
+          pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+        },
+      }),
+    });
+  });
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  const htmlPreview = await screen.findByTitle(/ethscription #5563238 html preview/i);
+  expect(htmlPreview).toHaveAttribute('src', `/api/ethscriptions/media/${htmlId}`);
+  expect(htmlPreview).toHaveAttribute('sandbox', '');
+  expect(await screen.findByText('a222330b-ce29-49a0-8723-9b1258b1522f')).toBeInTheDocument();
+});
+
+test('uses a validated ENS name as the primary identity and keeps the address copyable', async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+
+  render(<WalletPage
+    account={owner}
+    ensName="jeremy.eth"
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  expect(await screen.findByRole('heading', { name: 'jeremy.eth' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /0x4B2E.*4Bba/i })).toHaveAttribute('href', `https://etherscan.io/address/${owner}`);
+  fireEvent.click(screen.getByRole('button', { name: 'COPY ADDRESS' }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith(owner));
+  expect(screen.getByRole('button', { name: 'COPIED' })).toBeInTheDocument();
 });
 
 test('simulates a deposit and waits for fail-closed custody reconciliation', async () => {
@@ -319,64 +376,6 @@ test('stops reconciliation if the connected account changes after confirmation',
     { headers: { accept: 'application/json' } },
   ));
   await waitFor(() => expect(screen.getByRole('button', { name: 'REFRESH' })).toBeEnabled());
-});
-
-test('can preflight an Ethscription already held by the connected wallet', async () => {
-  global.fetch = jest.fn((path) => Promise.resolve({
-    ok: true,
-    json: async () => {
-      if (path === '/api/market/status') return { result: market };
-      if (path === `/api/ethscriptions/${ethscriptionId}`) {
-        return {
-          result: {
-            transaction_hash: ethscriptionId,
-            ethscription_number: 174464,
-            current_owner: owner,
-            previous_owner: owner,
-            mimetype: 'image/x-xpixmap',
-            content_uri: 'data:image/x-xpixmap;base64,QQ==',
-          },
-        };
-      }
-      return {
-        result: {
-          owner: owner.toLowerCase(),
-          market,
-          directlyOwned: [{
-            transactionHash: ethscriptionId,
-            ethscriptionNumber: 174464,
-            blockTimestamp: 1687470000,
-            currentOwner: owner,
-            mimetype: 'image/x-xpixmap',
-          }],
-          escrow: [],
-          pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
-        },
-      };
-    },
-  }));
-
-  render(<WalletPage
-    account={owner}
-    chainId="0x1"
-    connectWallet={jest.fn()}
-    switchToMainnet={jest.fn()}
-    header={<div>HEADER</div>}
-    footer={<div>FOOTER</div>}
-  />);
-
-  const targetSelect = await screen.findByLabelText(/expedition 001 target/i);
-  fireEvent.change(targetSelect, { target: { value: 'november-20-xpm' } });
-  expect(targetSelect).toHaveValue('november-20-xpm');
-  fireEvent.click(screen.getByRole('button', { name: /ethscription in my wallet/i }));
-  await screen.findByRole('option', { name: /ethscription #174464/i });
-  const walletSelect = screen.getByLabelText(/my ethscription/i);
-  fireEvent.change(walletSelect, { target: { value: ethscriptionId } });
-  expect(walletSelect).toHaveValue(ethscriptionId);
-
-  expect(await screen.findByText(/01 · ethscription in my wallet/i)).toBeInTheDocument();
-  await waitFor(() => expect(screen.getByRole('button', { name: /test bytes/i })).toBeEnabled());
-  expect(screen.getByText(/never opens your wallet or sends a transaction/i)).toBeInTheDocument();
 });
 
 test('pages through marketplace custody 50 records at a time', async () => {

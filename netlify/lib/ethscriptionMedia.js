@@ -34,6 +34,12 @@ function parseDataUri(contentUri) {
   return { body, contentType };
 }
 
+function previewContentSecurityPolicy(contentType) {
+  return ['text/html', 'application/xhtml+xml'].includes(contentType)
+    ? "sandbox; default-src 'none'; base-uri 'none'; form-action 'none'; img-src data: blob:; media-src data: blob:; style-src 'unsafe-inline'"
+    : "default-src 'none'; sandbox";
+}
+
 async function loadEthscriptionMedia(ethscriptionId, fetchImpl = fetch) {
   if (!isEthscriptionId(ethscriptionId)) throw new Error('invalid_ethscription_id');
   const baseUrl = (process.env.ETHSCRIPTIONS_API_URL || DEFAULT_API_URL).replace(/\/$/, '');
@@ -47,4 +53,4 @@ async function loadEthscriptionMedia(ethscriptionId, fetchImpl = fetch) {
   return parseDataUri(record.content_uri);
 }
 
-module.exports = { loadEthscriptionMedia, parseDataUri };
+module.exports = { loadEthscriptionMedia, parseDataUri, previewContentSecurityPolicy };

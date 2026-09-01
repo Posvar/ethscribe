@@ -4086,6 +4086,32 @@ footer > span {
   margin-top: 18px;
 }
 
+.wallet-address-line {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.wallet-account-heading .wallet-address-line a,
+.wallet-address-line button {
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.wallet-address-line button {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .wallet-inventory-section {
   padding-top: 70px;
 }
@@ -4180,6 +4206,29 @@ footer > span {
   image-rendering: pixelated;
   object-fit: contain;
   width: 100%;
+}
+
+.wallet-asset-preview > iframe {
+  background: white;
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.wallet-asset-text {
+  align-self: stretch;
+  background: white;
+  box-sizing: border-box;
+  color: var(--ink);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  margin: 0;
+  overflow: auto;
+  padding: 18px;
+  white-space: pre-wrap;
+  width: 100%;
+  word-break: break-word;
 }
 
 .wallet-asset-preview .wallet-asset-xpm {
@@ -4352,100 +4401,6 @@ footer > span {
   color: #5c5952;
   font-size: 10px;
   line-height: 1.45;
-}
-
-.wallet-expedition-preflight {
-  background: #f2eee4;
-  border: 1px solid var(--ink);
-  margin: 38px 0 58px;
-  padding: clamp(24px, 4vw, 46px);
-}
-
-.wallet-preflight-heading {
-  align-items: end;
-  display: grid;
-  gap: 28px;
-  grid-template-columns: minmax(260px, 0.85fr) 1.15fr;
-}
-
-.wallet-preflight-heading span,
-.wallet-target-select > span {
-  color: var(--muted);
-  font-family: "Courier New", monospace;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-}
-
-.wallet-preflight-heading h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(32px, 4vw, 54px);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  margin: 7px 0 0;
-}
-
-.wallet-preflight-heading p {
-  color: var(--muted);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.wallet-preflight-source {
-  border: 1px solid var(--ink);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin-top: 28px;
-}
-
-.wallet-preflight-source button {
-  background: white;
-  border: 0;
-  color: var(--ink);
-  cursor: pointer;
-  font-family: "Courier New", monospace;
-  font-size: 9px;
-  font-weight: 700;
-  min-height: 48px;
-  padding: 0 14px;
-}
-
-.wallet-preflight-source button + button {
-  border-left: 1px solid var(--ink);
-}
-
-.wallet-preflight-source button.active {
-  background: var(--signal);
-}
-
-.wallet-target-select {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 28px;
-}
-
-.wallet-target-select select {
-  background: white;
-  border: 1px solid var(--ink);
-  border-radius: 0;
-  color: var(--ink);
-  font-family: "Courier New", monospace;
-  font-size: 10px;
-  padding: 13px 12px;
-}
-
-.wallet-target-select small {
-  color: var(--muted);
-  font-family: "Courier New", monospace;
-  font-size: 8px;
-  line-height: 1.5;
-}
-
-.wallet-expedition-preflight .ethscribe-workbench {
-  margin-top: 28px;
 }
 
 .wallet-pilot-gate {
@@ -4636,7 +4591,7 @@ footer > span {
 .wallet-pagination button,
 .wallet-pagination span {
   font-family: "Courier New", monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.06em;
 }
 
@@ -4699,10 +4654,6 @@ footer > span {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .wallet-preflight-heading {
-    align-items: start;
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 760px) {
@@ -4767,17 +4718,10 @@ footer > span {
     gap: 6px;
   }
 
-  .wallet-expedition-preflight {
-    margin: 30px 0 48px;
-    padding: 24px 18px;
-  }
-
-  .wallet-preflight-source,
   .wallet-inventory-tabs {
     grid-template-columns: 1fr;
   }
 
-  .wallet-preflight-source button + button,
   .wallet-inventory-tabs button + button {
     border-left: 0;
     border-top: 1px solid var(--ink);
@@ -5473,6 +5417,111 @@ footer > span {
   margin: 0;
 }
 
+.target-submission {
+  border: 1px solid var(--ink);
+  margin-top: 36px;
+}
+
+.target-submission-heading {
+  align-items: end;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(280px, 1.1fr);
+  padding: 24px;
+}
+
+.target-submission-heading span,
+.target-ethscription-picker > span {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.target-submission-heading h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  margin: 9px 0 0;
+}
+
+.target-submission-heading p,
+.target-submission-connect p {
+  color: #56534d;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.target-submission-source {
+  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.target-submission-source button {
+  background: white;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  min-height: 52px;
+  padding: 0 16px;
+}
+
+.target-submission-source button + button {
+  border-left: 1px solid var(--ink);
+}
+
+.target-submission-source button.active {
+  background: var(--signal);
+}
+
+.target-submission-connect {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.target-ethscription-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 24px;
+}
+
+.target-ethscription-picker select {
+  background: white;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  min-height: 50px;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.target-ethscription-picker small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.target-submission > .ethscribe-workbench {
+  border: 0;
+  border-top: 1px solid var(--ink);
+  margin-top: 0;
+}
+
 .ethscribe-workbench {
   background: #e8e3d7;
   border: 1px solid var(--ink);
@@ -6102,6 +6151,7 @@ footer > span {
   }
 
   .ethscribe-workbench-heading,
+  .target-submission-heading,
   .preflight-result-heading,
   .finding-assignment-form > div {
     align-items: flex-start;
@@ -6109,8 +6159,23 @@ footer > span {
   }
 
   .ethscribe-inspection-form,
+  .target-submission-heading,
   .compatible-targets {
     grid-template-columns: 1fr;
+  }
+
+  .target-submission-source {
+    grid-template-columns: 1fr;
+  }
+
+  .target-submission-source button + button {
+    border-left: 0;
+    border-top: 1px solid var(--ink);
+  }
+
+  .target-submission-connect {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .ethscribe-inspection-form > button {
