@@ -374,6 +374,11 @@ export default function WalletPage({
 
   const market = inventory?.market || status;
   const onMainnet = chainId?.toLowerCase() === MAINNET_CHAIN_ID;
+  const isFeeRecipient = Boolean(
+    account
+    && market?.feeRecipient
+    && account.toLowerCase() === market.feeRecipient.toLowerCase(),
+  );
   const direct = inventory?.directlyOwned || [];
   const escrow = inventory?.escrow || [];
   const transactionBusy = transaction && !['complete', 'error'].includes(transaction.phase);
@@ -604,7 +609,9 @@ export default function WalletPage({
                   <div>
                     <span>CLAIMABLE MARKETPLACE CREDIT</span>
                     <strong>{claimableKnown ? `${formattedClaimableCredit} ETH` : loading ? 'CHECKING…' : 'UNAVAILABLE'}</strong>
-                    <small>Seller proceeds and marketplace fees accumulate here until this wallet claims them.</small>
+                    <small>{isFeeRecipient
+                      ? 'Ethscribe marketplace fees and any sale proceeds accumulate here until you claim them.'
+                      : 'Your sale proceeds accumulate here until you claim them.'}</small>
                   </div>
                   <button type="button" disabled={claimDisabled} onClick={claimCredit}>{claimButtonLabel} <ArrowIcon /></button>
                 </div>

@@ -64,6 +64,8 @@ test('shows a focused Field Wallet without operational pilot panels', async () =
   expect(await screen.findByText('Ethscription #174464')).toBeInTheDocument();
   expect(screen.getByText('IN MY WALLET')).toBeInTheDocument();
   expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent('0 ETH');
+  expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent(/your sale proceeds accumulate here/i);
+  expect(screen.queryByText(/ethscribe marketplace fees and any sale proceeds/i)).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /nothing to claim/i })).toBeDisabled();
   expect(screen.queryByRole('heading', { name: /marketplace status/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/custody pilot/i)).not.toBeInTheDocument();
@@ -348,6 +350,7 @@ test('shows and claims accumulated marketplace credit', async () => {
     transactionsEnabled: true,
     intakeEnabled: true,
     exitsEnabled: true,
+    feeRecipient: owner.toLowerCase(),
   };
   let walletReads = 0;
   global.fetch = jest.fn(() => {
@@ -388,6 +391,7 @@ test('shows and claims accumulated marketplace credit', async () => {
   />);
 
   await waitFor(() => expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent('1.25 ETH'));
+  expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent(/ethscribe marketplace fees and any sale proceeds/i);
   fireEvent.click(screen.getByRole('button', { name: /claim 1\.25 eth/i }));
   expect(screen.getByRole('heading', { name: /claim your marketplace credit/i })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
