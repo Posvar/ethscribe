@@ -57,6 +57,10 @@ export function parseXpm(source) {
   if (![width, height, colorCount, charsPerPixel].every(Number.isFinite)) {
     throw new Error('Invalid XPM header');
   }
+  if (width < 1 || height < 1 || width > 2048 || height > 2048 || width * height > 4_000_000
+    || colorCount < 1 || colorCount > 65_536 || charsPerPixel < 1 || charsPerPixel > 8) {
+    throw new Error('XPM dimensions exceed safe preview limits');
+  }
 
   const palette = new Map();
   const colorLines = strings.slice(headerIndex + 1, headerIndex + 1 + colorCount);
@@ -70,6 +74,7 @@ export function parseXpm(source) {
 
   const rows = strings.slice(headerIndex + 1 + colorCount, headerIndex + 1 + colorCount + height);
   if (rows.length !== height) throw new Error('Incomplete XPM pixel data');
+  if (rows.some((row) => row.length < width * charsPerPixel)) throw new Error('Incomplete XPM pixel row');
 
   return { width, height, charsPerPixel, palette, rows };
 }

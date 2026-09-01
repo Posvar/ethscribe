@@ -17,3 +17,7 @@ test('parses XPM source into an exact pixel map', () => {
   expect(parsed.palette.get(' ')).toEqual([0, 0, 0, 0]);
   expect(parsed.rows).toEqual(['. ']);
 });
+
+test('rejects unsafe XPM preview dimensions', () => {
+  expect(() => parseXpm('"999999 999999 1 1"')).toThrow(/safe preview limits/i);
+});

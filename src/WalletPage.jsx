@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import EthscribeWorkbench from './EthscribeWorkbench';
+import XpmPreview from './XpmPreview';
 import { artifacts, lostArtifact } from './huntData';
 import { fetchMarketStatus, fetchWalletInventory } from './marketApi';
 import {
@@ -8,7 +9,6 @@ import {
   MARKET_DEPLOYMENT_BLOCK,
   MARKET_DEPLOYMENT_DOCS_PATH,
   MARKET_ETHERSCAN_URL,
-  MARKET_VERSION,
 } from './marketConfig';
 import {
   buildDepositTransaction,
@@ -59,29 +59,51 @@ function TransactionStatus({ transaction, onDismiss }) {
   );
 }
 
+function AssetPreview({ record }) {
+  const source = record.transactionHash ? `/api/ethscriptions/media/${record.transactionHash}` : '';
+  const mimetype = (record.mimetype || '').toLowerCase();
+  const label = `Ethscription #${record.ethscriptionNumber ?? ''}`.trim();
+
+  if (!source) {
+    return <div className="wallet-asset-fallback"><span>PREVIEW UNAVAILABLE</span><strong>{record.mimetype || 'UNKNOWN MEDIA'}</strong></div>;
+  }
+  if (['image/x-xpixmap', 'image/x-xpm', 'image/xpm', 'text/x-xpm'].includes(mimetype)) {
+    return <XpmPreview source={source} label={`${label} XPM preview`} className="wallet-asset-xpm" />;
+  }
+  if (mimetype.startsWith('image/')) {
+    return <img src={source} alt={`${label} preview`} loading="lazy" />;
+  }
+  if (mimetype.startsWith('audio/')) {
+    return <div className="wallet-asset-audio"><span>AUDIO ETHSCRIPTION</span><audio controls preload="none" src={source}>Your browser cannot play this audio Ethscription.</audio></div>;
+  }
+  if (mimetype.startsWith('video/')) {
+    return <video controls preload="metadata" src={source}>Your browser cannot play this video Ethscription.</video>;
+  }
+  return <div className="wallet-asset-fallback"><span>DIGITAL ARTIFACT</span><strong>{record.mimetype || 'UNKNOWN MEDIA'}</strong></div>;
+}
+
 function InventoryCard({ record, escrow = false, action = null }) {
   const custody = record.custody;
   const custodyLabel = custody?.verified
     ? 'VERIFIED IN MARKET CUSTODY'
-    : (custody?.status || 'not_verified').replace(/_/g, ' ').toUpperCase();
+    : custody?.status === 'cooldown'
+      ? 'CONFIRMING CUSTODY'
+      : 'CUSTODY CHECK PENDING';
 
   return (
     <article className="wallet-inventory-card">
+      <div className="wallet-asset-preview"><AssetPreview record={record} /></div>
       <div className="wallet-card-heading">
         <p>{record.mimetype || 'UNKNOWN MEDIA'}</p>
         <span className={custody?.verified ? 'custody-verified' : 'custody-unverified'}>
-          {escrow ? custodyLabel : 'DIRECTLY OWNED'}
+          {escrow ? custodyLabel : 'IN MY WALLET'}
         </span>
       </div>
       <h3>Ethscription #{record.ethscriptionNumber ?? '—'}</h3>
       <dl>
-        <div><dt>ETHSCRIPTION ID</dt><dd><a href={`https://etherscan.io/tx/${record.transactionHash}`} target="_blank" rel="noreferrer">{shortAddress(record.transactionHash)}</a></dd></div>
-        <div><dt>CONTENT SHA-256</dt><dd><code>{record.contentSha || 'Unavailable'}</code></dd></div>
+        <div><dt>ETHSCRIPTION ID</dt><dd><a href={`https://ethscriptions.com/ethscriptions/${record.transactionHash}`} target="_blank" rel="noreferrer">{shortAddress(record.transactionHash)}</a></dd></div>
         <div><dt>ETHSCRIBED</dt><dd>{formatDate(record.blockTimestamp)}</dd></div>
-        <div><dt>CURRENT OWNER</dt><dd><a href={`https://etherscan.io/address/${record.currentOwner}`} target="_blank" rel="noreferrer">{shortAddress(record.currentOwner)}</a></dd></div>
       </dl>
-      {escrow && <p className="custody-reason">{custody?.reason || 'Custody could not be independently reconciled.'}</p>}
-      <a className="wallet-record-link" href={`https://ethscriptions.com/ethscriptions/${record.transactionHash}`} target="_blank" rel="noreferrer">Open official record <ArrowIcon /></a>
       {action && (
         <div className="wallet-custody-action">
           <button type="button" disabled={action.disabled} onClick={action.onClick}>{action.label} <ArrowIcon /></button>
@@ -111,6 +133,12 @@ export default function WalletPage({
   const [riskAccepted, setRiskAccepted] = useState(false);
   const [transaction, setTransaction] = useState(null);
   const [preflightTargetId, setPreflightTargetId] = useState('');
+  const [preflightSource, setPreflightSource] = useState('upload');
+  const [preflightEthscriptionId, setPreflightEthscriptionId] = useState('');
+  const [inventoryView, setInventoryView] = useState('escrow');
+  const [pageKeys, setPageKeys] = useState({ directPageKey: '', escrowPageKey: '' });
+  const [pageHistory, setPageHistory] = useState({ direct: [], escrow: [] });
+  const previousAccount = useRef(account);
 
   const refresh = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) {
@@ -120,7 +148,7 @@ export default function WalletPage({
 
     try {
       if (account) {
-        const nextInventory = await fetchWalletInventory(account);
+        const nextInventory = await fetchWalletInventory(account, pageKeys);
         setInventory(nextInventory);
         setStatus(nextInventory.market);
         return nextInventory;
@@ -138,6 +166,15 @@ export default function WalletPage({
     } finally {
       if (!quiet) setLoading(false);
     }
+  }, [account, pageKeys]);
+
+  useEffect(() => {
+    if (previousAccount.current === account) return;
+    previousAccount.current = account;
+    setPageKeys({ directPageKey: '', escrowPageKey: '' });
+    setPageHistory({ direct: [], escrow: [] });
+    setInventoryView('escrow');
+    setPreflightEthscriptionId('');
   }, [account]);
 
   useEffect(() => {
@@ -213,6 +250,34 @@ export default function WalletPage({
   const direct = inventory?.directlyOwned || [];
   const escrow = inventory?.escrow || [];
   const transactionBusy = transaction && !['complete', 'error'].includes(transaction.phase);
+  const visibleRecords = inventoryView === 'escrow' ? escrow : direct;
+  const visibleHistory = inventoryView === 'escrow' ? pageHistory.escrow : pageHistory.direct;
+  const visibleHasMore = inventoryView === 'escrow'
+    ? inventory?.pagination?.escrowHasMore
+    : inventory?.pagination?.directlyOwnedHasMore;
+  const visibleNextPageKey = inventoryView === 'escrow'
+    ? inventory?.pagination?.escrowNextPageKey
+    : inventory?.pagination?.directlyOwnedNextPageKey;
+
+  const showNextInventoryPage = () => {
+    if (!visibleHasMore || !visibleNextPageKey) return;
+    const pageKeyName = inventoryView === 'escrow' ? 'escrowPageKey' : 'directPageKey';
+    const historyName = inventoryView === 'escrow' ? 'escrow' : 'direct';
+    setPageHistory((current) => ({
+      ...current,
+      [historyName]: [...current[historyName], pageKeys[pageKeyName]],
+    }));
+    setPageKeys((current) => ({ ...current, [pageKeyName]: visibleNextPageKey }));
+  };
+
+  const showPreviousInventoryPage = () => {
+    if (visibleHistory.length === 0) return;
+    const pageKeyName = inventoryView === 'escrow' ? 'escrowPageKey' : 'directPageKey';
+    const historyName = inventoryView === 'escrow' ? 'escrow' : 'direct';
+    const previousPageKey = visibleHistory[visibleHistory.length - 1];
+    setPageHistory((current) => ({ ...current, [historyName]: current[historyName].slice(0, -1) }));
+    setPageKeys((current) => ({ ...current, [pageKeyName]: previousPageKey }));
+  };
 
   const openConfirmation = (type, record) => {
     setRiskAccepted(false);
@@ -235,6 +300,9 @@ export default function WalletPage({
       const hash = await simulateAndSendTransaction(provider, request);
       setTransaction({ type, id, account, phase: 'mining', hash, message: '' });
       await waitForTransactionReceipt(provider, hash);
+      setPageKeys({ directPageKey: '', escrowPageKey: '' });
+      setPageHistory({ direct: [], escrow: [] });
+      setInventoryView(type === 'deposit' ? 'escrow' : 'direct');
       setTransaction({ type, id, account, phase: 'reconciling', reconcileStartedAt: Date.now(), hash, message: '' });
     } catch (transactionError) {
       setTransaction((current) => ({
@@ -256,7 +324,7 @@ export default function WalletPage({
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Marketplace transactions use Ethereum mainnet.' };
     if (!market?.transactionsEnabled) return { disabled: true, label: 'DEPOSIT TEST LOCKED', hint: 'The operational transaction gate remains closed.' };
     if (market?.paused) return { disabled: true, label: 'MARKET PAUSED', hint: 'The owner must deliberately open the controlled deposit window.' };
-    if (!market?.intakeEnabled) return { disabled: true, label: 'DEPOSIT UNAVAILABLE', hint: 'Contract, indexer, and interface readiness must all agree.' };
+    if (!market?.intakeEnabled) return { disabled: true, label: 'DEPOSIT TEMPORARILY UNAVAILABLE', hint: 'Official ownership data is refreshing. Your Ethscription is unchanged; refresh before trying again.' };
     return { disabled: false, label: 'DEPOSIT FOR CUSTODY ONLY', hint: 'Does not submit this artifact to an expedition. Use Expedition preflight for a Finding.', onClick: () => openConfirmation('deposit', record) };
   };
 
@@ -268,9 +336,7 @@ export default function WalletPage({
     return {
       disabled: false,
       label: 'WITHDRAW TO THIS WALLET',
-      hint: record.custody?.custodyKind === 'direct_creation'
-        ? 'Returns this direct creation to its previous owner. The exit remains available while intake is paused.'
-        : 'Registered-deposit withdrawals remain available while market intake is paused.',
+      hint: 'Returns this Ethscription from the Ethscri.be market contract to your wallet.',
       onClick: () => openConfirmation('withdraw', record),
     };
   };
@@ -286,7 +352,7 @@ export default function WalletPage({
             <p>Inspect Ethscriptions held by your address and independently reconcile anything deposited with the Ethscribe marketplace.</p>
           </div>
           <div className="wallet-contract-seal">
-            <span>MARKET V{MARKET_VERSION}</span>
+            <span>ETHSCRI.BE MARKET</span>
             <strong>{market?.paused === false ? 'ACTIVE' : 'PAUSED'}</strong>
             <small>MAINNET · BLOCK {MARKET_DEPLOYMENT_BLOCK.toLocaleString('en-US')}</small>
           </div>
@@ -302,7 +368,7 @@ export default function WalletPage({
             <div className="market-status-grid" aria-busy={loading}>
               <div><span>CONTRACT</span><strong>{market?.deployed ? 'DEPLOYED' : loading ? 'CHECKING…' : 'UNAVAILABLE'}</strong><a href={MARKET_ETHERSCAN_URL} target="_blank" rel="noreferrer">{shortAddress(MARKET_ADDRESS)}</a></div>
               <div><span>TRANSACTION UI</span><strong>{market?.transactionsEnabled ? 'PILOT READY' : 'LOCKED'}</strong><small>{!market?.transactionsEnabled ? 'Operational gate is closed' : market?.paused ? 'Intake paused · exits available' : 'Intake and exits enabled'}</small></div>
-              <div><span>OFFICIAL INDEXER</span><strong>{market?.indexer?.healthy ? 'CURRENT' : loading ? 'CHECKING…' : 'NOT VERIFIED'}</strong><small>{market?.indexer?.blocksBehind != null ? `${market.indexer.blocksBehind} block${market.indexer.blocksBehind === 1 ? '' : 's'} behind` : 'Status unavailable'}</small></div>
+              <div><span>OFFICIAL INDEXER</span><strong>{market?.indexer?.healthy ? 'CURRENT' : loading ? 'CHECKING…' : 'TEMPORARILY UNAVAILABLE'}</strong><small>{market?.indexer?.blocksBehind != null ? `${market.indexer.blocksBehind} block${market.indexer.blocksBehind === 1 ? '' : 's'} behind` : 'Deposits wait for the next successful check'}</small></div>
               <div><span>MARKET FEE</span><strong>{market?.feeBps != null ? `${market.feeBps / 100}%` : '—'}</strong><a href={MARKET_DEPLOYMENT_DOCS_PATH}>Deployment record</a></div>
             </div>
           )}
@@ -332,8 +398,22 @@ export default function WalletPage({
               <section className="wallet-expedition-preflight" aria-labelledby="wallet-preflight-title">
                 <div className="wallet-preflight-heading">
                   <div><span>EXPEDITION SUBMISSION</span><h2 id="wallet-preflight-title">Test before you deposit.</h2></div>
-                  <p>Choose a target and upload the exact local file. Ethscribe hashes it locally, checks the sealed target commitment and protocol duplicates, and prepares no gas transaction unless the candidate is eligible.</p>
+                  <p>Run read-only checks against a local file or an Ethscription already in your wallet. Testing sends no transaction.</p>
                 </div>
+                <div className="wallet-preflight-source" role="group" aria-label="Choose what to test">
+                  <button type="button" className={preflightSource === 'upload' ? 'active' : ''} onClick={() => { setPreflightSource('upload'); setPreflightEthscriptionId(''); }}>UPLOAD A FILE</button>
+                  <button type="button" className={preflightSource === 'wallet' ? 'active' : ''} onClick={() => setPreflightSource('wallet')}>ETHSCRIPTION IN MY WALLET</button>
+                </div>
+                {preflightSource === 'wallet' && (
+                  <label className="wallet-target-select">
+                    <span>MY ETHSCRIPTION</span>
+                    <select value={preflightEthscriptionId} onChange={(event) => setPreflightEthscriptionId(event.target.value)}>
+                      <option value="">Choose an Ethscription in your wallet</option>
+                      {direct.map((record) => <option value={record.transactionHash} key={record.transactionHash}>Ethscription #{record.ethscriptionNumber} · {record.mimetype || 'unknown media'}</option>)}
+                    </select>
+                    <small>{direct.length > 0 ? 'Only Ethscriptions currently held by this wallet appear here.' : 'No Ethscriptions on this inventory page are held directly by your wallet.'}</small>
+                  </label>
+                )}
                 <label className="wallet-target-select">
                   <span>EXPEDITION 001 TARGET</span>
                   <select value={preflightTargetId} onChange={(event) => setPreflightTargetId(event.target.value)}>
@@ -342,11 +422,12 @@ export default function WalletPage({
                   </select>
                   <small>The expected hash and source remain sealed while an exact-byte target is open.</small>
                 </label>
-                {preflightTargetId && (
+                {preflightTargetId && (preflightSource === 'upload' || preflightEthscriptionId) && (
                   <EthscribeWorkbench
-                    key={preflightTargetId}
+                    key={`${preflightTargetId}-${preflightSource}-${preflightEthscriptionId}`}
                     mode="target"
                     artifact={expeditionTargets.find((target) => target.id === preflightTargetId)}
+                    existingEthscriptionId={preflightSource === 'wallet' ? preflightEthscriptionId : ''}
                     account={account}
                     chainId={chainId}
                     connectWallet={connectWallet}
@@ -357,17 +438,20 @@ export default function WalletPage({
               </section>
 
               <div className="wallet-inventory-section">
-                <div className="wallet-inventory-title"><div><span>01</span><h2>Directly owned</h2></div><strong>{loading ? '—' : direct.length}</strong></div>
-                {!loading && direct.length === 0 && !error && <p className="wallet-empty-record">The official indexer reports no Ethscriptions directly owned by this address.</p>}
-                <div className="wallet-inventory-grid">{direct.map((record) => <InventoryCard key={record.transactionHash} record={record} action={depositAction(record)} />)}</div>
-                {inventory?.pagination?.directlyOwnedHasMore && <p className="wallet-limit-note">Showing the newest {inventory.pagination.maximumResultsPerSection} records.</p>}
-              </div>
-
-              <div className="wallet-inventory-section">
-                <div className="wallet-inventory-title"><div><span>02</span><h2>Marketplace custody</h2></div><strong>{loading ? '—' : escrow.length}</strong></div>
-                {!loading && escrow.length === 0 && !error && <p className="wallet-empty-record">No direct creations or active deposits from this address passed custody reconciliation.</p>}
-                <div className="wallet-inventory-grid">{escrow.map((record) => <InventoryCard key={record.transactionHash} record={record} escrow action={withdrawAction(record)} />)}</div>
-                {inventory?.pagination?.escrowHasMore && <p className="wallet-limit-note">Showing the newest {inventory.pagination.maximumResultsPerSection} records.</p>}
+                <div className="wallet-inventory-title"><div><span>01</span><h2>Your Ethscriptions</h2></div><strong>{loading ? '—' : `${visibleRecords.length}${visibleHasMore ? '+' : ''}`}</strong></div>
+                <div className="wallet-inventory-tabs" role="tablist" aria-label="Ethscription location">
+                  <button type="button" role="tab" aria-selected={inventoryView === 'escrow'} className={inventoryView === 'escrow' ? 'active' : ''} onClick={() => setInventoryView('escrow')}>MARKETPLACE CUSTODY <span>{escrow.length}{inventory?.pagination?.escrowHasMore ? '+' : ''}</span></button>
+                  <button type="button" role="tab" aria-selected={inventoryView === 'direct'} className={inventoryView === 'direct' ? 'active' : ''} onClick={() => setInventoryView('direct')}>MY WALLET <span>{direct.length}{inventory?.pagination?.directlyOwnedHasMore ? '+' : ''}</span></button>
+                </div>
+                {!loading && visibleRecords.length === 0 && !error && <p className="wallet-empty-record">{inventoryView === 'escrow' ? 'No Ethscriptions from this wallet are currently verified in marketplace custody.' : 'The official indexer reports no Ethscriptions directly held by this address.'}</p>}
+                <div className="wallet-inventory-grid">{visibleRecords.map((record) => <InventoryCard key={record.transactionHash} record={record} escrow={inventoryView === 'escrow'} action={inventoryView === 'escrow' ? withdrawAction(record) : depositAction(record)} />)}</div>
+                {(visibleHistory.length > 0 || visibleHasMore) && (
+                  <div className="wallet-pagination" aria-label="Inventory pagination">
+                    <button type="button" onClick={showPreviousInventoryPage} disabled={visibleHistory.length === 0}>PREVIOUS</button>
+                    <span>PAGE {visibleHistory.length + 1} · UP TO {inventory?.pagination?.maximumResultsPerSection || 50} ITEMS</span>
+                    <button type="button" onClick={showNextInventoryPage} disabled={!visibleHasMore || !visibleNextPageKey}>NEXT</button>
+                  </div>
+                )}
               </div>
             </>
           )}

@@ -362,23 +362,27 @@ function reconcileCustody({ record, owner, deposit, currentBlock, indexer }) {
   };
 }
 
-async function getWalletInventory(owner) {
+async function getWalletInventory(owner, options = {}) {
   if (!isAddress(owner)) throw new Error('Invalid owner address');
   const normalizedOwner = owner.toLowerCase();
+  const directParameters = {
+    current_owner: normalizedOwner,
+    max_results: MAX_INVENTORY_RESULTS,
+    sort_by: 'newest_first',
+  };
+  const escrowParameters = {
+    current_owner: MARKET_ADDRESS_LOWER,
+    previous_owner: normalizedOwner,
+    include_latest_transfer: true,
+    max_results: MAX_INVENTORY_RESULTS,
+    sort_by: 'newest_first',
+  };
+  if (options.directPageKey) directParameters.page_key = options.directPageKey;
+  if (options.escrowPageKey) escrowParameters.page_key = options.escrowPageKey;
 
   const [direct, escrowCandidates, market] = await Promise.all([
-    fetchIndexerList({
-      current_owner: normalizedOwner,
-      max_results: MAX_INVENTORY_RESULTS,
-      sort_by: 'newest_first',
-    }),
-    fetchIndexerList({
-      current_owner: MARKET_ADDRESS_LOWER,
-      previous_owner: normalizedOwner,
-      include_latest_transfer: true,
-      max_results: MAX_INVENTORY_RESULTS,
-      sort_by: 'newest_first',
-    }),
+    fetchIndexerList(directParameters),
+    fetchIndexerList(escrowParameters),
     getMarketStatus(),
   ]);
 
@@ -421,7 +425,9 @@ async function getWalletInventory(owner) {
     escrow,
     pagination: {
       directlyOwnedHasMore: direct.pagination.hasMore,
+      directlyOwnedNextPageKey: direct.pagination.pageKey,
       escrowHasMore: escrowCandidates.pagination.hasMore,
+      escrowNextPageKey: escrowCandidates.pagination.pageKey,
       maximumResultsPerSection: MAX_INVENTORY_RESULTS,
     },
     checkedAt: new Date().toISOString(),

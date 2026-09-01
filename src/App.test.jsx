@@ -116,7 +116,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
   expect(screen.queryByText(/data uri media type/i)).not.toBeInTheDocument();
-  expect(screen.getByText(/canonical target locked/i)).toBeInTheDocument();
+  expect(screen.getByText(/read-only byte check/i)).toBeInTheDocument();
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
 }, 10_000);
 

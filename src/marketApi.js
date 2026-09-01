@@ -19,6 +19,9 @@ export function fetchMarketStatus() {
   return request('/api/market/status');
 }
 
-export function fetchWalletInventory(owner) {
-  return request(`/api/market/wallet?owner=${encodeURIComponent(owner)}`);
+export function fetchWalletInventory(owner, pageKeys = {}) {
+  const query = new URLSearchParams({ owner });
+  if (pageKeys.directPageKey) query.set('direct_page_key', pageKeys.directPageKey);
+  if (pageKeys.escrowPageKey) query.set('escrow_page_key', pageKeys.escrowPageKey);
+  return request(`/api/market/wallet?${query.toString()}`);
 }

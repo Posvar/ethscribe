@@ -49,6 +49,27 @@ function earliestExisting(results) {
     })[0] || null;
 }
 
+function fileFromEthscription(record) {
+  const contentUri = record?.content_uri;
+  if (typeof contentUri !== 'string' || !contentUri.startsWith('data:')) {
+    throw new Error('The official record does not contain a readable Data URI.');
+  }
+  const comma = contentUri.indexOf(',');
+  if (comma < 0) throw new Error('The official record contains an invalid Data URI.');
+  const metadata = contentUri.slice(5, comma);
+  const parts = metadata.split(';');
+  const mediaType = (parts[0] || record.mimetype || '').toLowerCase();
+  if (!parts.includes('base64')) {
+    throw new Error('This expedition preflight currently supports base64 file Ethscriptions only.');
+  }
+  const binary = atob(contentUri.slice(comma + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  const extension = mediaType.split('/')[1]?.replace(/^x-/, '') || 'bin';
+  const filename = `ethscription-${record.ethscription_number ?? 'artifact'}.${extension}`;
+  return { file: new File([bytes], filename, { type: mediaType }), mediaType };
+}
+
 function StatusBanner({ phase, message, transactionHash }) {
   if (!phase || phase === 'idle') return null;
   return (
@@ -70,6 +91,7 @@ export default function EthscribeWorkbench({
   switchToMainnet,
   provider,
   onFindingPublished = () => {},
+  existingEthscriptionId = '',
 }) {
   const embeddedTargetMode = mode === 'target';
   const [selectedTargetId, setSelectedTargetId] = useState(artifact?.id || '');
@@ -93,6 +115,7 @@ export default function EthscribeWorkbench({
   const [sourceUrl, setSourceUrl] = useState(artifact?.status === 'lost' ? '' : (artifact?.sourceUrl || ''));
   const [finding, setFinding] = useState(null);
   const [targetCheck, setTargetCheck] = useState(null);
+  const [walletEthscription, setWalletEthscription] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -103,6 +126,39 @@ export default function EthscribeWorkbench({
     });
     return () => { active = false; };
   }, [submissionMode]);
+
+  useEffect(() => {
+    if (!existingEthscriptionId) return undefined;
+    let active = true;
+    setPhase('loading-record');
+    setMessage('Loading the selected Ethscription from the official index. No transaction is being prepared.');
+
+    fetch(`/api/ethscriptions/${existingEthscriptionId}`, { headers: { accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('The selected Ethscription could not be loaded from the official index.');
+        const payload = await response.json();
+        return payload.result || payload;
+      })
+      .then((record) => {
+        if (!active) return;
+        if (record.transaction_hash?.toLowerCase() !== existingEthscriptionId.toLowerCase()) {
+          throw new Error('The official index returned a different Ethscription.');
+        }
+        const decoded = fileFromEthscription(record);
+        setWalletEthscription(record);
+        setFile(decoded.file);
+        setMediaType(decoded.mediaType);
+        setPhase('idle');
+        setMessage('');
+      })
+      .catch((error) => {
+        if (!active) return;
+        setPhase('error');
+        setMessage(error.message || 'The selected Ethscription could not be prepared for testing.');
+      });
+
+    return () => { active = false; };
+  }, [existingEthscriptionId]);
 
   const onMainnet = chainId?.toLowerCase() === '0x1';
   const targetEligible = Boolean(activeArtifact && targetCheck?.targetId === activeArtifact.id && targetCheck.eligible);
@@ -169,7 +225,7 @@ export default function EthscribeWorkbench({
     setTransactionHash('');
 
     try {
-      const nextInspection = await inspectFile(file, lockedMediaType || mediaType);
+      const nextInspection = await inspectFile(file, walletEthscription ? mediaType : (lockedMediaType || mediaType));
       setInspection(nextInspection);
       if (embeddedTargetMode && !nextInspection.signatureMatchesMediaType) {
         setPhase('mismatch');
@@ -194,7 +250,10 @@ export default function EthscribeWorkbench({
           : [nextInspection.mediaType],
       );
       const checked = await checkProtocolExistence(checks);
-      const firstExisting = earliestExisting(checked);
+      const selectedExisting = walletEthscription
+        ? checked.find((result) => result.ethscription?.transaction_hash?.toLowerCase() === walletEthscription.transaction_hash?.toLowerCase())
+        : null;
+      const firstExisting = selectedExisting || earliestExisting(checked);
       setDuplicateChecks(checked);
       setExisting(firstExisting);
 
@@ -413,22 +472,30 @@ export default function EthscribeWorkbench({
           <span>{embeddedTargetMode ? 'ETHSCRIBE + SUBMIT' : 'PERSONAL ETHSCRIBE'}</span>
           <h3>{embeddedTargetMode ? `Test bytes against ${artifact.filename}` : 'Preserve exact bytes in the market vault.'}</h3>
         </div>
-        {embeddedTargetMode && <strong>ONE TRANSACTION · ONE SIGNATURE</strong>}
+        {embeddedTargetMode && <strong>READ-ONLY UNTIL YOU CONTINUE</strong>}
       </div>
 
       <div className="ethscribe-boundary-note">
-        <strong>{embeddedTargetMode ? 'CANONICAL TARGET LOCKED' : 'DIRECT-TO-VAULT CREATION'}</strong>
+        <strong>READ-ONLY BYTE CHECK</strong>
         <p>{embeddedTargetMode
-          ? 'The expedition fixes the standard file wrapper automatically. One transaction makes your wallet the creator and places the exact payload in the vault. If accepted first, that canonical payload cannot be Ethscribed again.'
-          : 'The site selects the standard wrapper from the file type. One transaction makes your wallet the creator and places the artifact in the vault. It is not listed or assigned automatically, and you can withdraw it.'}</p>
+          ? 'The expedition supplies the required file wrapper and sealed target commitment. This test hashes the bytes and checks known duplicates. It never opens your wallet or sends a transaction.'
+          : 'This test hashes the selected bytes and checks known duplicates. It never opens your wallet or sends a transaction.'}</p>
       </div>
 
       <form className="ethscribe-inspection-form" onSubmit={inspectExactBytes}>
-        <label>
-          <span>01 · EXACT FILE</span>
-          <input type="file" onChange={chooseFile} required />
-          <small>Read locally. Opening and resaving a historical file can change its bytes.</small>
-        </label>
+        {existingEthscriptionId ? (
+          <div className="ethscribe-selected-record">
+            <span>01 · ETHSCRIPTION IN MY WALLET</span>
+            <strong>{walletEthscription ? `Ethscription #${walletEthscription.ethscription_number}` : 'Loading official record…'}</strong>
+            <small>{short(existingEthscriptionId, 12, 10)}</small>
+          </div>
+        ) : (
+          <label>
+            <span>01 · EXACT FILE</span>
+            <input type="file" onChange={chooseFile} required />
+            <small>Read locally. Opening and resaving a historical file can change its bytes.</small>
+          </label>
+        )}
         <button type="submit" disabled={!file || busy}>Test bytes <ArrowIcon /></button>
       </form>
 
@@ -479,7 +546,7 @@ export default function EthscribeWorkbench({
 
       {existingRecord && (
         <div className="existing-ethscription-card">
-          <span>EARLIEST MATCH ACROSS CHECKED WRAPPERS</span>
+          <span>{walletEthscription ? 'SELECTED ETHSCRIPTION' : 'EARLIEST MATCH ACROSS CHECKED WRAPPERS'}</span>
           <strong>Ethscription #{existingRecord.ethscription_number}</strong>
           <code>{existingRecord.transaction_hash}</code>
           <p>Current owner: <a href={`https://etherscan.io/address/${existingRecord.current_owner}`} target="_blank" rel="noreferrer">{short(existingRecord.current_owner)}</a></p>
@@ -584,7 +651,7 @@ export default function EthscribeWorkbench({
         </div>
       )}
 
-      <p className="ethscribe-market-state">MARKET {market?.paused === false ? 'ACTIVE' : market?.paused ? 'PAUSED' : 'CHECKING'} · TRANSACTION UI {market?.transactionsEnabled ? 'ENABLED' : 'LOCKED'} · INDEXER {market?.indexer?.healthy ? 'CURRENT' : 'NOT VERIFIED'}</p>
+      <p className="ethscribe-market-state">MARKET {market?.paused === false ? 'ACTIVE' : market?.paused ? 'PAUSED' : 'CHECKING'} · TRANSACTION UI {market?.transactionsEnabled ? 'ENABLED' : 'LOCKED'} · INDEXER {market?.indexer?.healthy ? 'CURRENT' : 'TEMPORARILY UNAVAILABLE'}</p>
     </section>
   );
 }

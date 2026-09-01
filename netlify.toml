@@ -27,6 +27,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/ethscriptions/media/:id"
+  to = "/.netlify/functions/ethscription-media?id=:id"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/ethscriptions/:id"
   to = "https://api.ethscriptions.com/v2/ethscriptions/:id"
   status = 200

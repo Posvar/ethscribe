@@ -25,3 +25,19 @@ test('encodes the wallet route and fails on an unusable upstream response', asyn
   await expect(fetchWalletInventory('0xabc/def')).rejects.toThrow('invalid_owner');
   expect(global.fetch).toHaveBeenCalledWith('/api/market/wallet?owner=0xabc%2Fdef', { headers: { accept: 'application/json' } });
 });
+
+test('passes independent inventory cursors to the wallet route', async () => {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ result: { directlyOwned: [], escrow: [] } }),
+  });
+  const directPageKey = `0x${'1'.repeat(64)}`;
+  const escrowPageKey = `0x${'2'.repeat(64)}`;
+
+  await fetchWalletInventory('0xabc', { directPageKey, escrowPageKey });
+
+  expect(global.fetch).toHaveBeenCalledWith(
+    `/api/market/wallet?owner=0xabc&direct_page_key=${directPageKey}&escrow_page_key=${escrowPageKey}`,
+    { headers: { accept: 'application/json' } },
+  );
+});

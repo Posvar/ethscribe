@@ -56,14 +56,18 @@ test('shows live paused-market state and read-only wallet inventory', async () =
   />);
 
   expect(screen.getByRole('heading', { name: /your field wallet/i })).toBeInTheDocument();
+  expect(await screen.findByRole('tab', { name: /marketplace custody/i })).toHaveAttribute('aria-selected', 'true');
+  expect(await screen.findByText(/no ethscriptions from this wallet are currently verified/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: /my wallet/i }));
   expect(await screen.findByText('Ethscription #174464')).toBeInTheDocument();
   expect(screen.getByText('PAUSED')).toBeInTheDocument();
   expect(screen.getByText('LOCKED')).toBeInTheDocument();
   expect(screen.getByText('CURRENT')).toBeInTheDocument();
-  expect(screen.getByText('DIRECTLY OWNED')).toBeInTheDocument();
-  expect(screen.getByText(/no direct creations or active deposits/i)).toBeInTheDocument();
+  expect(screen.getByText('IN MY WALLET')).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /two records must agree/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /test before you deposit/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /upload a file/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /ethscription in my wallet/i })).toBeInTheDocument();
   expect(screen.getByLabelText(/expedition 001 target/i)).toHaveTextContent('bitcoin20.xpm');
   expect(screen.getByRole('button', { name: /deposit test locked/i })).toBeDisabled();
   await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(`/api/market/wallet?owner=${owner}`, { headers: { accept: 'application/json' } }));
@@ -131,6 +135,7 @@ test('simulates a deposit and waits for fail-closed custody reconciliation', asy
     footer={<div>FOOTER</div>}
   />);
 
+  fireEvent.click(await screen.findByRole('tab', { name: /my wallet/i }));
   const deposit = await screen.findByRole('button', { name: /deposit for custody only/i });
   fireEvent.click(deposit);
   const confirm = screen.getByRole('button', { name: /simulate \+ open wallet/i });
@@ -253,6 +258,7 @@ test('stops reconciliation if the connected account changes after confirmation',
   };
   const { rerender } = render(<WalletPage account={owner} {...props} />);
 
+  fireEvent.click(await screen.findByRole('tab', { name: /my wallet/i }));
   fireEvent.click(await screen.findByRole('button', { name: /deposit for custody only/i }));
   fireEvent.click(screen.getByRole('checkbox', { name: /disposable, low-value test artifact/i }));
   fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
@@ -267,4 +273,113 @@ test('stops reconciliation if the connected account changes after confirmation',
     { headers: { accept: 'application/json' } },
   ));
   await waitFor(() => expect(screen.getByRole('button', { name: 'REFRESH' })).toBeEnabled());
+});
+
+test('can preflight an Ethscription already held by the connected wallet', async () => {
+  global.fetch = jest.fn((path) => Promise.resolve({
+    ok: true,
+    json: async () => {
+      if (path === '/api/market/status') return { result: market };
+      if (path === `/api/ethscriptions/${ethscriptionId}`) {
+        return {
+          result: {
+            transaction_hash: ethscriptionId,
+            ethscription_number: 174464,
+            current_owner: owner,
+            previous_owner: owner,
+            mimetype: 'image/x-xpixmap',
+            content_uri: 'data:image/x-xpixmap;base64,QQ==',
+          },
+        };
+      }
+      return {
+        result: {
+          owner: owner.toLowerCase(),
+          market,
+          directlyOwned: [{
+            transactionHash: ethscriptionId,
+            ethscriptionNumber: 174464,
+            blockTimestamp: 1687470000,
+            currentOwner: owner,
+            mimetype: 'image/x-xpixmap',
+          }],
+          escrow: [],
+          pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+        },
+      };
+    },
+  }));
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  const targetSelect = await screen.findByLabelText(/expedition 001 target/i);
+  fireEvent.change(targetSelect, { target: { value: 'november-20-xpm' } });
+  expect(targetSelect).toHaveValue('november-20-xpm');
+  fireEvent.click(screen.getByRole('button', { name: /ethscription in my wallet/i }));
+  await screen.findByRole('option', { name: /ethscription #174464/i });
+  const walletSelect = screen.getByLabelText(/my ethscription/i);
+  fireEvent.change(walletSelect, { target: { value: ethscriptionId } });
+  expect(walletSelect).toHaveValue(ethscriptionId);
+
+  expect(await screen.findByText(/01 · ethscription in my wallet/i)).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole('button', { name: /test bytes/i })).toBeEnabled());
+  expect(screen.getByText(/never opens your wallet or sends a transaction/i)).toBeInTheDocument();
+});
+
+test('pages through marketplace custody 50 records at a time', async () => {
+  const nextPageKey = `0x${'b'.repeat(64)}`;
+  const secondId = `0x${'c'.repeat(64)}`;
+  global.fetch = jest.fn((path) => {
+    const secondPage = path.includes(`escrow_page_key=${nextPageKey}`);
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({
+        result: {
+          owner: owner.toLowerCase(),
+          market: { ...market, paused: false, transactionsEnabled: true, exitsEnabled: true },
+          directlyOwned: [],
+          escrow: [{
+            transactionHash: secondPage ? secondId : ethscriptionId,
+            ethscriptionNumber: secondPage ? 174465 : 174464,
+            blockTimestamp: 1687470000,
+            mimetype: 'audio/wav',
+            contentUri: 'data:audio/wav;base64,UklGRg==',
+            custody: { verified: true, status: 'verified' },
+          }],
+          pagination: {
+            directlyOwnedHasMore: false,
+            escrowHasMore: !secondPage,
+            escrowNextPageKey: secondPage ? null : nextPageKey,
+            maximumResultsPerSection: 50,
+          },
+        },
+      }),
+    });
+  });
+
+  const { container } = render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  expect(await screen.findByText('Ethscription #174464')).toBeInTheDocument();
+  expect(container.querySelector('audio[controls]')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'NEXT' }));
+  expect(await screen.findByText('Ethscription #174465')).toBeInTheDocument();
+  expect(global.fetch).toHaveBeenCalledWith(
+    `/api/market/wallet?owner=${owner}&escrow_page_key=${nextPageKey}`,
+    { headers: { accept: 'application/json' } },
+  );
+  expect(screen.getByText(/page 2 · up to 50 items/i)).toBeInTheDocument();
 });
