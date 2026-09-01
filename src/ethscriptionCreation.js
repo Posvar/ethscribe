@@ -297,13 +297,26 @@ export async function signFindingAssignment(provider, account, assignment) {
   return { message, signature };
 }
 
-export async function publishFinding(assignment, message, signature, fetchImpl = fetch) {
-  const response = await fetchImpl('/api/findings', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ assignment, message, signature }),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.message || 'The signed Finding could not be published. Your onchain custody is unaffected.');
-  return payload.result;
+export async function publishFinding(assignment, message, signature, fetchImpl = fetch, options = {}) {
+  const retryDelays = options.retryDelays || [1_000, 2_000, 3_000, 4_000, 5_000];
+
+  for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
+    const response = await fetchImpl('/api/findings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ assignment, message, signature }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (response.ok) return payload.result;
+
+    const custodyStillReconciling = payload.error === 'custody_unverified';
+    if (custodyStillReconciling && attempt < retryDelays.length) {
+      await wait(retryDelays[attempt]);
+      continue;
+    }
+
+    throw new Error(payload.message || 'The signed Finding could not be published. Your onchain custody is unaffected.');
+  }
+
+  throw new Error('The signed Finding could not be published. Your onchain custody is unaffected.');
 }

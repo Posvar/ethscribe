@@ -309,7 +309,14 @@ async function verifyAndStoreFinding(payload, dependencies = {}) {
   const inventory = await getInventory(assignment.authorAddress);
   const escrow = inventory.escrow?.find((item) => item.transactionHash?.toLowerCase() === assignment.ethscriptionId);
   if (!escrow?.custody?.verified) {
-    throw new FindingError(409, 'custody_unverified', 'Contract and indexer custody are not yet reconciled.');
+    const detail = escrow?.custody?.reason;
+    throw new FindingError(
+      409,
+      'custody_unverified',
+      detail
+        ? `Vault custody is still reconciling: ${detail}`
+        : 'The official indexer has not exposed this direct vault creation consistently yet. No new transaction is needed.',
+    );
   }
 
   const findingId = `${assignment.targetId}--${assignment.ethscriptionId.slice(2)}`;

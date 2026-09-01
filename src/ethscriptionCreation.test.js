@@ -10,6 +10,7 @@ import {
   findingAssignmentMessage,
   inspectFile,
   matchesMediaSignature,
+  publishFinding,
   waitForEthscriptionRecord,
   XPM_MEDIA_TYPE_CANDIDATES,
 } from './ethscriptionCreation';
@@ -112,6 +113,37 @@ test('creates directly to the market and signs a deterministic assignment messag
   expect(assignment.custodyContract).toBe(MARKET_ADDRESS.toLowerCase());
   expect(findingAssignmentMessage(assignment)).toContain('Target: lost-bc-png');
   expect(findingAssignmentMessage(assignment)).toContain('Data URI prefix: data:image/png;base64,');
+});
+
+test('retries a signed Finding while direct-vault custody replicas reconcile', async () => {
+  const published = { findingId: 'november-20-xpm--verified' };
+  const fetchImpl = jest.fn()
+    .mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'custody_unverified', message: 'Custody is still reconciling.' }),
+    })
+    .mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'custody_unverified', message: 'Custody is still reconciling.' }),
+    })
+    .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ result: published }) });
+
+  await expect(publishFinding({}, 'message', 'signature', fetchImpl, { retryDelays: [0, 0] })).resolves.toEqual(published);
+  expect(fetchImpl).toHaveBeenCalledTimes(3);
+  expect(fetchImpl.mock.calls[0][1].body).toBe(fetchImpl.mock.calls[2][1].body);
+});
+
+test('does not retry a rejected Finding whose failure is not transient custody lag', async () => {
+  const fetchImpl = jest.fn(async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({ error: 'target_mismatch', message: 'The bytes do not match.' }),
+  }));
+
+  await expect(publishFinding({}, 'message', 'signature', fetchImpl, { retryDelays: [0, 0] })).rejects.toThrow('The bytes do not match.');
+  expect(fetchImpl).toHaveBeenCalledTimes(1);
 });
 
 test('recognizes the guaranteed Finding Receipt when canonical creation loses a race', async () => {

@@ -377,6 +377,7 @@ export default function EthscribeWorkbench({
         sourceUrl,
       });
       const signed = await signFindingAssignment(provider, account, assignment);
+      setMessage('Signature accepted. Publishing the Finding while vault custody services reconcile. No new transaction is needed.');
       const result = await publishFinding(assignment, signed.message, signed.signature);
       setFinding(result);
       onFindingPublished(result);
