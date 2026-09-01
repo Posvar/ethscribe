@@ -41,6 +41,7 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(screen.getByRole('heading', { name: /living museum built through public hunts/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /lost pixels of satoshi/i })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /open the expedition/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
+  expect(screen.queryByRole('link', { name: /explore the mission/i })).not.toBeInTheDocument();
   const brand = screen.getByRole('link', { name: /ethscribe home/i });
   expect(within(brand).getByText('ETHSCRI.BE')).toBeInTheDocument();
   expect(brand.querySelector('img')).toHaveAttribute('src', '/icon.svg');
@@ -114,8 +115,8 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
-  expect(screen.getByDisplayValue('image/x-xpixmap')).toHaveAttribute('readonly');
-  expect(screen.getByText(/direct-to-vault creation/i)).toBeInTheDocument();
+  expect(screen.queryByText(/data uri media type/i)).not.toBeInTheDocument();
+  expect(screen.getByText(/canonical target locked/i)).toBeInTheDocument();
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
 }, 10_000);
 
@@ -130,15 +131,43 @@ test('offers a standalone personal Ethscribe flow with expedition handoff explai
   expect(within(primaryNavigation).getByRole('link', { name: 'Ethscribe' })).toHaveAttribute('aria-current', 'page');
 });
 
+test('promotes an exact verified Finding into the live expedition grid and counter', async () => {
+  const findingId = `0x${'66'.repeat(32)}`;
+  global.fetch = jest.fn(async (url) => {
+    if (url === '/api/findings') {
+      return { ok: true, json: async () => ({ result: [{
+        findingId: `november-20-xpm--${findingId.slice(2)}`,
+        targetId: 'november-20-xpm',
+        validationMode: 'exact',
+        ethscriptionId: findingId,
+        rawSha256: `0x${'11'.repeat(32)}`,
+        protocolContentSha256: `0x${'22'.repeat(32)}`,
+        byteLength: 4193,
+        authorAddress: `0x${'33'.repeat(20)}`,
+        sourceUrl: 'https://example.com/source',
+        contentUri: 'data:image/x-xpixmap;base64,WA==',
+        verifiedAt: '2026-09-01T12:00:00.000Z',
+      }] }) };
+    }
+    return { ok: true, json: async () => ({ result: {} }) };
+  });
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi');
+  render(<App />);
+
+  expect(await screen.findByRole('button', { name: /open field note for bitcoin20\.xpm, ethscribed/i })).toBeInTheDocument();
+  expect(screen.getByLabelText('8 of 22 artifacts secured')).toBeInTheDocument();
+});
+
 test('renders a compact newest-first Expeditions archive with a dedicated proposal entry point', () => {
   window.history.pushState({}, '', '/expeditions');
   render(<App />);
 
   expect(screen.getByRole('heading', { name: /^expeditions$/i })).toBeInTheDocument();
-  expect(screen.getByText(/expedition archive \/ newest first/i)).toBeInTheDocument();
+  expect(screen.getByText(/live now \/ expedition 001/i)).toBeInTheDocument();
   expect(screen.queryByText(/active and completed field records/i)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: /lost pixels of satoshi/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
-  expect(screen.getByRole('link', { name: /propose an expedition/i })).toHaveAttribute('href', '/expeditions/propose');
+  expect(screen.getByRole('link', { name: /propose a future expedition/i })).toHaveAttribute('href', '/expeditions/propose');
+  expect(screen.getByRole('link', { name: /enter the live expedition/i })).toHaveAttribute('href', '#live-expeditions');
   expect(screen.queryByText(/what should the field investigate next/i)).not.toBeInTheDocument();
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Expeditions' })).toHaveAttribute('aria-current', 'page');

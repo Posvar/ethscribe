@@ -30,7 +30,7 @@ test('rejects IDs that collide with any deployed market selector', () => {
   expect(hasDepositSelectorCollision(pauseCollision)).toBe(true);
   expect(hasDepositSelectorCollision(directWithdrawalCollision)).toBe(true);
   expect(hasDepositSelectorCollision(directBatchWithdrawalCollision)).toBe(true);
-  expect(() => buildDepositTransaction(account, pauseCollision)).toThrow(/collides/i);
+  expect(() => buildDepositTransaction(account, pauseCollision)).toThrow(/conflicts/i);
   expect(hasDepositSelectorCollision(id)).toBe(false);
 });
 

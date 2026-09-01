@@ -250,7 +250,7 @@ export default function WalletPage({
 
   const depositAction = (record) => {
     if (hasDepositSelectorCollision(record.transactionHash)) {
-      return { disabled: true, label: 'UNSUPPORTED ID', hint: 'This ID collides with a V2 contract selector and cannot use the fallback deposit path.' };
+      return { disabled: true, label: 'UNSUPPORTED ID', hint: 'This ID conflicts with a reserved market action and cannot use the standard deposit path.' };
     }
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Marketplace transactions use Ethereum mainnet.' };
@@ -269,7 +269,7 @@ export default function WalletPage({
       disabled: false,
       label: 'WITHDRAW TO THIS WALLET',
       hint: record.custody?.custodyKind === 'direct_creation'
-        ? 'Uses the ESIP-2 direct-creation exit. It remains available while intake is paused.'
+        ? 'Returns this direct creation to its previous owner. The exit remains available while intake is paused.'
         : 'Registered-deposit withdrawals remain available while market intake is paused.',
       onClick: () => openConfirmation('withdraw', record),
     };
@@ -388,7 +388,7 @@ export default function WalletPage({
             <h2 id="wallet-confirmation-title">{confirmation.type === 'deposit' ? 'Deposit this Ethscription?' : 'Withdraw this Ethscription?'}</h2>
             <p>{confirmation.type === 'deposit'
               ? 'A successful zero-ETH transaction transfers the complete Ethscription to the immutable market contract for custody only. It does not create an expedition Finding. A transaction receipt alone is not proof of custody; Ethscribe will wait for the official indexer and contract record to agree.'
-              : 'The contract will emit an ESIP-2 conditional transfer returning the Ethscription to this connected wallet. This exit remains available while market intake is paused.'}</p>
+              : 'The vault will return the Ethscription to this connected wallet after confirming it as the previous owner. This exit remains available while market intake is paused.'}</p>
             <dl>
               <div><dt>ETHSCRIPTION</dt><dd><code>{confirmation.record.transactionHash}</code></dd></div>
               <div><dt>{confirmation.type === 'deposit' ? 'DESTINATION' : 'RECIPIENT'}</dt><dd><code>{confirmation.type === 'deposit' ? MARKET_ADDRESS : account}</code></dd></div>

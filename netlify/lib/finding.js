@@ -10,6 +10,7 @@ const {
 
 const MAX_CLOCK_AGE_MS = 60 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
+const MAX_LIST_RESULTS = 50;
 const HASH_PATTERN = /^0x[a-f0-9]{64}$/;
 
 class FindingError extends Error {
@@ -176,9 +177,13 @@ function encodeBlobPath(path) {
   return path.split('/').map(encodeURIComponent).join('/');
 }
 
+function blobBaseUrl(config) {
+  return `https://${config.account}.blob.core.windows.net/${config.container}`;
+}
+
 async function storeFinding(path, record, fetchImpl = fetch, env = process.env) {
-  const { account, container, sas } = storageConfig(env);
-  const url = `https://${account}.blob.core.windows.net/${container}/${encodeBlobPath(path)}?${sas}`;
+  const config = storageConfig(env);
+  const url = `${blobBaseUrl(config)}/${encodeBlobPath(path)}?${config.sas}`;
   const response = await fetchImpl(url, {
     method: 'PUT',
     headers: {
@@ -193,6 +198,67 @@ async function storeFinding(path, record, fetchImpl = fetch, env = process.env) 
     throw new FindingError(409, 'finding_exists', 'This Ethscription is already assigned to this target.');
   }
   if (!response.ok) throw new FindingError(503, 'storage_unavailable', 'The verified Finding could not be stored.');
+}
+
+function decodeXml(value) {
+  return value
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&apos;', "'");
+}
+
+function publicFinding(record) {
+  const assignment = record?.assignment;
+  if (record?.documentType !== 'verified-finding' || assignment?.expeditionId !== EXPEDITION_ID) return null;
+  try {
+    const spec = targetSpec(assignment.targetId);
+    return {
+      findingId: record.findingId,
+      expeditionId: assignment.expeditionId,
+      targetId: assignment.targetId,
+      validationMode: spec.validationMode,
+      ethscriptionId: assignment.ethscriptionId,
+      rawSha256: assignment.rawSha256,
+      protocolContentSha256: assignment.protocolContentSha256,
+      filename: assignment.filename,
+      byteLength: assignment.byteLength,
+      authorAddress: assignment.authorAddress,
+      sourceUrl: assignment.sourceReferences?.[0] || '',
+      claimSummary: assignment.claimSummary,
+      contentUri: record.verification?.indexedContentUri || '',
+      verifiedAt: record.verifiedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function listFindings(fetchImpl = fetch, env = process.env, limit = MAX_LIST_RESULTS) {
+  const config = storageConfig(env);
+  const boundedLimit = Math.min(Math.max(Number(limit) || MAX_LIST_RESULTS, 1), MAX_LIST_RESULTS);
+  const prefix = `hunts/${EXPEDITION_ID}/findings/`;
+  const listUrl = `${blobBaseUrl(config)}?restype=container&comp=list&prefix=${encodeURIComponent(prefix)}&maxresults=5000&${config.sas}`;
+  const listResponse = await fetchImpl(listUrl, { headers: { 'x-ms-version': '2023-11-03' } });
+  if (!listResponse.ok) {
+    throw new FindingError(503, 'storage_unavailable', 'The verified Finding index could not be read.');
+  }
+
+  const xml = await listResponse.text();
+  const names = Array.from(xml.matchAll(/<Name>([\s\S]*?)<\/Name>/g), (match) => decodeXml(match[1]))
+    .filter((name) => /^hunts\/lost-pixels-of-satoshi\/findings\/[a-z0-9-]+--[a-f0-9]{64}\/finding\.json$/.test(name))
+    .slice(-boundedLimit);
+
+  const records = await Promise.all(names.map(async (name) => {
+    const response = await fetchImpl(`${blobBaseUrl(config)}/${encodeBlobPath(name)}?${config.sas}`, {
+      headers: { accept: 'application/json', 'x-ms-version': '2023-11-03' },
+    });
+    if (!response.ok) return null;
+    return publicFinding(await response.json().catch(() => null));
+  }));
+
+  return records.filter(Boolean).sort((left, right) => right.verifiedAt.localeCompare(left.verifiedAt));
 }
 
 async function verifyAndStoreFinding(payload, dependencies = {}) {
@@ -262,11 +328,12 @@ async function verifyAndStoreFinding(payload, dependencies = {}) {
       frozenTargetWrapper: expectedPrefix,
       decodedRawSha256: assignment.rawSha256,
       marketCustody: 'verified',
+      indexedContentUri: record.content_uri,
     },
   };
   const putFinding = dependencies.storeFinding || storeFinding;
   await putFinding(storagePath, storedRecord, fetchImpl, env);
-  return { findingId, storagePath, verifiedAt: storedRecord.verifiedAt };
+  return { ...publicFinding(storedRecord), storagePath };
 }
 
 module.exports = {
@@ -275,6 +342,8 @@ module.exports = {
   assignmentMessage,
   decodeVerifiedContentUri,
   fetchEthscription,
+  listFindings,
+  publicFinding,
   storeFinding,
   hasExpectedFileSignature,
   validateAssignment,

@@ -69,6 +69,7 @@ export default function EthscribeWorkbench({
   connectWallet,
   switchToMainnet,
   provider,
+  onFindingPublished = () => {},
 }) {
   const embeddedTargetMode = mode === 'target';
   const [selectedTargetId, setSelectedTargetId] = useState(artifact?.id || '');
@@ -89,7 +90,7 @@ export default function EthscribeWorkbench({
   const [confirmation, setConfirmation] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [claimSummary, setClaimSummary] = useState(artifact ? `Exact-byte candidate for ${artifact.filename}` : '');
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceUrl, setSourceUrl] = useState(artifact?.status === 'lost' ? '' : (artifact?.sourceUrl || ''));
   const [finding, setFinding] = useState(null);
   const [targetCheck, setTargetCheck] = useState(null);
 
@@ -230,7 +231,7 @@ export default function EthscribeWorkbench({
     setSelectedTargetId(target.id);
     setTargetCheck(null);
     setClaimSummary(`Exact-byte candidate for ${target.filename}`);
-    setSourceUrl('');
+    setSourceUrl(target.status === 'lost' ? '' : (target.sourceUrl || ''));
     setPhase('inspecting');
     setMessage('Testing your locally hashed bytes against the sealed target commitment.');
     try {
@@ -314,7 +315,7 @@ export default function EthscribeWorkbench({
     if (existingRecord && !existingOwnedByWallet) return;
     if (hasDepositSelectorCollision(id)) {
       setPhase('error');
-      setMessage('This Ethscription ID collides with a V2 function selector. It remains safely in your wallet but cannot use the V2 fallback deposit path.');
+      setMessage('This Ethscription ID conflicts with a reserved market action. It remains safely in your wallet but cannot use the standard deposit path.');
       return;
     }
     try {
@@ -378,6 +379,7 @@ export default function EthscribeWorkbench({
       const signed = await signFindingAssignment(provider, account, assignment);
       const result = await publishFinding(assignment, signed.message, signed.signature);
       setFinding(result);
+      onFindingPublished(result);
       setPhase('submitted');
       setMessage('Finding published. Custody and the signed target assignment are both independently recorded.');
     } catch (error) {
@@ -414,10 +416,10 @@ export default function EthscribeWorkbench({
       </div>
 
       <div className="ethscribe-boundary-note">
-        <strong>DIRECT-TO-VAULT CREATION</strong>
+        <strong>{embeddedTargetMode ? 'CANONICAL TARGET LOCKED' : 'DIRECT-TO-VAULT CREATION'}</strong>
         <p>{embeddedTargetMode
-          ? 'One transaction makes your connected wallet the creator and the V2 market the initial owner. Ethereum ordering determines the canonical winner; a compact Finding Receipt is guaranteed if the exact Data URI loses a race.'
-          : 'One transaction makes your connected wallet the creator and places the artifact directly in the V2 market vault. It is not listed or assigned automatically, and you retain an ESIP-2 withdrawal path.'}</p>
+          ? 'The expedition fixes the standard file wrapper automatically. One transaction makes your wallet the creator and places the exact payload in the vault. If accepted first, that canonical payload cannot be Ethscribed again.'
+          : 'The site selects the standard wrapper from the file type. One transaction makes your wallet the creator and places the artifact in the vault. It is not listed or assigned automatically, and you can withdraw it.'}</p>
       </div>
 
       <form className="ethscribe-inspection-form" onSubmit={inspectExactBytes}>
@@ -425,19 +427,6 @@ export default function EthscribeWorkbench({
           <span>01 · EXACT FILE</span>
           <input type="file" onChange={chooseFile} required />
           <small>Read locally. Opening and resaving a historical file can change its bytes.</small>
-        </label>
-        <label>
-          <span>02 · DATA URI MEDIA TYPE</span>
-          <input
-            type="text"
-            value={lockedMediaType || mediaType}
-            onChange={(event) => { setMediaType(event.target.value); resetAnalysis(); }}
-            readOnly={Boolean(lockedMediaType)}
-            spellCheck="false"
-          />
-          <small>{lockedMediaType
-            ? `This target locks the canonical prefix: data:${lockedMediaType};base64,`
-            : 'The prefix is part of protocol identity. Change it only deliberately.'}</small>
         </label>
         <button type="submit" disabled={!file || busy}>Test bytes <ArrowIcon /></button>
       </form>
@@ -500,7 +489,7 @@ export default function EthscribeWorkbench({
       {ethscription?.creationOutcome === 'receipt' && (
         <div className="ethscribe-race-result">
           <strong>FINDING RECEIPT CREATED</strong>
-          <p>The canonical wrapper was claimed by an earlier Ethereum transaction. This transaction still created an ESIP-6 receipt owned by your wallet and committed to the attempted canonical content hash. Receipts are evidence of timing, not accepted marketplace artifacts.</p>
+          <p>An earlier Ethereum transaction claimed the canonical payload first. Your wallet still received an onchain Finding Receipt committed to the attempted content hash. The receipt proves timing; it is not the accepted artifact.</p>
           <a href={`https://ethscriptions.com/ethscriptions/${ethscription.transaction_hash}`} target="_blank" rel="noreferrer">Open Finding Receipt <ArrowIcon /></a>
         </div>
       )}
@@ -513,7 +502,7 @@ export default function EthscribeWorkbench({
       </div>
 
       {account && onMainnet && inspection && rawMatchesTarget && !existing && phase === 'ready' && !market?.intakeEnabled && (
-        <p className="ethscribe-race-result">Direct creation is unavailable until the V2 market, transaction interface, and official indexer all report ready. No transaction can be prepared in this state.</p>
+        <p className="ethscribe-race-result">Direct creation is unavailable until the vault, transaction interface, and official indexer all report ready. No transaction can be prepared in this state.</p>
       )}
 
       {!embeddedTargetMode && inspection && (custody || existingOwnedByWallet) && !submissionMode && (
@@ -552,7 +541,7 @@ export default function EthscribeWorkbench({
 
       {submissionMode && custody && !finding && (
         <form className="finding-assignment-form" onSubmit={submitAssignment}>
-          <div><span>03 · SIGN TARGET ASSIGNMENT</span><strong>NO GAS · CANNOT MOVE THE ARTIFACT</strong></div>
+          <div><span>02 · SIGN TARGET ASSIGNMENT</span><strong>NO GAS · CANNOT MOVE THE ARTIFACT</strong></div>
           <label>Claim summary<textarea rows="3" maxLength="500" value={claimSummary} onChange={(event) => setClaimSummary(event.target.value)} required /></label>
           <label>{activeArtifact.status === 'lost' ? 'Candidate source / custody URL' : 'Primary source URL'}<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder={activeArtifact.status === 'lost' ? 'Where did these exact bytes come from?' : undefined} required /></label>
           <button type="submit" disabled={phase === 'signing'}>Sign + publish Finding <ArrowIcon /></button>
@@ -572,7 +561,7 @@ export default function EthscribeWorkbench({
             <p className="kicker"><span /> Wallet checkpoint</p>
             <h2 id="ethscribe-confirmation-title">{confirmation === 'create' ? 'Ethscribe directly into the vault?' : 'Deposit this Ethscription?'}</h2>
             <p>{confirmation === 'create'
-              ? `Your connected wallet remains the protocol creator. The V2 market becomes initial owner immediately. ${submissionMode ? 'After custody verification, one gas-free signature submits the Finding.' : 'No listing or expedition assignment is created automatically.'}`
+              ? `Your connected wallet remains the creator and the Ethscribe vault becomes initial owner immediately. ${submissionMode ? 'After custody verification, one gas-free signature submits the Finding.' : 'No listing or expedition assignment is created automatically.'}`
               : 'This transaction transfers an existing Ethscription into the immutable market while preserving your contract withdrawal path.'}</p>
             <dl>
               <div><dt>FROM</dt><dd><code>{account}</code></dd></div>
@@ -586,7 +575,7 @@ export default function EthscribeWorkbench({
             <label className="ethscribe-confirm-check">
               <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
               <span>{confirmation === 'create'
-                ? 'I reviewed the exact file hash, full Data URI prefix, and market destination. I understand the artifact enters contract custody immediately and a Finding Receipt—not the canonical artifact—wins if another transaction is ordered first.'
+                ? 'I reviewed the exact file hash, canonical file wrapper, and vault destination. I understand the artifact enters custody immediately and a Finding Receipt—not the canonical artifact—wins if another transaction is ordered first.'
                 : 'I reviewed the exact Ethscription ID and market destination and understand that this transfers custody.'}</span>
             </label>
             <button type="button" className="primary-action" disabled={!confirmed} onClick={confirmation === 'create' ? createEthscription : depositEthscription}>Simulate + open wallet <ArrowIcon /></button>

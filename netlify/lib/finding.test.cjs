@@ -6,6 +6,7 @@ const { MARKET_ADDRESS } = require('./market');
 const {
   FindingError,
   assignmentMessage,
+  listFindings,
   storeFinding,
   validateAssignment,
   verifyAndStoreFinding,
@@ -72,6 +73,9 @@ test('verifies signature, exact indexed bytes, frozen wrapper, and reconciled cu
   assert.equal(stored.path, result.storagePath);
   assert.equal(stored.record.verification.marketCustody, 'verified');
   assert.equal(stored.record.verification.frozenTargetWrapper, 'data:image/png;base64,');
+  assert.equal(result.targetId, 'lost-bc-png');
+  assert.equal(result.ethscriptionId, ethscriptionId);
+  assert.equal(result.contentUri, contentUri);
 });
 
 test('rejects non-frozen wrappers and known-target hash mismatches', () => {
@@ -115,4 +119,35 @@ test('writes immutable Azure blobs without exposing credentials in the record', 
   assert.equal(request.options.headers['x-ms-blob-type'], 'BlockBlob');
   assert.match(request.url, /^https:\/\/ethscribe\.blob\.core\.windows\.net\/ethscribe-assets\/hunts\/test/);
   assert.doesNotMatch(request.options.body, /secret/);
+});
+
+test('lists only safe verified Finding projections from immutable storage', async () => {
+  const value = assignment({ targetId: 'lost-bc-png' });
+  const record = {
+    schemaVersion: 1,
+    documentType: 'verified-finding',
+    findingId: `lost-bc-png--${ethscriptionId.slice(2)}`,
+    assignment: value,
+    message: 'private signed message is not returned',
+    signature: `0x${'44'.repeat(65)}`,
+    verifiedAt: new Date(now).toISOString(),
+    verification: { indexedContentUri: contentUri },
+  };
+  const blobName = `hunts/lost-pixels-of-satoshi/findings/${record.findingId}/finding.json`;
+  const records = await listFindings(async (url) => {
+    if (String(url).includes('comp=list')) {
+      return { ok: true, text: async () => `<EnumerationResults><Blobs><Blob><Name>${blobName}</Name></Blob></Blobs></EnumerationResults>` };
+    }
+    return { ok: true, json: async () => record };
+  }, {
+    AZURE_STORAGE_ACCOUNT_NAME: 'ethscribe',
+    AZURE_STORAGE_CONTAINER: 'ethscribe-assets',
+    AZURE_STORAGE_SAS_TOKEN: '?sv=secret',
+  });
+
+  assert.equal(records.length, 1);
+  assert.equal(records[0].targetId, 'lost-bc-png');
+  assert.equal(records[0].contentUri, contentUri);
+  assert.equal(records[0].signature, undefined);
+  assert.equal(records[0].message, undefined);
 });

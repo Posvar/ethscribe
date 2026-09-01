@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import DocsPage from './DocsPage';
 import EthscribeWorkbench from './EthscribeWorkbench';
 import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
+import { fetchVerifiedFindings, mergeVerifiedFindings, statsForArtifacts } from './findingApi';
 import {
   buildExpeditionProposal,
   fetchExpeditionProposals,
@@ -163,6 +164,38 @@ function ArtifactPreview({ artifact, className = '' }) {
   return <div className={`file-preview ${className}`}><img src={artifact.previewUrl} alt={`${artifact.filename} historical artifact`} /></div>;
 }
 
+function ArtifactGridPreview({ artifact }) {
+  if (artifact.status !== 'secured' || !artifact.previewUrl) return <span className="corpus-slot-open">+</span>;
+  if (artifact.format === 'XPM') {
+    return <XpmPreview source={artifact.previewUrl} label={`${artifact.filename} decoded preview`} />;
+  }
+  return <img src={artifact.previewUrl} alt="" />;
+}
+
+function ExpeditionCorpusGrid({ resolvedArtifacts, onOpenArtifact }) {
+  return (
+    <div className="expedition-corpus" aria-label="Twenty-two artifact targets in Expedition 001">
+      <div className="corpus-grid-heading"><span>22 BYTE-PERFECT TARGETS</span><strong>FIRST COME · FIRST SCRIBE</strong></div>
+      <div className="corpus-grid">
+        {resolvedArtifacts.map((artifact, index) => (
+          <button
+            className={`corpus-slot slot-${artifact.status}`}
+            type="button"
+            key={artifact.id}
+            onClick={() => onOpenArtifact(artifact.id)}
+            aria-label={`Open field note for ${artifact.filename}, ${artifact.status === 'secured' ? 'Ethscribed' : 'not yet Ethscribed'}`}
+          >
+            <span className="corpus-slot-number">{String(index + 1).padStart(2, '0')}</span>
+            <span className="corpus-slot-visual"><ArtifactGridPreview artifact={artifact} /></span>
+            <span className="corpus-slot-name">{artifact.filename}</span>
+            <span className="corpus-slot-state">{artifact.status === 'secured' ? 'ETHSCRIBED' : 'OPEN'}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RecordFact({ label, value, unknown = 'Unknown until the original bytes are recovered', className = '' }) {
   return (
     <div className={`record-fact ${className}`}>
@@ -172,7 +205,7 @@ function RecordFact({ label, value, unknown = 'Unknown until the original bytes 
   );
 }
 
-function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMainnet, provider }) {
+function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished }) {
   const [chainRecord, setChainRecord] = useState(null);
   const [recordState, setRecordState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
   const statusCopy = {
@@ -316,10 +349,6 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
           </section>
         </div>
 
-        {artifact.format === 'XPM' && artifact.status !== 'lost' && (
-          <div className="artifact-prefix"><span>RECOMMENDED DATA URI</span><code>data:image/x-xpixmap;base64,&lt;exact XPM bytes&gt;</code></div>
-        )}
-
         {(artifact.status === 'open' || artifact.status === 'lost') && (
           <EthscribeWorkbench
             mode="target"
@@ -329,6 +358,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
             connectWallet={connectWallet}
             switchToMainnet={switchToMainnet}
             provider={provider}
+            onFindingPublished={onFindingPublished}
           />
         )}
 
@@ -353,14 +383,14 @@ function MethodSection() {
         {processSteps.map((step) => <article key={step.number}><span>{step.number}</span><h3>{step.title}</h3><p>{step.body}</p></article>)}
       </div>
       <div className="principle-note">
-        <strong>ONE FILE IDENTITY. MANY ONCHAIN WRAPPERS.</strong>
-        <p>Ethereum establishes inscription history and ownership. Ethscribe separately hashes the decoded raw file, so a MIME change, alternate Data URI, or compressed wrapper cannot impersonate a new historical artifact.</p>
+        <strong>FIRST COME. FIRST SCRIBE.</strong>
+        <p>Each target fixes one canonical wrapper around the original bytes. Ethereum accepts that exact payload only once; Ethscribe also hashes the decoded file so alternate wrappers cannot impersonate a second historical original.</p>
       </div>
     </section>
   );
 }
 
-function HomePage({ account, walletState, walletName, connectWallet }) {
+function HomePage({ account, walletState, walletName, connectWallet, resolvedStats = huntStats }) {
   return (
     <div className="site-shell home-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} />
@@ -369,10 +399,9 @@ function HomePage({ account, walletState, walletName, connectWallet }) {
           <div className="hero-copy">
             <p className="kicker"><span /> Ownable digital archaeology</p>
             <h1>Find the bytes. Establish the provenance. Own the artifact.</h1>
-            <p className="hero-intro">Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.</p>
+            <p className="hero-intro">Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence. For each expedition’s canonical payload, the protocol recognizes one first inscription: first come, first scribe.</p>
             <div className="hero-actions">
-              <a className="primary-action" href="#mission">Explore the mission <ArrowIcon /></a>
-              <a className="text-action" href={EXPEDITION_PATH}>Enter Expedition 001</a>
+              <a className="primary-action" href={EXPEDITION_PATH}>Enter Expedition 001 <ArrowIcon /></a>
             </div>
           </div>
 
@@ -382,7 +411,7 @@ function HomePage({ account, walletState, walletName, connectWallet }) {
             <div className="index-connector">↓</div>
             <div className="index-object object-proof"><span>02 / AUTHENTICATE</span><strong>BYTE-PERFECT MATCH</strong><code>sha256: 7f3a…e921</code></div>
             <div className="index-connector">↓</div>
-            <div className="index-object object-record"><span>03 / PRESERVE</span><strong>OWNABLE RECORD</strong><code>ethereum · provenance · custody</code></div>
+            <div className="index-object object-record"><span>03 / FIRST SCRIBE</span><strong>OWNABLE ORIGINAL</strong><code>ethereum · provenance · custody</code></div>
             <p>THE ARTIFACT IS THE BYTES.<br />THE STORY IS THE EVIDENCE.</p>
           </div>
         </section>
@@ -399,7 +428,7 @@ function HomePage({ account, walletState, walletName, connectWallet }) {
           <div className="mission-pillars">
             <article><span>01</span><h3>Hunt together</h3><p>Time-boxed expeditions turn open questions and known collection gaps into approachable public fieldwork.</p></article>
             <article><span>02</span><h3>Verify exactly</h3><p>Primary sources establish the story. Raw-byte hashes establish whether the recovered file is the target.</p></article>
-            <article><span>03</span><h3>Preserve and own</h3><p>Ethereum records inscription history and custody while the exhibition preserves context, evidence, and status.</p></article>
+            <article><span>03</span><h3>Preserve and own</h3><p>The first canonical inscription becomes the singular onchain artifact. Its owner may change; its byte-perfect identity and provenance remain public.</p></article>
           </div>
         </section>
 
@@ -412,11 +441,11 @@ function HomePage({ account, walletState, walletName, connectWallet }) {
           <div className="featured-copy">
             <p className="kicker"><span /> Expedition 001 · Active</p>
             <h2>The Lost Pixels of Satoshi</h2>
-            <p>The inaugural expedition maps Satoshi’s 2009–2010 icon workshop: seven files already secured, fifteen known-byte gaps ready to ethscribe, and one contemporaneously attested attachment genuinely missing.</p>
+            <p>The inaugural expedition maps Satoshi’s 2009–2010 icon workshop. Each slot seeks one canonical Ethscription of artwork shaped by Satoshi’s own hand—an exact onchain original that cannot be claimed twice.</p>
             <dl>
-              <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured}</dd></div>
-              <div><dt>KNOWN GAPS</dt><dd>{huntStats.open}</dd></div>
-              <div><dt>LOST ARTIFACT</dt><dd>{huntStats.lost}</dd></div>
+              <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured}</dd></div>
+              <div><dt>KNOWN GAPS</dt><dd>{resolvedStats.open}</dd></div>
+              <div><dt>LOST ARTIFACT</dt><dd>{resolvedStats.lost}</dd></div>
             </dl>
             <a className="primary-action" href={EXPEDITION_PATH}>Open the expedition <ArrowIcon /></a>
           </div>
@@ -428,21 +457,22 @@ function HomePage({ account, walletState, walletName, connectWallet }) {
   );
 }
 
-function ExpeditionsPage({ account, walletState, walletName, connectWallet }) {
+function ExpeditionsPage({ account, walletState, walletName, connectWallet, resolvedStats = huntStats }) {
   return (
     <div className="site-shell expeditions-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expeditions />
       <main id="top">
         <section className="expeditions-index-hero">
           <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
-          <div>
-            <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as permanent public records.</p>
-            <a className="primary-action" href="/expeditions/propose">Propose an expedition <ArrowIcon /></a>
+          <div className="expeditions-index-actions">
+            <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as singular onchain artifacts.</p>
+            <a className="primary-action" href="#live-expeditions">Enter the live expedition <ArrowIcon /></a>
+            <a className="text-action" href="/expeditions/propose">Propose a future expedition</a>
           </div>
         </section>
 
-        <section className="expedition-index-list" aria-label="Expedition archive, newest first">
-          <p className="card-index expedition-archive-label">EXPEDITION ARCHIVE / NEWEST FIRST</p>
+        <section className="expedition-index-list" id="live-expeditions" aria-label="Live expeditions">
+          <p className="card-index expedition-archive-label">LIVE NOW / EXPEDITION 001</p>
           <a className="expedition-index-card" href={EXPEDITION_PATH}>
             <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" /><span>EXPEDITION 001</span></div>
             <div className="expedition-index-copy">
@@ -450,14 +480,19 @@ function ExpeditionsPage({ account, walletState, walletName, connectWallet }) {
               <h3>The Lost Pixels of Satoshi</h3>
               <p>Complete the exact-file record behind Satoshi’s first two Bitcoin icon systems—and recover one attested PNG whose original bytes remain lost.</p>
               <dl>
-                <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured} / {huntStats.known}</dd></div>
-                <div><dt>KNOWN-BYTE GAPS</dt><dd>{huntStats.open}</dd></div>
-                <div><dt>LOST-BYTE TARGETS</dt><dd>{huntStats.lost}</dd></div>
+                <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured} / {resolvedStats.known}</dd></div>
+                <div><dt>KNOWN-BYTE GAPS</dt><dd>{resolvedStats.open}</dd></div>
+                <div><dt>LOST-BYTE TARGETS</dt><dd>{resolvedStats.lost}</dd></div>
               </dl>
               <strong>OPEN EXPEDITION <ArrowIcon /></strong>
             </div>
           </a>
         </section>
+
+        <aside className="expedition-proposal-secondary">
+          <div><span>NEXT FIELD QUESTION</span><p>Know a piece of digital history worth recovering byte by byte?</p></div>
+          <a className="text-action" href="/expeditions/propose">Open the proposal notebook <ArrowIcon /></a>
+        </aside>
 
       </main>
       <SiteFooter />
@@ -613,14 +648,15 @@ function ProposeExpeditionPage({ account, walletState, walletName, connectWallet
   );
 }
 
-function ExpeditionPage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider }) {
+function ExpeditionPage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, resolvedStats = huntStats, onFindingPublished }) {
   const requestedArtifactId = new URLSearchParams(window.location.search).get('artifact');
+  const artifactForId = (id) => (id === lostArtifact.id ? lostArtifact : resolvedArtifacts.find((artifact) => artifact.id === id));
   const [selectedArtifactId, setSelectedArtifactId] = useState(
-    artifactById(requestedArtifactId) ? requestedArtifactId : lostArtifact.id,
+    artifactForId(requestedArtifactId) ? requestedArtifactId : lostArtifact.id,
   );
 
   useEffect(() => {
-    if (!artifactById(requestedArtifactId)) return undefined;
+    if (!artifactForId(requestedArtifactId)) return undefined;
 
     const scrollTimer = window.setTimeout(() => {
       document.getElementById(`record-${requestedArtifactId}`)?.scrollIntoView?.({ block: 'start' });
@@ -642,6 +678,14 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
     });
   };
 
+  const openArtifactFromGrid = (artifactId) => {
+    setSelectedArtifactId(artifactId);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set('artifact', artifactId);
+    window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}#record-${artifactId}`);
+    window.setTimeout(() => document.getElementById(`record-${artifactId}`)?.scrollIntoView?.({ block: 'start' }), 0);
+  };
+
   return (
     <div className="site-shell expedition-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expedition />
@@ -651,24 +695,14 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
             <p className="page-breadcrumb"><a href="/">ETHSCRIBE</a><span>/</span>EXPEDITION 001</p>
             <p className="kicker"><span /> Active digital archaeology hunt</p>
             <h1>The Lost Pixels of Satoshi</h1>
-            <p>This expedition—not the whole Ethscribe mission—focuses on the exact files behind Satoshi’s first two Bitcoin icon systems.</p>
+            <p>Twenty-two exact files trace Satoshi’s first two Bitcoin icon systems. Each canonical payload has room for one first Ethscription—one ownable, byte-perfect artifact made from Satoshi’s original pixels.</p>
             <a className="primary-action" href="#timeline">Open the field record <ArrowIcon /></a>
           </div>
-          <div className="hero-artifact" aria-label="The Lost Pixels of Satoshi artifact preview">
-            <div className="artifact-label top-label"><span>FIELD NOTE 001</span><span>08 FEB 2010</span></div>
-            <div className="artifact-stage lost-stage">
-              <span className="registration-mark mark-one">+</span><span className="registration-mark mark-two">+</span>
-              <img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" />
-            </div>
-            <div className="artifact-label bottom-label">
-              <div><span>CORPUS</span><strong>{huntStats.known} KNOWN FILES</strong></div>
-              <div><span>STATUS</span><strong className="status-dot">ONE OPEN MYSTERY</strong></div>
-            </div>
-          </div>
+          <ExpeditionCorpusGrid resolvedArtifacts={resolvedArtifacts} onOpenArtifact={openArtifactFromGrid} />
         </section>
 
         <section className="ticker" aria-label="Expedition principles">
-          <div>{huntStats.secured} ETHSCRIBED</div><span>✦</span><div>{huntStats.open} KNOWN-BYTE GAPS</div><span>✦</span><div>1 LOST-BYTE HUNT</div><span>✦</span><div>EXACT MATCHES ONLY</div>
+          <div>{resolvedStats.secured} ETHSCRIBED</div><span>✦</span><div>{resolvedStats.open} KNOWN-BYTE GAPS</div><span>✦</span><div>FIRST COME · FIRST SCRIBE</div><span>✦</span><div>1 LOST-BYTE HUNT</div>
         </section>
 
         <section className="hunt-section">
@@ -687,19 +721,19 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
 
             <article className="progress-card">
               <p className="card-index">CANONICAL CORPUS / THROUGH v0.3.0</p>
-              <div className="progress-fraction"><strong>{huntStats.secured}</strong><span>/ {huntStats.known}</span></div>
+              <div className="progress-fraction"><strong>{resolvedStats.secured}</strong><span>/ {resolvedStats.known}</span></div>
               <p className="progress-label">known byte-perfect files secured in this collection</p>
-              <div className="progress-track" aria-label={`${huntStats.secured} of ${huntStats.known} artifacts secured`}><span style={{ width: `${(huntStats.secured / huntStats.known) * 100}%` }} /></div>
-              <p className="progress-sync-note">CURATED MANIFEST TODAY · LIVE TARGET INTAKE · VERIFIED MARKET CUSTODY</p>
+              <div className="progress-track" aria-label={`${resolvedStats.secured} of ${resolvedStats.known} artifacts secured`}><span style={{ width: `${(resolvedStats.secured / resolvedStats.known) * 100}%` }} /></div>
+              <p className="progress-sync-note">LIVE VERIFIED FINDINGS · EXACT TARGET MATCH · ONCHAIN CUSTODY</p>
               <dl className="progress-breakdown">
-                <div><dt>ETHSCRIBED</dt><dd>{huntStats.secured}</dd></div><div><dt>NEEDS ETHSCRIBING</dt><dd>{huntStats.open}</dd></div>
-                <div><dt>BYTES UNKNOWN</dt><dd>{huntStats.lost}</dd></div><div><dt>MAPPED COMPONENTS</dt><dd>{huntStats.components}</dd></div>
+                <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured}</dd></div><div><dt>NEEDS ETHSCRIBING</dt><dd>{resolvedStats.open}</dd></div>
+                <div><dt>BYTES UNKNOWN</dt><dd>{resolvedStats.lost}</dd></div><div><dt>MAPPED COMPONENTS</dt><dd>{resolvedStats.components}</dd></div>
               </dl>
             </article>
           </div>
 
           <div className="hunt-lanes">
-            <article><span className="lane-index">01 / ACCESSION</span><h3>Known bytes</h3><p>Fifteen authoritative files are already available from source commits or archives. Their full target hashes appear in the timeline below. The task is to ethscribe the exact bytes and submit the matching record.</p><strong>A finite completion race</strong></article>
+            <article><span className="lane-index">01 / ACCESSION</span><h3>Known bytes</h3><p>Authoritative files survive in source commits and archives. The first hunter to place a target’s exact canonical payload onchain secures its singular Ethscription for the record.</p><strong>First come. First scribe.</strong></article>
             <article className="unknown-lane"><span className="lane-index">02 / RECOVERY</span><h3>Unknown bytes</h3><p>For `bitcoin20x20.png`, no target hash exists because no verified original payload has survived. The task is to recover a candidate and establish its chain of custody.</p><strong>The open archaeological mystery</strong></article>
           </div>
 
@@ -716,7 +750,7 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
             <div className="artifact-timeline">
               {timelineEvents.map((event) => {
                 const selectedInEvent = event.artifactIds.includes(selectedArtifactId);
-                const selectedArtifact = selectedInEvent ? artifactById(selectedArtifactId) : null;
+                const selectedArtifact = selectedInEvent ? artifactForId(selectedArtifactId) : null;
 
                 return (
                   <article className="timeline-event" key={event.id}>
@@ -727,7 +761,7 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
                         {event.artifactIds.length > 0 && (
                           <div className="artifact-chips">
                             {event.artifactIds.map((artifactId) => {
-                              const artifact = artifactById(artifactId);
+                              const artifact = artifactForId(artifactId);
                               const isSelected = selectedArtifactId === artifact.id;
                               return (
                                 <button className={`artifact-chip chip-${artifact.status}`} type="button" key={artifact.id} aria-expanded={isSelected} aria-controls={`record-${artifact.id}`} onClick={() => selectArtifact(artifact.id)}>
@@ -741,12 +775,14 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
                       {selectedArtifact && (
                         <div className="timeline-expanded" id={`record-${selectedArtifact.id}`}>
                           <ArtifactDetail
+                            key={selectedArtifact.id}
                             artifact={selectedArtifact}
                             account={account}
                             chainId={chainId}
                             connectWallet={connectWallet}
                             switchToMainnet={switchToMainnet}
                             provider={provider}
+                            onFindingPublished={onFindingPublished}
                           />
                         </div>
                       )}
@@ -783,8 +819,8 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
   );
 }
 
-function EthscribePage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider }) {
-  const submissionTargets = [...artifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
+function EthscribePage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, onFindingPublished }) {
+  const submissionTargets = [...resolvedArtifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
 
   return (
     <div className="site-shell ethscribe-page">
@@ -795,7 +831,7 @@ function EthscribePage({ account, walletState, walletName, connectWallet, chainI
             <p className="kicker"><span /> Exact-byte preservation</p>
             <h1>Ethscribe a file directly into the vault.</h1>
           </div>
-          <p>Your wallet remains the protocol creator while the immutable market becomes initial owner. Nothing is listed or assigned automatically; after verification, keep it vaulted, withdraw it, or submit it to a compatible expedition.</p>
+          <p>Your wallet remains the creator while the vault safeguards the artifact. Nothing is listed or assigned automatically; after verification, keep it vaulted, withdraw it, or submit it to a compatible expedition.</p>
         </section>
         <EthscribeWorkbench
           mode="personal"
@@ -805,6 +841,7 @@ function EthscribePage({ account, walletState, walletName, connectWallet, chainI
           connectWallet={connectWallet}
           switchToMainnet={switchToMainnet}
           provider={provider}
+          onFindingPublished={onFindingPublished}
         />
       </main>
       <SiteFooter />
@@ -823,6 +860,8 @@ function SiteFooter({ expedition = false }) {
 
 function App() {
   const walletSession = useEthscribeWallet();
+  const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+  const [verifiedFindings, setVerifiedFindings] = useState([]);
   const {
     account,
     chainId,
@@ -832,8 +871,33 @@ function App() {
     connectWallet,
     openAccountModal,
   } = walletSession;
+  const resolvedArtifacts = useMemo(
+    () => mergeVerifiedFindings(artifacts, verifiedFindings),
+    [verifiedFindings],
+  );
+  const resolvedStats = useMemo(
+    () => statsForArtifacts(resolvedArtifacts, huntStats),
+    [resolvedArtifacts],
+  );
+
+  useEffect(() => {
+    if (!['/', '/expeditions', EXPEDITION_PATH, '/ethscribe'].includes(pathname)) return undefined;
+    let active = true;
+    fetchVerifiedFindings()
+      .then((records) => {
+        if (active) setVerifiedFindings(records);
+      })
+      .catch(() => {
+        // The immutable manifest remains usable when the public Finding index is unavailable.
+      });
+    return () => { active = false; };
+  }, [pathname]);
+
+  const recordPublishedFinding = (finding) => {
+    if (!finding?.findingId) return;
+    setVerifiedFindings((current) => [finding, ...current.filter((item) => item.findingId !== finding.findingId)]);
+  };
   const [modal, setModal] = useState(null);
-  const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const isExpedition = pathname === EXPEDITION_PATH;
   const isExpeditions = pathname === '/expeditions';
   const isProposal = pathname === '/expeditions/propose';
@@ -872,6 +936,9 @@ function App() {
     chainId,
     switchToMainnet,
     provider,
+    resolvedArtifacts,
+    resolvedStats,
+    onFindingPublished: recordPublishedFinding,
   };
   const headerProps = { account, walletState, walletName, connectWallet };
 

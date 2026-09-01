@@ -48,7 +48,7 @@ export function buildDepositTransaction(account, ethscriptionId) {
   const from = requireAddress(account, 'wallet');
   const id = requireEthscriptionId(ethscriptionId);
   if (hasDepositSelectorCollision(id)) {
-    throw new Error('This Ethscription ID collides with a market function selector and cannot use the V2 fallback deposit path.');
+    throw new Error('This Ethscription ID conflicts with a reserved market action and cannot use the standard deposit path.');
   }
 
   return {
