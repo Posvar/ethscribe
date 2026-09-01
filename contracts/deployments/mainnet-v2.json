@@ -1,0 +1,29 @@
+{
+  "chainId": 1,
+  "network": "ethereum-mainnet",
+  "contractName": "EthscribeMarketV2",
+  "address": "0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614",
+  "deploymentTransaction": "0x44129d4a381a4a6c19ee6151eb1497c49af621c500e5aa4a3a61bf7fb764734f",
+  "deploymentBlock": 25883357,
+  "deployer": "0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba",
+  "initialOwner": "0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba",
+  "initialFeeRecipient": "0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba",
+  "initiallyPaused": true,
+  "activationTransaction": "0xac50eae83068897ebdc4ce3e1f637a26101b4d7790cdaa220b4a3017378180af",
+  "activationBlock": 25883396,
+  "currentReleaseState": "active",
+  "marketVersion": 2,
+  "feeBps": 500,
+  "transferCooldownBlocks": 5,
+  "maximumBatchSize": 100,
+  "sourceCommit": "b2339be570a3f75ff3478dd945db20cb22e940cf",
+  "solidityVersion": "0.8.36",
+  "openzeppelinContractsVersion": "5.7.0",
+  "runtimeSizeBytes": 14497,
+  "runtimeCodeHash": "0x26ea3f0b035afc64c065097307bf438cde1f9c9ec4c41bb906b805d1958b2ad3",
+  "sourceVerification": {
+    "provider": "Sourcify",
+    "status": "exact_match",
+    "jobId": "fe000343-ca42-4523-a5b0-2fc6d5a542b2"
+  }
+}

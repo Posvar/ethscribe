@@ -28,10 +28,10 @@ contract EthscribeMarketV1MainnetForkTest is TestBase {
         assertTrue(address(MARKET).code.length > 0, "deployed runtime code");
         assertEq(MARKET.owner(), OWNER, "deployed owner");
         assertEq(MARKET.MARKET_VERSION(), 1, "deployed version");
-        assertEq(MARKET.paused(), true, "production snapshot paused");
-
-        vm.prank(OWNER);
-        MARKET.unpause();
+        if (MARKET.paused()) {
+            vm.prank(OWNER);
+            MARKET.unpause();
+        }
 
         vm.prank(TEST_DEPOSITOR);
         (bool deposited,) = address(MARKET).call(abi.encodePacked(TEST_ID));

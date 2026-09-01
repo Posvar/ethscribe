@@ -47,4 +47,4 @@ Ethscribe's `.gitbook.yaml`, `README.md`, and `SUMMARY.md` follow GitBook's Git 
 
 ## Documentation status
 
-This documentation describes the phased architecture and the deployed, paused V1 marketplace as of 31 August 2026. Statements labeled “proposed,” “planned,” or “later” are not deployed contract behavior. Live product and contract surfaces take precedence over roadmap prose once released, and material changes should be reflected here with repository history.
+This documentation describes the phased architecture and the immutable V1 and V2 mainnet deployments as of 1 September 2026. V2 adds direct-to-vault creation and separate bounded batch exits for registered market deposits and unregistered direct creations. Statements labeled “proposed,” “planned,” or “later” are not deployed contract behavior. Live product and contract surfaces take precedence over roadmap prose once released, and material changes should be reflected here with repository history.

@@ -53,11 +53,11 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 
 **Release gate:** at least ten independent hunters contribute credible work, users improve others' Findings, the proposal queue has usable depth, and curator reasoning remains consistent.
 
-## Phase 4 — V1 marketplace
+## Phase 4 — immutable marketplace
 
 **Outcome:** trusted eligibility connects to trustless custody and settlement.
 
-- Freeze `EthscribeMarketV1` invariants, offer states, and withdrawal behavior.
+- Freeze `EthscribeMarketV1` settlement invariants and `EthscribeMarketV2` direct-creation, batch-exit, offer, and withdrawal behavior.
 - Build comprehensive contract and integration tests.
 - Rehearse deployment locally; use Sepolia when its public-chain exercise is worth the extra step, or record a deliberate skip in favor of a paused mainnet deployment.
 - Integrate official-indexer reconciliation into every first-party market action.
@@ -66,7 +66,7 @@ Ethscribe grows in response to demonstrated behavior. The roadmap adds complexit
 - Enable deposits, binding offers, refunds, settlement, and fee routing.
 - Complete the first primary Accession auction.
 
-**Current status:** the immutable contract, unit/fuzz/invariant suite, threat model, and deployment record are public. V1 is deployed to Ethereum mainnet and source-verified. The wallet integrates fail-closed official-indexer reconciliation, and the first disposable Deposit → Verify → Withdraw pilot completed through the production UI on August 31, 2026. The owner left the contract unpaused and pilot interface enabled afterward. Independent review, settlement controls, and the low-value settlement procedure remain incomplete; the contract is not approved for valuable custody.
+**Current status:** both immutable contracts, the unit/fuzz/invariant suite, threat model, and deployment records are public. V1 was source-verified and completed the first disposable Deposit → Verify → Withdraw production pilot on August 31, 2026. V2 was deployed from frozen source commit `b2339be`, exact-match source-verified, and adds direct-to-vault creation plus bounded bulk withdrawal for both registered deposits and unregistered direct creations. The wallet integrates fail-closed official-indexer reconciliation. Independent review, a low-value V2 direct-creation exercise, settlement controls, and the low-value settlement procedure remain incomplete; neither contract is approved for valuable custody.
 
 **Release gate:** every asset and fund path is tested, failure recovery does not require curator goodwill, and the live UI is reconciled to contract and official-indexer state.
 

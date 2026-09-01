@@ -3,7 +3,7 @@
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
 **Status:** Public site live; marketplace V1 deployed to mainnet, source-verified, and custody round-trip tested through the live UI
-**Updated:** August 31, 2026
+**Updated:** September 1, 2026
 
 ## Executive summary
 
@@ -501,7 +501,7 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Activate atomic settlement and fee routing
 - Run the first primary Accession auction
 
-**Current status:** V1 was deployed from commit `687ed2d`, exact-match source verified, and exercised through a disposable Deposit → Verify → Withdraw production pilot on August 31, 2026. V2 has passed the complete default and CI-profile contract suites, official-indexer parser review, and a disposable local deployment covering direct creation plus both bulk-withdrawal paths. Mainnet deployment, exact source verification, production configuration, and a low-value direct-creation exercise remain the next release steps. Independent review and low-value settlement checks remain required before marketplace trading.
+**Current status:** V1 was deployed from commit `687ed2d`, exact-match source verified, and exercised through a disposable Deposit → Verify → Withdraw production pilot on August 31, 2026. V2 was deployed to Ethereum mainnet from commit `b2339be` at `0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614` on September 1, 2026, received Sourcify `exact_match` verification, and was activated in block `25883396`. It passed the complete default and CI-profile contract suites, official-indexer parser review, and disposable local and mainnet-fork exercises covering direct creation plus both bulk-withdrawal paths. A low-value production direct-creation exercise remains the next release step. Independent review and low-value settlement checks remain required before marketplace trading.
 
 ## Roadmap after MVP/V1
 

@@ -6,7 +6,7 @@ const owner = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
 const ethscriptionId = `0x${'a'.repeat(64)}`;
 
 const market = {
-  address: '0x44c241ac86724D64a33558b03A637a63D9a30B02',
+  address: '0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614',
   deployed: true,
   paused: true,
   writesEnabled: false,

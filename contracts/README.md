@@ -2,6 +2,20 @@
 
 `EthscribeMarketV2` is the immutable direct-creation receiver, ESIP-2 vault, and ETH marketplace for Ethscriptions. It inherits the audited-by-tests V1 settlement model and adds direct-to-vault Data URI creation, a race-safe Finding Receipt, direct-creation exits, and bounded bulk withdrawal for both custody forms. It has not received an independent audit and is not approved for valuable custody or trading.
 
+## Version 2 mainnet deployment
+
+- Contract: [`0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614`](https://etherscan.io/address/0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614)
+- Deployment transaction: [`0x44129d4a381a4a6c19ee6151eb1497c49af621c500e5aa4a3a61bf7fb764734f`](https://etherscan.io/tx/0x44129d4a381a4a6c19ee6151eb1497c49af621c500e5aa4a3a61bf7fb764734f)
+- Deployment block: `25883357`
+- Exact source commit: [`b2339be`](https://github.com/Posvar/ethscribe/commit/b2339be570a3f75ff3478dd945db20cb22e940cf)
+- Sourcify verification: [`exact_match`](https://repo.sourcify.dev/contracts/full_match/1/0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614/metadata.json)
+- Initial state: paused
+- Activation transaction: [`0xac50eae83068897ebdc4ce3e1f637a26101b4d7790cdaa220b4a3017378180af`](https://etherscan.io/tx/0xac50eae83068897ebdc4ce3e1f637a26101b4d7790cdaa220b4a3017378180af)
+- Activation block: `25883396`
+- Runtime code hash: `0x26ea3f0b035afc64c065097307bf438cde1f9c9ec4c41bb906b805d1958b2ad3`
+
+The machine-readable V2 record is [deployments/mainnet-v2.json](deployments/mainnet-v2.json). Registered market deposits use `withdrawEthscription` or `withdrawBatchEthscriptions`; unregistered direct creations use `withdrawUnregisteredEthscription` or `withdrawBatchUnregisteredEthscriptions`. Both batch methods are bounded to 100 IDs, and all four exit methods remain available during a pause.
+
 ## Version 1 mainnet deployment
 
 - Contract: [`0x44c241ac86724D64a33558b03A637a63D9a30B02`](https://etherscan.io/address/0x44c241ac86724D64a33558b03A637a63D9a30B02)
@@ -11,9 +25,7 @@
 - Sourcify verification: [`exact_match`](https://repo.sourcify.dev/contracts/full_match/1/0x44c241ac86724D64a33558b03A637a63D9a30B02/metadata.json)
 - Initial state: paused
 
-The machine-readable deployment record is [deployments/mainnet.json](deployments/mainnet.json), and the first production custody exercise is recorded in [deployments/custody-pilot-001.json](deployments/custody-pilot-001.json). The owner deliberately left the contract unpaused and the interface pilot gate enabled after that test. This does not substitute for an independent review or authorize valuable custody or trading.
-
-V2 is the replacement intake candidate. Its mainnet address, deployment transaction, block, source commit, and exact verification record must be added here and to a separate machine-readable deployment record before the public interface changes destinations.
+The machine-readable V1 deployment record is [deployments/mainnet.json](deployments/mainnet.json), and the first production custody exercise is recorded in [deployments/custody-pilot-001.json](deployments/custody-pilot-001.json). The owner deliberately left V1 unpaused and the interface pilot gate enabled after that test. V1 remains available for existing exits, while new first-party intake moves to V2. This does not substitute for an independent review or authorize valuable custody or trading.
 
 ## Version 2 boundary
 
