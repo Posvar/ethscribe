@@ -793,9 +793,9 @@ function EthscribePage({ account, walletState, walletName, connectWallet, chainI
         <section className="ethscribe-page-hero">
           <div>
             <p className="kicker"><span /> Exact-byte preservation</p>
-            <h1>Ethscribe a file to your own wallet.</h1>
+            <h1>Ethscribe a file directly into the vault.</h1>
           </div>
-          <p>Create a standard Ethscription without listing it or assigning it to a hunt. After the official indexer verifies the record, you can stop—or continue into a compatible live expedition.</p>
+          <p>Your wallet remains the protocol creator while the immutable market becomes initial owner. Nothing is listed or assigned automatically; after verification, keep it vaulted, withdraw it, or submit it to a compatible expedition.</p>
         </section>
         <EthscribeWorkbench
           mode="personal"

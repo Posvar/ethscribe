@@ -252,15 +252,15 @@ Each Finding contains:
 
 The vault is expedition-agnostic. It stores Ethscription custody and market state; signed off-chain records connect an `ethscriptionId` to an Expedition and target.
 
-V1 supports three intake paths:
+The release supports three intake paths:
 
-1. **Inline Ethscribe + Submit.** From an artifact target, upload a file, verify its raw hash, create the Ethscription when needed, deposit it, and sign its target assignment and Dossier.
-2. **Generic Ethscribe.** Create an artifact directly to the connected wallet and stop there by default. After indexer verification, the user may optionally continue into a compatible active target; only that explicit continuation deposits the asset.
+1. **Inline Ethscribe + Submit.** From an artifact target, upload a file, verify its raw hash, create it directly into market custody when needed, and sign its target assignment and Dossier.
+2. **Generic Ethscribe.** Create an artifact directly into the vault without listing or assigning it. After indexer verification, the user may keep it vaulted, withdraw it, or continue into a compatible active target.
 3. **Deposit an existing Ethscription.** Query assets owned by the connected wallet, select one or more, transfer them to the vault, and optionally assign them to targets.
 
-The safest creation flow initially uses two explicit transactions: create to the user's wallet, then transfer the resulting transaction-hash ID to the vault. The product presents one guided workflow while clearly showing both confirmations. Existing owned assets skip creation, and ESIP-5 supports bulk deposits.
+Creation uses one direct-to-vault transaction. The connected wallet remains the protocol creator and the V2 market becomes initial owner. Because preflight cannot reserve uniqueness before mining, the same call emits a lower-priority ESIP-6 Finding Receipt: canonical input wins when unique; otherwise the hunter receives a timestamped receipt committed to the attempted protocol hash. Existing owned assets skip creation and use the ordinary deposit path.
 
-Inline target actions, the global `Ethscribe` action, and the wallet's Expedition preflight share the same transaction engine. Every expedition target freezes one accepted Data URI wrapper; the embedded UI generates it and the Finding verifier enforces it. For an exact-byte target, the browser hashes locally and a server-side sealed commitment returns only eligibility before protocol duplicate checks or gas actions continue. The global flow lets the user choose a valid MIME type, then test compatible targets after creation or discovery of an existing wallet-owned match. The connected-wallet control opens `My Wallet`, where direct holdings and verified vault positions remain separate; a generic vault deposit is explicitly custody-only and does not create a Finding.
+Inline target actions, the global `Ethscribe` action, and the wallet's Expedition preflight share the same transaction engine. Every expedition target freezes one accepted Data URI wrapper; the embedded UI generates it and the Finding verifier enforces it. For an exact-byte target, the browser hashes locally and a server-side sealed commitment returns only eligibility before protocol duplicate checks or gas actions continue. The global flow lets the user choose a valid MIME type, then test compatible targets after creation or discovery of an existing wallet-owned match. `My Wallet` separates direct holdings from verified market custody, and custody alone never creates a Finding.
 
 Preflight is progressively disclosed. The default result is one decision-oriented checkpoint—target matched, no known duplicate found, ready to Ethscribe. Raw and protocol hashes, the exact prefix, and individual wrapper checks remain available under `Technical checks`. A duplicate or mismatch expands into the relevant blocking explanation automatically.
 
@@ -419,7 +419,7 @@ The official API's `content_sha` hashes the complete Data URI and cannot answer 
 
 ### Marketplace contract boundary
 
-The implementation is `EthscribeMarketV1`, deployed paused on Ethereum mainnet at `0x44c241ac86724D64a33558b03A637a63D9a30B02`. Its behavioral starting point is the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, offers, and 5% fee ceiling.
+`EthscribeMarketV1` established the immutable marketplace on Ethereum mainnet at `0x44c241ac86724D64a33558b03A637a63D9a30B02`. `EthscribeMarketV2` inherits that settlement system and adds direct-to-vault creation, Finding Receipts, conditional exits for unregistered direct creations, and bounded batch withdrawal for both custody forms. The behavioral starting point remains the verified ittybits proxy at `0xa8Ee53258865c55a521727127D8a64c414163D36`, particularly its ESIP-2 escrow, depositor-keyed potential deposits, five-block cooldown, bulk transfers, listings, offers, and 5% fee ceiling.
 
 Ethscribe changes the boundary in several ways:
 
@@ -430,15 +430,15 @@ Ethscribe changes the boundary in several ways:
 - Seller proceeds and refunds use pull payments.
 - Pausing never disables ordinary artifact or ETH withdrawals.
 - Curated settlement anchors an opaque `contextHash` and frozen fee terms.
-- Funded V1 offers are available in the first-party interface only after official-indexer reconciliation confirms escrow.
+- Funded offers are available in the first-party interface only after official-indexer reconciliation and registered deposit state confirm escrow.
 
 The immutable, non-proxy contract accepts and returns Ethscriptions, creates and cancels listings, holds escrow-first offers, accrues refunds and proceeds through pull payments, emits ESIP-2 transfers, applies a fixed 5% fee, and settles trades. It does not decide historical eligibility or activate Expedition records itself. The application observes settlement events and advances the prepared queue.
 
 The 5% fee recipient is a replaceable boundary, not upgrade authority over custody. The solo-operated beta can initially route fees to a dedicated treasury EOA. A later Safe or rewards distributor can become the recipient for newly created positions; active listings and offers retain the recipient they originally displayed. Exact proposer or validator splits inside each settlement require a separately deployed market version.
 
-Core evolution is versioned. If custody or settlement semantics change, V1 pauses new entry while withdrawals, offer cancellation, and ETH claims remain open; the site then directs new activity to a separately reviewed V2. No proxy administrator can rewrite the rules around artifacts already escrowed in V1.
+Core evolution is versioned. V2 is a separate immutable deployment because direct creation changes custody intake semantics; V1 remains unchanged and available for exits. Future changes use the same migration model. No proxy administrator can rewrite the rules around artifacts already escrowed in any version.
 
-Recognized artifacts that are not escrowed may collect nonbinding, wallet-signed interest, but V1 does not lock funds against them. Because Solidity cannot read Ethscriptions ownership, funded pre-escrow bidding would require buyer-finalized settlement or a disclosed ownership attestation, plus additional cancellation and stale-owner states. It is deferred until real usage justifies that complexity.
+Recognized artifacts that are not escrowed may collect nonbinding, wallet-signed interest, but the current market does not lock funds against them. Because Solidity cannot read Ethscriptions ownership, funded pre-escrow bidding would require buyer-finalized settlement or a disclosed ownership attestation, plus additional cancellation and stale-owner states. It is deferred until real usage justifies that complexity.
 
 The escrow-first marketplace does not require Ethscribe to operate a separate protocol indexer. The app can read contract events and reconcile custody through the official Ethscriptions API, failing closed when that API is delayed or unavailable. Ethscribe's future wrapper-independent raw-byte index remains a separate archaeology requirement; marketplace bidding neither creates nor removes it.
 
@@ -478,7 +478,7 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Implement Finding pages and signed Field Notes
 - Add basic moderation and rate limiting
 
-**Current status:** the first production slice now supports personal creation to the connected wallet, inline target submissions, and a public wallet-signed expedition proposal notebook. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled V1 custody. Expedition proposals use gas-free signatures and immutable Azure-backed records; curation remains separate from publication. Public Finding pages, Dossier revisions, Field Notes, proposal moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
+**Current status:** the first production slice supports direct-to-vault personal creation, inline target submissions, existing-ID deposits, and a public wallet-signed expedition proposal notebook. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled custody. Expedition proposals use gas-free signatures and immutable Azure-backed records; curation remains separate from publication. Public Finding pages, Dossier revisions, Field Notes, proposal moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
 
 ### Phase 3 — live Genesis Hunts
 
@@ -491,7 +491,7 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 
 ### Phase 4 — marketplace completion
 
-- Freeze `EthscribeMarketV1` invariants, offer states, and withdrawal behavior
+- Freeze `EthscribeMarketV2` direct-creation, batch-exit, inherited settlement, and withdrawal behavior
 - Implement comprehensive contract tests
 - Rehearse the immutable deployment locally; optionally use Sepolia, or record a deliberate skip in favor of a paused mainnet deployment
 - Integrate official-indexer custody reconciliation into every first-party market action
@@ -501,11 +501,11 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Activate atomic settlement and fee routing
 - Run the first primary Accession auction
 
-**Current status:** V1 is deployed to Ethereum mainnet from commit `687ed2d` and exact-match source verified. On August 31, 2026, a disposable Ethscription completed Deposit → Verify → Withdraw through the production wallet UI with contract/indexer reconciliation and no residual custody or liabilities. The owner deliberately left the contract unpaused and the pilot UI gate enabled afterward; this is operational state, not approval for valuable custody or trading. Independent review, settlement controls, and low-value end-to-end settlement checks remain required before marketplace activity.
+**Current status:** V1 was deployed from commit `687ed2d`, exact-match source verified, and exercised through a disposable Deposit → Verify → Withdraw production pilot on August 31, 2026. V2 has passed the complete default and CI-profile contract suites, official-indexer parser review, and a disposable local deployment covering direct creation plus both bulk-withdrawal paths. Mainnet deployment, exact source verification, production configuration, and a low-value direct-creation exercise remain the next release steps. Independent review and low-value settlement checks remain required before marketplace trading.
 
 ## Roadmap after MVP/V1
 
-### V2 — optimistic curation
+### Later product phase — optimistic curation
 
 Add only when curator review becomes a real bottleneck:
 

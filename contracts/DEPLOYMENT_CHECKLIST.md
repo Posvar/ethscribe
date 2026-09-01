@@ -7,9 +7,9 @@ Copy this checklist into the ignored `.secrets/` workspace for each rehearsal. D
 - [ ] Target network and chain ID recorded
 - [ ] Git commit recorded
 - [ ] Working tree clean except documented non-contract files
-- [ ] Contract: `EthscribeMarketV1`
+- [ ] Contract: `EthscribeMarketV2`
 - [ ] Deployment simulation used `--force` to rebuild the script and dependencies
-- [ ] `MARKET_VERSION`: `1`
+- [ ] `MARKET_VERSION`: `2`
 - [ ] Solidity: `0.8.36`
 - [ ] OpenZeppelin Contracts: `5.7.0`
 - [ ] Optimizer: enabled, 10,000 runs
@@ -56,7 +56,7 @@ Copy this checklist into the ignored `.secrets/` workspace for each rehearsal. D
 - [ ] Contract address recorded
 - [ ] Runtime code exists at the address
 - [ ] Source verified with exact compiler settings
-- [ ] `MARKET_VERSION()` returns `1`
+- [ ] `MARKET_VERSION()` returns `2`
 - [ ] `FEE_BPS()` returns `500`
 - [ ] `BPS_DENOMINATOR()` returns `10000`
 - [ ] `TRANSFER_COOLDOWN_BLOCKS()` returns `5`

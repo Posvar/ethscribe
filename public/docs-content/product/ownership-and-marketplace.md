@@ -67,15 +67,17 @@ An emergency pause may stop new deposits, listings, bids, and sales. It must not
 
 Global administration must not alter the price, fee, or recipients of an active sale. Each listing or accepted curator authorization commits to its own terms and expiry.
 
-## V1 contract deployment
+## Versioned contract deployment
 
-The public implementation is [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts). It combines a minimal ESIP-2 vault with fixed-price sales and funded escrow-first offers. The immutable contract is [deployed to Ethereum mainnet](../reference/mainnet-deployment.md), source-verified, and custody round-trip tested. It is not independently audited or approved for valuable custody.
+The public contracts are immutable and versioned. [`EthscribeMarketV1`](https://github.com/Posvar/ethscribe/tree/main/contracts) established the ESIP-2 vault, fixed-price sales, and funded escrow-first offers. `EthscribeMarketV2` inherits that settlement model and adds direct-to-vault creation, a race-safe Finding Receipt, and an ESIP-2 exit for direct creations that have not been registered for trading. See the [mainnet deployment record](../reference/mainnet-deployment.md). Neither version has received an independent audit or approval for valuable custody.
 
 ### Vault responsibilities
 
 - Record potential single and ESIP-5 bulk deposits.
+- Accept canonical Data URI creation directly into V2 custody.
 - Apply a confirmation cooldown.
 - Emit ESIP-2 transfers for withdrawal and settlement.
+- Support bounded batch withdrawals for both registered deposits and unregistered direct creations.
 - Cancel attached listings when an item leaves.
 - Preserve depositor withdrawal without curator cooperation.
 - Expose public state for wallet inventory and indexed event reconciliation.
@@ -147,7 +149,9 @@ An existing owner transfers one or more Ethscription IDs to the contract. The fa
 3. `previous_owner` is the recorded depositor; and
 4. the cooldown has elapsed.
 
-Only then does the interface show `Escrow verified`.
+Only then does the interface show verified custody for an existing-ID deposit.
+
+A V2 direct creation has no potential-deposit record because an EVM contract cannot read the hash of its own containing Ethereum transaction. The interface instead requires the official record to name the connected wallet as `creator` and `previous_owner`, and the market as both `initial_owner` and `current_owner`. It applies the same five-block safety window before showing verified custody.
 
 A withdrawal emits:
 
@@ -163,14 +167,11 @@ Withdrawing cancels the depositor's listing. Existing funded offers become unexe
 
 ## Creating through the site
 
-The safest first implementation guides the user through two transactions:
+V2 guides the user through one Ethereum transaction: send the canonical Data URI from the connected wallet to the market. Valid transaction input makes the wallet the protocol creator and the market the initial owner. The call is a normal contract destination, so it avoids the browser-wallet restriction on website-originated calldata sent back to the same managed EOA.
 
-1. create the Ethscription to the user's wallet; and
-2. transfer its resulting transaction-hash ID to the vault.
+The contract cannot reserve uniqueness during preflight. It therefore emits a lower-priority ESIP-3 creation for a compact ESIP-6 Finding Receipt. Protocol input is evaluated first: a valid unique canonical Data URI becomes the transaction's Ethscription and the receipt is ignored. If another transaction wins the content race, the invalid duplicate input yields to the guaranteed receipt, initially owned by the hunter. The receipt proves an attempt and ordering but is not the artifact.
 
-This produces the same final escrow state as depositing an existing Ethscription and avoids pretending that a contract can read the hash of the transaction currently executing.
-
-A later direct-to-vault creation path is possible, but it requires careful fallback handling and a follow-up registration because the EVM cannot access its own Ethereum transaction hash. It is not necessary for the first contract.
+Direct creations can be withdrawn immediately through a conditional ESIP-2 exit after first-party reconciliation. To list or receive funded offers, the previous owner first registers the known Ethscription ID through the ordinary deposit fallback; this creates the nonce and listing state that settlement requires.
 
 ## Fixed-price settlement
 
@@ -186,9 +187,9 @@ verified escrow
 
 Checks-effects-interactions ordering and pull payments prevent external recipients from interrupting the state transition.
 
-## V1 bidding: escrow first
+## Bidding: escrow first
 
-The first-party V1 interface accepts a funded bid only after the official API confirms that the marketplace contract is the Ethscription's `current_owner` and the recorded seller is its `previous_owner`. The contract cannot perform that API check; every bid therefore names the seller and Ethscription ID explicitly, and direct callers are responsible for the same verification. This follows the useful boundary in ittybits and keeps every financial settlement inside one understandable state machine:
+The first-party interface accepts a funded bid only after the official API confirms that the marketplace contract is the Ethscription's `current_owner` and the registered seller is its `previous_owner`. The contract cannot perform that API check; every bid therefore names the seller and Ethscription ID explicitly, and direct callers are responsible for the same verification. This follows the useful boundary in ittybits and keeps every financial settlement inside one understandable state machine:
 
 ```text
 owner deposits
@@ -208,7 +209,7 @@ A buyer-finalized, two-phase flow can avoid that theft: the owner deposits, the 
 
 ### Does this require a separate indexer?
 
-No separately operated marketplace indexer is required for the escrow-first V1. The app can read contract events and query the official Ethscriptions API before displaying `Escrow verified`. It must handle API delay or downtime conservatively, but it does not need to reconstruct the full protocol itself.
+No separately operated marketplace indexer is required for the escrow-first market. The app can read contract state and query the official Ethscriptions API before displaying verified custody. It must handle API delay or downtime conservatively, but it does not need to reconstruct the full protocol itself.
 
 The future wrapper-independent raw-byte index is a different concern. Ethscribe eventually needs that archaeology index to determine the earliest decoded-byte match across MIME types and Data URI wrappers. Pre-escrow bidding neither creates nor removes that requirement.
 
@@ -230,17 +231,17 @@ contextHash = keccak256(
 )
 ```
 
-V1 does not verify a curator signature or finalized root. It stores and emits the opaque `contextHash` supplied by the listing or offer creator. The first-party application decides whether that hash corresponds to a recognized, signed Accession record and must never imply that arbitrary contract calldata received curatorial approval.
+The market does not verify a curator signature or finalized root. It stores and emits the opaque `contextHash` supplied by the listing or offer creator. The first-party application decides whether that hash corresponds to a recognized, signed Accession record and must never imply that arbitrary contract calldata received curatorial approval.
 
 Native curator authorization can be considered in a later market version after the signed-research format is proven in public.
 
 ## Fee and incentive boundary
 
-Every V1 settlement allocates 95% to the seller and 5% to the fee recipient snapshotted when the listing or offer was created. The fee itself and its denominator are immutable.
+Every current settlement allocates 95% to the seller and 5% to the fee recipient snapshotted when the listing or offer was created. The fee itself and its denominator are immutable.
 
 The solo-operated beta can begin with a dedicated treasury EOA. Later, the owner can propose a Safe or separate reward distributor and that recipient must accept the role. This lets future activity fund proposers, researchers, validators, and operations without placing custody under upgrade authority. Active positions keep their original recipient.
 
-If exact per-sale recipient splits must execute inside settlement, that is a `MarketV2` change rather than a mutable V1 parameter.
+If exact per-sale recipient splits must execute inside settlement, that requires a later immutable market version rather than a mutable parameter.
 
 ## Immutability, administration, and migration
 
@@ -255,7 +256,7 @@ The candidate adopts:
 - an immutable 5% fee; and
 - no admin function capable of transferring arbitrary deposits or bidder funds.
 
-Product evolution is versioned rather than performed behind a proxy. If settlement rules change, V1 can stop accepting new activity while its exits remain open, and users can voluntarily move to a separately deployed V2. Revenue-distribution changes generally require only a new fee recipient, not a new custody contract.
+Product evolution is versioned rather than performed behind a proxy. V2 was deployed because direct creation changed custody intake semantics; V1 remained unchanged. If settlement rules change later, the active version can stop accepting new activity while its exits remain open, and users can voluntarily move to a separately reviewed deployment. Revenue-distribution changes generally require only a new fee recipient, not a new custody contract.
 
 Every deployment begins paused. Publishing and verifying the address therefore does not open deposits or trading; unpause is a separate owner action after the first-party integration is ready.
 
@@ -274,7 +275,7 @@ Every deployment begins paused. Publishing and verifying the address therefore d
 
 ## Test and release status
 
-Implemented tests cover deposits, withdrawals, listings, offers, expiry, refunds, fees, fake depositors, smart wallets, reverting recipients, pause exits, deposit-generation replay, ESIP-2 event shape, and the five-block cooldown. Stateful invariants exercise randomized market sequences and reconcile every ordinary-flow wei against locked offers and claimable balances.
+Implemented tests cover direct creation routing, exact Finding Receipt shape, direct-creation exits, deposits, withdrawals, listings, offers, expiry, refunds, fees, fake depositors, smart wallets, reverting recipients, pause exits, deposit-generation replay, ESIP-2 event shape, and the five-block cooldown. Stateful invariants exercise randomized market sequences and reconcile every ordinary-flow wei against locked offers and claimable balances.
 
 Still required before mainnet value is accepted:
 

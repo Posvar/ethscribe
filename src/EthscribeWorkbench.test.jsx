@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import EthscribeWorkbench from './EthscribeWorkbench';
-import { utf8ToHex } from './ethscriptionCreation';
+import { MARKET_ADDRESS } from './marketConfig';
 
 const originalFetch = global.fetch;
 
@@ -19,16 +19,35 @@ afterEach(() => {
   global.fetch = originalFetch;
 });
 
-test('reduces successful target validation to one ready checkpoint with optional technical details', async () => {
+test('creates a matching target directly into verified market custody', async () => {
+  const account = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
+  const txHash = `0x${'77'.repeat(32)}`;
+  let expectedProtocolSha = '';
+
   global.fetch = jest.fn(async (url) => {
     if (url === '/api/market/status') {
-      return { ok: true, json: async () => ({ result: { paused: false, transactionsEnabled: true, indexer: { healthy: true } } }) };
+      return { ok: true, json: async () => ({ result: { paused: false, transactionsEnabled: true, intakeEnabled: true, indexer: { healthy: true } } }) };
     }
     if (url === '/api/targets/check') {
       return { ok: true, json: async () => ({ result: { targetId: 'november-20-xpm', eligible: true, validation: 'exact' } }) };
     }
     if (String(url).startsWith('/api/ethscriptions/exists/')) {
       return { ok: true, json: async () => ({ result: { exists: false, ethscription: null } }) };
+    }
+    if (url === `/api/ethscriptions/${txHash}`) {
+      return { ok: true, json: async () => ({ result: {
+        transaction_hash: txHash,
+        content_sha: expectedProtocolSha,
+        creator: account,
+        initial_owner: MARKET_ADDRESS,
+        current_owner: MARKET_ADDRESS,
+        previous_owner: account,
+      } }) };
+    }
+    if (String(url).startsWith('/api/market/wallet?owner=')) {
+      return { ok: true, json: async () => ({ result: {
+        escrow: [{ transactionHash: txHash, custody: { verified: true, custodyKind: 'direct_creation' } }],
+      } }) };
     }
     throw new Error(`Unexpected request: ${url}`);
   });
@@ -42,14 +61,16 @@ test('reduces successful target validation to one ready checkpoint with optional
   const provider = {
     request: jest.fn(async ({ method }) => {
       if (method === 'eth_chainId') return '0x1';
-      if (method === 'eth_sendTransaction') throw new Error('External transactions to internal accounts cannot include data');
+      if (method === 'eth_estimateGas') return '0x50000';
+      if (method === 'eth_sendTransaction') return txHash;
+      if (method === 'eth_getTransactionReceipt') return { status: '0x1', transactionHash: txHash };
       throw new Error(`Unexpected wallet method: ${method}`);
     }),
   };
   const { container } = render(<EthscribeWorkbench
     mode="target"
     artifact={{ id: 'november-20-xpm', filename: 'bitcoin20.xpm', format: 'XPM', status: 'open', validationMode: 'exact' }}
-    account="0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba"
+    account={account}
     chainId="0x1"
     connectWallet={jest.fn()}
     switchToMainnet={jest.fn()}
@@ -60,26 +81,25 @@ test('reduces successful target validation to one ready checkpoint with optional
   fireEvent.submit(screen.getByRole('button', { name: /^test bytes/i }).closest('form'));
 
   expect(await screen.findByText('READY TO ETHSCRIBE')).toBeInTheDocument();
-  expect(screen.getByText('✓ TARGET MATCHED')).toBeInTheDocument();
-  expect(screen.getByText('✓ NO KNOWN DUPLICATE FOUND')).toBeInTheDocument();
+  expect(screen.getByText(/TARGET MATCHED/)).toBeInTheDocument();
+  expect(screen.getByText(/NO KNOWN DUPLICATE FOUND/)).toBeInTheDocument();
   const technicalDetails = screen.getByText('HASHES + WRAPPERS').closest('details');
   expect(technicalDetails).not.toHaveAttribute('open');
-  expect(global.fetch).toHaveBeenCalledTimes(6);
+  const protocolHashRow = Array.from(technicalDetails.querySelectorAll('dt'))
+    .find((element) => element.textContent === 'PROTOCOL SHA-256')
+    .closest('div');
+  expectedProtocolSha = protocolHashRow.querySelector('code').textContent;
 
-  fireEvent.click(screen.getByRole('button', { name: /1 of 2 · ethscribe to my wallet/i }));
+  fireEvent.click(screen.getByRole('button', { name: /ethscribe directly into vault/i }));
   fireEvent.click(screen.getByRole('checkbox'));
-  fireEvent.click(screen.getByRole('button', { name: /^open wallet/i }));
+  expect(screen.getByText(MARKET_ADDRESS)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
 
-  expect(await screen.findByRole('heading', { name: /finish inside metamask/i })).toBeInTheDocument();
-  expect(screen.getByText(/MetaMask blocks dapp-created calldata transactions/i)).toBeInTheDocument();
-  const clipboard = { writeText: jest.fn().mockResolvedValue(undefined) };
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: clipboard });
-  fireEvent.click(screen.getByRole('button', { name: /copy exact hex data/i }));
-  const expectedDataUri = `data:image/x-xpixmap;base64,${btoa(String.fromCharCode(...bytes))}`;
-  expect(clipboard.writeText).toHaveBeenCalledWith(utf8ToHex(expectedDataUri));
-  expect(await screen.findByRole('button', { name: /^copied/i })).toBeInTheDocument();
-  expect(provider.request).toHaveBeenCalledTimes(2);
-  expect(provider.request.mock.calls.map(([request]) => request.method)).toEqual(['eth_chainId', 'eth_sendTransaction']);
-  expect(screen.getByText('READY TO ETHSCRIBE')).toBeInTheDocument();
-  expect(screen.queryByText('CHECK INCOMPLETE')).not.toBeInTheDocument();
+  expect(await screen.findByText(/canonical artifact and direct market custody verified/i)).toBeInTheDocument();
+  expect(provider.request.mock.calls.map(([request]) => request.method)).toEqual([
+    'eth_chainId', 'eth_estimateGas', 'eth_sendTransaction', 'eth_getTransactionReceipt',
+  ]);
+  const sent = provider.request.mock.calls.find(([request]) => request.method === 'eth_sendTransaction')[0].params[0];
+  expect(sent.to).toBe(MARKET_ADDRESS);
+  expect(sent.from).toBe(account);
 });

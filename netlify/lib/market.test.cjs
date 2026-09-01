@@ -57,6 +57,38 @@ test('verifies custody only when indexer and active contract state agree after c
   assert.equal(inactive.verified, false);
 });
 
+test('verifies a direct-to-market creation without inventing a deposit record', () => {
+  const record = {
+    transaction_hash: ID,
+    block_number: '100',
+    creator: OWNER,
+    initial_owner: MARKET_ADDRESS,
+    current_owner: MARKET_ADDRESS,
+    previous_owner: OWNER,
+  };
+  const verified = reconcileCustody({
+    record,
+    owner: OWNER,
+    deposit: { receivedBlock: 0, nonce: '0', active: false },
+    currentBlock: 105,
+    indexer: { available: true, healthy: true, blocksBehind: 0 },
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.status, 'verified_direct_creation');
+  assert.equal(verified.custodyKind, 'direct_creation');
+  assert.equal(verified.receivedBlock, 100);
+
+  const wrongCreator = reconcileCustody({
+    record: { ...record, creator: '0x0000000000000000000000000000000000000001' },
+    owner: OWNER,
+    deposit: { receivedBlock: 0, nonce: '0', active: false },
+    currentBlock: 105,
+    indexer: { available: true, healthy: true, blocksBehind: 0 },
+  });
+  assert.equal(wrongCreator.verified, false);
+  assert.equal(wrongCreator.status, 'contract_inactive');
+});
+
 test('fails closed for indexer lag, ownership mismatch, and cooldown', () => {
   const record = { current_owner: MARKET_ADDRESS, previous_owner: OWNER };
   const deposit = { receivedBlock: 100, nonce: '1', active: true };

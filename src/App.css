@@ -5018,7 +5018,6 @@ footer > span {
 .existing-ethscription-card,
 .ethscribe-flow-status,
 .ethscribe-flow-actions,
-.ethscribe-manual-creation,
 .ethscribe-follow-up,
 .selected-expedition-target,
 .finding-assignment-form,
@@ -5042,7 +5041,6 @@ footer > span {
 .preflight-result-heading > span,
 .existing-ethscription-card > span,
 .ethscribe-flow-status > span,
-.manual-creation-heading > span,
 .ethscribe-follow-up > div > span,
 .selected-expedition-target > span,
 .finding-assignment-form > div span,
@@ -5379,101 +5377,6 @@ footer > span {
   border-left: 5px solid var(--signal);
 }
 
-.ethscribe-manual-creation {
-  background: var(--paper);
-  border-left: 5px solid var(--signal);
-  border-top: 1px solid var(--ink);
-}
-
-.manual-creation-heading {
-  align-items: center;
-  display: flex;
-  gap: 20px;
-  justify-content: space-between;
-}
-
-.manual-creation-heading > span {
-  color: var(--muted);
-}
-
-.manual-creation-heading > h4 {
-  font-family: "Courier New", monospace;
-  font-size: clamp(17px, 2vw, 26px);
-  margin: 0;
-}
-
-.ethscribe-manual-creation > p,
-.ethscribe-manual-creation li,
-.ethscribe-manual-creation > small {
-  color: #56534d;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.ethscribe-manual-creation dl {
-  border: 1px solid var(--line);
-  margin: 18px 0;
-}
-
-.ethscribe-manual-creation dl > div {
-  border-bottom: 1px solid var(--line);
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 120px minmax(0, 1fr);
-  padding: 11px;
-}
-
-.ethscribe-manual-creation dl > div:last-child {
-  border-bottom: 0;
-}
-
-.ethscribe-manual-creation dt,
-.ethscribe-manual-creation dd,
-.ethscribe-manual-creation button {
-  font-family: "Courier New", monospace;
-  font-size: 9px;
-}
-
-.ethscribe-manual-creation dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.ethscribe-manual-creation button {
-  align-items: center;
-  background: var(--signal);
-  border: 1px solid var(--ink);
-  cursor: pointer;
-  display: flex;
-  font-weight: 700;
-  justify-content: space-between;
-  letter-spacing: 0.07em;
-  min-height: 48px;
-  padding: 12px 15px;
-  width: 100%;
-}
-
-.ethscribe-manual-creation button svg {
-  fill: none;
-  height: 16px;
-  stroke: currentColor;
-  width: 16px;
-}
-
-.ethscribe-manual-creation ol {
-  margin: 18px 0;
-  padding-left: 21px;
-}
-
-.ethscribe-manual-creation li + li {
-  margin-top: 7px;
-}
-
-.ethscribe-manual-creation > small a {
-  color: inherit;
-  text-decoration: underline;
-}
-
 .existing-ethscription-card,
 .ethscribe-follow-up,
 .selected-expedition-target,
@@ -5705,7 +5608,6 @@ footer > span {
 
   .ethscribe-workbench-heading,
   .preflight-result-heading,
-  .manual-creation-heading,
   .finding-assignment-form > div {
     align-items: flex-start;
     flex-direction: column;
@@ -5723,7 +5625,6 @@ footer > span {
   .preflight-technical-details dl,
   .preflight-wrapper-checks p,
   .selected-expedition-target,
-  .ethscribe-manual-creation dl > div,
   .ethscribe-confirmation dl > div {
     grid-template-columns: 1fr;
   }

@@ -1,6 +1,7 @@
 import {
   buildCreateEthscriptionTransaction,
   buildDataUri,
+  buildFindingReceiptDataUri,
   buildFindingAssignment,
   buildWrapperChecks,
   CANONICAL_XPM_MEDIA_TYPE,
@@ -40,6 +41,8 @@ test('hashes exact bytes separately from the complete protocol Data URI', async 
   expect(inspected.dataUri).toBe('data:image/x-xpixmap;base64,YWJj');
   expect(inspected.dataUriPrefix).toBe('data:image/x-xpixmap;base64,');
   expect(inspected.protocolContentSha256).not.toBe(inspected.rawSha256);
+  expect(inspected.receiptDataUri).toBe(buildFindingReceiptDataUri(inspected.protocolContentSha256));
+  expect(inspected.receiptContentSha256).toMatch(/^0x[a-f0-9]{64}$/);
 });
 
 test('checks common file signatures without treating a MIME label as proof', () => {
@@ -84,11 +87,11 @@ test('checks a candidate against a sealed expedition target without requesting i
   expect(request.body).not.toContain('expected');
 });
 
-test('creates to the connected wallet and signs a deterministic assignment message', () => {
+test('creates directly to the market and signs a deterministic assignment message', () => {
   const dataUri = buildDataUri('image/png', 'YWJj');
   expect(buildCreateEthscriptionTransaction(account, dataUri)).toMatchObject({
     from: account,
-    to: account,
+    to: MARKET_ADDRESS,
     value: '0x0',
   });
 
@@ -111,19 +114,29 @@ test('creates to the connected wallet and signs a deterministic assignment messa
   expect(findingAssignmentMessage(assignment)).toContain('Data URI prefix: data:image/png;base64,');
 });
 
-test('detects an exact-content race while waiting for the new transaction to index', async () => {
-  const competingId = `0x${'44'.repeat(32)}`;
+test('recognizes the guaranteed Finding Receipt when canonical creation loses a race', async () => {
   const attemptedId = `0x${'55'.repeat(32)}`;
+  const canonicalSha = `0x${'66'.repeat(32)}`;
+  const receiptUri = buildFindingReceiptDataUri(canonicalSha);
+  const receiptSha = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(receiptUri));
+  const receiptContentSha256 = `0x${Array.from(new Uint8Array(receiptSha), (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
   const fetchImpl = jest.fn(async (url) => {
-    if (url.includes('/exists/')) return {
+    if (url.includes(attemptedId)) return {
       ok: true,
-      json: async () => ({ result: { exists: true, ethscription: { transaction_hash: competingId } } }),
+      json: async () => ({ result: {
+        transaction_hash: attemptedId,
+        content_sha: receiptContentSha256,
+        creator: MARKET_ADDRESS,
+        initial_owner: account,
+        current_owner: account,
+      } }),
     };
     return { ok: false, status: 404 };
   });
 
   await expect(waitForEthscriptionRecord(attemptedId, {
     owner: account,
-    protocolContentSha256: `0x${'66'.repeat(32)}`,
-  }, { fetchImpl, pollMs: 0, timeoutMs: 20 })).rejects.toThrow(/created this exact data uri first/i);
+    protocolContentSha256: canonicalSha,
+    receiptContentSha256,
+  }, { fetchImpl, pollMs: 0, timeoutMs: 20 })).resolves.toMatchObject({ creationOutcome: 'receipt' });
 });

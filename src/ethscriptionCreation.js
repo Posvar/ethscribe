@@ -67,6 +67,12 @@ export function buildDataUri(mediaType, base64) {
   return `data:${mediaType.toLowerCase()};base64,${base64}`;
 }
 
+export function buildFindingReceiptDataUri(canonicalContentSha256) {
+  const contentSha = normalizeSha(canonicalContentSha256);
+  if (!contentSha) throw new Error('A valid canonical content hash is required for the Finding Receipt.');
+  return `data:application/vnd.ethscribe.finding-receipt+json;rule=esip6,{"version":1,"canonical_content_sha256":"${contentSha}"}`;
+}
+
 export function matchesMediaSignature(bytes, mediaType) {
   const type = String(mediaType).toLowerCase();
   if (type === 'image/png') {
@@ -102,6 +108,9 @@ export async function inspectFile(file, mediaType) {
     sha256Hex(new TextEncoder().encode(dataUri)),
   ]);
 
+  const receiptDataUri = buildFindingReceiptDataUri(protocolContentSha256);
+  const receiptContentSha256 = await sha256Hex(new TextEncoder().encode(receiptDataUri));
+
   return {
     filename: file.name,
     byteLength: bytes.length,
@@ -112,6 +121,8 @@ export async function inspectFile(file, mediaType) {
     calldataBytes: new TextEncoder().encode(dataUri).length,
     rawSha256,
     protocolContentSha256,
+    receiptDataUri,
+    receiptContentSha256,
     signatureMatchesMediaType: matchesMediaSignature(bytes, mediaType),
   };
 }
@@ -166,7 +177,7 @@ export function buildCreateEthscriptionTransaction(account, dataUri) {
   if (!/^data:[^,]+,/.test(dataUri || '')) throw new Error('The generated Data URI is invalid.');
   return {
     from: account,
-    to: account,
+    to: MARKET_ADDRESS,
     value: '0x0',
     data: utf8ToHex(dataUri),
   };
@@ -183,27 +194,39 @@ export async function waitForEthscriptionRecord(ethscriptionId, expected, option
     if (response.ok) {
       const payload = await response.json();
       const record = payload.result || payload;
-      if (normalizeSha(record.content_sha) !== normalizeSha(expected.protocolContentSha256)) {
-        throw new Error('The indexed Ethscription content hash does not match the prepared Data URI.');
+      const indexedContentSha = normalizeSha(record.content_sha);
+      if (indexedContentSha === normalizeSha(expected.protocolContentSha256)) {
+        if (record.creator?.toLowerCase() !== expected.owner.toLowerCase()
+          || record.initial_owner?.toLowerCase() !== MARKET_ADDRESS.toLowerCase()
+          || record.current_owner?.toLowerCase() !== MARKET_ADDRESS.toLowerCase()
+          || record.previous_owner?.toLowerCase() !== expected.owner.toLowerCase()) {
+          throw new Error('The canonical Ethscription does not have the expected creator and direct-vault ownership chain.');
+        }
+        return { ...record, creationOutcome: 'canonical' };
       }
-      if (record.current_owner?.toLowerCase() !== expected.owner.toLowerCase()) {
-        throw new Error('The new Ethscription is not indexed to the connected wallet.');
+      if (indexedContentSha === normalizeSha(expected.receiptContentSha256)) {
+        if (record.creator?.toLowerCase() !== MARKET_ADDRESS.toLowerCase()
+          || record.initial_owner?.toLowerCase() !== expected.owner.toLowerCase()
+          || record.current_owner?.toLowerCase() !== expected.owner.toLowerCase()) {
+          throw new Error('The Finding Receipt does not have the expected creator and owner.');
+        }
+        return { ...record, creationOutcome: 'receipt' };
       }
-      return record;
+      throw new Error('The indexed transaction contains neither the prepared artifact nor its Finding Receipt.');
     }
     if (response.status !== 404) throw new Error('The official Ethscriptions indexer is temporarily unavailable.');
     const existence = await fetchImpl(`/api/ethscriptions/exists/${normalizeSha(expected.protocolContentSha256)}`, { headers: { accept: 'application/json' } });
     if (existence.ok) {
       const payload = await existence.json();
       const competing = payload.result?.ethscription;
-      if (payload.result?.exists && competing?.transaction_hash?.toLowerCase() !== ethscriptionId.toLowerCase()) {
-        throw new Error(`Another transaction created this exact Data URI first (${competing.transaction_hash}). Your Ethereum transaction succeeded, but it did not create a new Ethscription.`);
-      }
+      // A competing canonical record is expected to make this transaction's
+      // guaranteed ESIP-6 Finding Receipt win. Continue polling this tx hash.
+      void competing;
     }
     await wait(pollMs);
   }
 
-  throw new Error('Ethereum confirmed the transaction, but the official indexer did not recognize a new Ethscription. An exact-content race may have occurred; do not submit the transaction again.');
+  throw new Error('Ethereum confirmed the transaction, but the official indexer has not recognized its canonical artifact or guaranteed Finding Receipt yet. Do not submit it again.');
 }
 
 export async function waitForVerifiedCustody(owner, ethscriptionId, options = {}) {
@@ -222,7 +245,7 @@ export async function waitForVerifiedCustody(owner, ethscriptionId, options = {}
     await wait(pollMs);
   }
 
-  throw new Error('The deposit confirmed, but custody reconciliation is taking longer than expected. Check the transaction and wallet later; do not redeposit.');
+  throw new Error('The transaction confirmed, but custody reconciliation is taking longer than expected. Check the transaction and wallet later; do not resubmit it.');
 }
 
 export function buildFindingAssignment({ artifact, inspection, ethscriptionId, account, claimSummary, sourceUrl }) {

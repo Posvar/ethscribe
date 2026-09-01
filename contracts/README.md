@@ -1,8 +1,8 @@
 # Ethscribe contracts
 
-`EthscribeMarketV1` is an immutable ESIP-2 vault and ETH marketplace for Ethscriptions. V1 is deployed to Ethereum mainnet and source-verified. A disposable custody round trip completed through the production UI on August 31, 2026. It has not received an independent audit and is not approved for valuable custody or trading.
+`EthscribeMarketV2` is the immutable direct-creation receiver, ESIP-2 vault, and ETH marketplace for Ethscriptions. It inherits the audited-by-tests V1 settlement model and adds direct-to-vault Data URI creation, a race-safe Finding Receipt, direct-creation exits, and bounded bulk withdrawal for both custody forms. It has not received an independent audit and is not approved for valuable custody or trading.
 
-## Mainnet deployment
+## Version 1 mainnet deployment
 
 - Contract: [`0x44c241ac86724D64a33558b03A637a63D9a30B02`](https://etherscan.io/address/0x44c241ac86724D64a33558b03A637a63D9a30B02)
 - Deployment transaction: [`0xf69d821904353eb57de9a28d4732ea96ca4f3198f289523dd6a9551517ae16df`](https://etherscan.io/tx/0xf69d821904353eb57de9a28d4732ea96ca4f3198f289523dd6a9551517ae16df)
@@ -13,14 +13,18 @@
 
 The machine-readable deployment record is [deployments/mainnet.json](deployments/mainnet.json), and the first production custody exercise is recorded in [deployments/custody-pilot-001.json](deployments/custody-pilot-001.json). The owner deliberately left the contract unpaused and the interface pilot gate enabled after that test. This does not substitute for an independent review or authorize valuable custody or trading.
 
-## Version 1 boundary
+V2 is the replacement intake candidate. Its mainnet address, deployment transaction, block, source commit, and exact verification record must be added here and to a separate machine-readable deployment record before the public interface changes destinations.
+
+## Version 2 boundary
 
 The contract provides:
 
 - depositor-scoped potential Ethscription records;
+- direct Data URI creation with the connected wallet preserved as protocol creator;
+- an ordered ESIP-6 Finding Receipt fallback committed to the attempted canonical hash;
 - a five-block transfer cooldown;
 - single and packed-batch deposits through the ESIP fallback path;
-- single and batch withdrawals that remain available during a pause;
+- single and batch withdrawals for registered deposits and unregistered direct creations that remain available during a pause;
 - fixed-price and buyer-restricted listings;
 - funded, escrow-first offers;
 - a fixed 5% protocol fee;
@@ -106,7 +110,7 @@ Start a disposable Anvil node and deploy using one of its unlocked test accounts
 ```powershell
 ..\.tools\foundry\anvil.exe --host 127.0.0.1 --port 8545
 
-..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV1.s.sol:DeployEthscribeMarketV1 `
+..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV2.s.sol:DeployEthscribeMarketV2 `
   --force --rpc-url http://127.0.0.1:8545 `
   --broadcast --unlocked --sender <ANVIL_TEST_ADDRESS> `
   --sig "run(address,address)" <OWNER_TEST_ADDRESS> <FEE_RECIPIENT_TEST_ADDRESS>
@@ -117,7 +121,7 @@ Start a disposable Anvil node and deploy using one of its unlocked test accounts
 Sepolia is useful for exercising browser signing and the public Ethscriptions/indexer path, but it is not a security boundary and is not mandatory for a deployment that starts paused. If used, fill out [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for Sepolia. First simulate without `--broadcast`:
 
 ```powershell
-..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV1.s.sol:DeployEthscribeMarketV1 `
+..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV2.s.sol:DeployEthscribeMarketV2 `
   --force --rpc-url <SEPOLIA_RPC_URL> --sender <DEPLOYER_ADDRESS> `
   --sig "run(address,address)" <OWNER_WALLET> <FEE_RECIPIENT_WALLET>
 ```
@@ -125,7 +129,7 @@ Sepolia is useful for exercising browser signing and the public Ethscriptions/in
 After reviewing the simulation, broadcast through the browser wallet:
 
 ```powershell
-..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV1.s.sol:DeployEthscribeMarketV1 `
+..\.tools\foundry\forge.exe script script/DeployEthscribeMarketV2.s.sol:DeployEthscribeMarketV2 `
   --force --rpc-url <SEPOLIA_RPC_URL> --broadcast --browser --sender <DEPLOYER_ADDRESS> `
   --sig "run(address,address)" <OWNER_WALLET> <FEE_RECIPIENT_WALLET>
 ```
@@ -150,12 +154,12 @@ The deployed contract begins paused. Do not unpause, transfer valuable Ethscript
 
 ## Version migration
 
-`EthscribeMarketV1` cannot be altered. If core settlement rules change:
+Neither deployed version can be altered. V2 demonstrates the migration pattern: V1 remains available for exits while new intake moves to a separately deployed contract. If core rules change again:
 
-1. the owner pauses new V1 deposits and trades;
+1. the owner pauses new intake and trades on the retiring version;
 2. withdrawals, offer cancellations, and ETH claims remain available;
-3. a separately tested `EthscribeMarketV2` is deployed;
-4. the public interface directs new activity to V2 while continuing to expose V1 exits; and
+3. a separately tested next version is deployed;
+4. the public interface directs new activity to it while continuing to expose old exits; and
 5. users move assets voluntarily.
 
 Revenue distribution does not automatically require a market migration. The owner can propose a new fee recipient, and that recipient must accept. Listings and offers snapshot the recipient that was active when their terms were created.

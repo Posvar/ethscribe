@@ -61,7 +61,7 @@ test('shows live paused-market state and read-only wallet inventory', async () =
   expect(screen.getByText('LOCKED')).toBeInTheDocument();
   expect(screen.getByText('CURRENT')).toBeInTheDocument();
   expect(screen.getByText('DIRECTLY OWNED')).toBeInTheDocument();
-  expect(screen.getByText(/no active market deposits/i)).toBeInTheDocument();
+  expect(screen.getByText(/no direct creations or active deposits/i)).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /two records must agree/i })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /test before you deposit/i })).toBeInTheDocument();
   expect(screen.getByLabelText(/expedition 001 target/i)).toHaveTextContent('bitcoin20.xpm');

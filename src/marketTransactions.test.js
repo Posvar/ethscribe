@@ -2,11 +2,10 @@ import {
   buildDepositTransaction,
   buildWithdrawTransaction,
   encodeWithdrawEthscription,
+  encodeWithdrawUnregisteredEthscription,
   friendlyTransactionError,
   hasDepositSelectorCollision,
-  isInternalAccountCalldataRejection,
   reconciliationTimedOut,
-  sendTransactionDirect,
   simulateAndSendTransaction,
   waitForTransactionReceipt,
 } from './marketTransactions';
@@ -26,9 +25,20 @@ test('builds the raw zero-value Ethscription deposit transaction', () => {
 
 test('rejects IDs that collide with any deployed market selector', () => {
   const pauseCollision = `0x8456cb59${'00'.repeat(28)}`;
+  const directWithdrawalCollision = `0x42ea2274${'00'.repeat(28)}`;
+  const directBatchWithdrawalCollision = `0xc5c2076f${'00'.repeat(28)}`;
   expect(hasDepositSelectorCollision(pauseCollision)).toBe(true);
+  expect(hasDepositSelectorCollision(directWithdrawalCollision)).toBe(true);
+  expect(hasDepositSelectorCollision(directBatchWithdrawalCollision)).toBe(true);
   expect(() => buildDepositTransaction(account, pauseCollision)).toThrow(/collides/i);
   expect(hasDepositSelectorCollision(id)).toBe(false);
+});
+
+test('ABI-encodes the ESIP-2 unregistered direct-creation exit', () => {
+  const calldata = encodeWithdrawUnregisteredEthscription(id, account);
+  expect(calldata.slice(0, 10)).toBe('0x42ea2274');
+  expect(calldata.slice(10, 74)).toBe(id.slice(2));
+  expect(buildWithdrawTransaction(account, id, { directCreation: true }).data).toBe(calldata);
 });
 
 test('ABI-encodes withdrawal to the connected wallet', () => {
@@ -59,31 +69,11 @@ test('simulates on mainnet before asking the wallet to send', async () => {
   expect(calls[2].params[0]).toEqual(transaction);
 });
 
-test('sends Ethscription creation without making optional gas estimation a gate', async () => {
-  const calls = [];
-  const transaction = { from: account, to: account, value: '0x0', data: '0x1234' };
-  const provider = {
-    request: jest.fn(({ method, params }) => {
-      calls.push({ method, params });
-      if (method === 'eth_chainId') return Promise.resolve('0x1');
-      if (method === 'eth_sendTransaction') return Promise.resolve(`0x${'56'.repeat(32)}`);
-      return Promise.reject(new Error('unexpected method'));
-    }),
-  };
-
-  await expect(sendTransactionDirect(provider, transaction)).resolves.toBe(`0x${'56'.repeat(32)}`);
-  expect(calls.map(({ method }) => method)).toEqual(['eth_chainId', 'eth_sendTransaction']);
-  expect(calls[1].params[0]).toEqual(transaction);
-});
-
 test('waits for a successful receipt and explains common wallet failures', async () => {
   const provider = { request: jest.fn().mockResolvedValue({ status: '0x1', blockNumber: '0x10' }) };
   await expect(waitForTransactionReceipt(provider, `0x${'34'.repeat(32)}`, { pollMs: 0, timeoutMs: 10 })).resolves.toMatchObject({ status: '0x1' });
   expect(friendlyTransactionError({ code: 4001 })).toMatch(/cancelled/i);
   expect(friendlyTransactionError(new Error('execution reverted: EnforcedPause'))).toMatch(/paused/i);
-  const internalAccountError = new Error('External transactions to internal accounts cannot include data');
-  expect(isInternalAccountCalldataRejection(internalAccountError)).toBe(true);
-  expect(friendlyTransactionError(internalAccountError)).toMatch(/MetaMask prevents websites/i);
 });
 
 test('bounds post-confirmation reconciliation without timing out an unknown start', () => {

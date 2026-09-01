@@ -8,6 +8,7 @@ import {
   MARKET_DEPLOYMENT_BLOCK,
   MARKET_DEPLOYMENT_DOCS_PATH,
   MARKET_ETHERSCAN_URL,
+  MARKET_VERSION,
 } from './marketConfig';
 import {
   buildDepositTransaction,
@@ -228,7 +229,9 @@ export default function WalletPage({
     try {
       const request = type === 'deposit'
         ? buildDepositTransaction(account, id)
-        : buildWithdrawTransaction(account, id);
+        : buildWithdrawTransaction(account, id, {
+          directCreation: record.custody?.custodyKind === 'direct_creation',
+        });
       const hash = await simulateAndSendTransaction(provider, request);
       setTransaction({ type, id, account, phase: 'mining', hash, message: '' });
       await waitForTransactionReceipt(provider, hash);
@@ -247,7 +250,7 @@ export default function WalletPage({
 
   const depositAction = (record) => {
     if (hasDepositSelectorCollision(record.transactionHash)) {
-      return { disabled: true, label: 'UNSUPPORTED ID', hint: 'This ID collides with a V1 contract selector and cannot use the fallback deposit path.' };
+      return { disabled: true, label: 'UNSUPPORTED ID', hint: 'This ID collides with a V2 contract selector and cannot use the fallback deposit path.' };
     }
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Marketplace transactions use Ethereum mainnet.' };
@@ -262,7 +265,14 @@ export default function WalletPage({
     if (!record.custody?.verified) return { disabled: true, label: 'WAITING FOR VERIFICATION', hint: record.custody?.reason || 'Contract and indexer custody must agree first.' };
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Withdrawals use Ethereum mainnet.' };
     if (!market?.transactionsEnabled || !market?.exitsEnabled) return { disabled: true, label: 'WITHDRAW UI LOCKED', hint: 'The tested transaction interface has not been operationally enabled.' };
-    return { disabled: false, label: 'WITHDRAW TO THIS WALLET', hint: 'Withdrawals remain available even when market intake is paused.', onClick: () => openConfirmation('withdraw', record) };
+    return {
+      disabled: false,
+      label: 'WITHDRAW TO THIS WALLET',
+      hint: record.custody?.custodyKind === 'direct_creation'
+        ? 'Uses the ESIP-2 direct-creation exit. It remains available while intake is paused.'
+        : 'Registered-deposit withdrawals remain available while market intake is paused.',
+      onClick: () => openConfirmation('withdraw', record),
+    };
   };
 
   return (
@@ -276,7 +286,7 @@ export default function WalletPage({
             <p>Inspect Ethscriptions held by your address and independently reconcile anything deposited with the Ethscribe marketplace.</p>
           </div>
           <div className="wallet-contract-seal">
-            <span>MARKET V1</span>
+            <span>MARKET V{MARKET_VERSION}</span>
             <strong>{market?.paused === false ? 'ACTIVE' : 'PAUSED'}</strong>
             <small>MAINNET · BLOCK {MARKET_DEPLOYMENT_BLOCK.toLocaleString('en-US')}</small>
           </div>
@@ -355,7 +365,7 @@ export default function WalletPage({
 
               <div className="wallet-inventory-section">
                 <div className="wallet-inventory-title"><div><span>02</span><h2>Marketplace custody</h2></div><strong>{loading ? '—' : escrow.length}</strong></div>
-                {!loading && escrow.length === 0 && !error && <p className="wallet-empty-record">No active market deposits from this address passed the candidate lookup. Nothing is represented as escrowed.</p>}
+                {!loading && escrow.length === 0 && !error && <p className="wallet-empty-record">No direct creations or active deposits from this address passed custody reconciliation.</p>}
                 <div className="wallet-inventory-grid">{escrow.map((record) => <InventoryCard key={record.transactionHash} record={record} escrow action={withdrawAction(record)} />)}</div>
                 {inventory?.pagination?.escrowHasMore && <p className="wallet-limit-note">Showing the newest {inventory.pagination.maximumResultsPerSection} records.</p>}
               </div>
@@ -366,7 +376,7 @@ export default function WalletPage({
         <section className="custody-method">
           <p className="kicker"><span /> Fail-closed custody</p>
           <h2>Two records must agree.</h2>
-          <p>An artifact is shown as verified in marketplace custody only when the official Ethscriptions indexer names the market as current owner and the depositor as previous owner, the contract reports an active matching deposit, and the five-block cooldown has elapsed. A lag, mismatch, or failed read produces no verified badge.</p>
+          <p>An artifact is shown as verified in marketplace custody only when the official Ethscriptions indexer names the market as current owner and the connected wallet as previous owner. Existing-ID deposits must also have an active contract record; direct-to-vault creations must name that same wallet as creator and the market as initial owner. Both paths wait through the five-block safety window.</p>
         </section>
       </main>
       {footer}

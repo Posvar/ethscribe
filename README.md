@@ -2,7 +2,7 @@
 
 Ownable digital archaeology: Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
 
-The current release establishes the brand, Genesis Hunt, archival sourcing, wallet-based researcher identity, personal Ethscription creation, verified market custody, and signed Finding intake. Listings and settlement remain behind the marketplace milestones described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
+The current release establishes the brand, Genesis Hunt, archival sourcing, wallet-based researcher identity, direct-to-vault Ethscription creation, verified market custody, and signed Finding intake. Listings and settlement remain behind the marketplace milestones described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
 
 ## Documentation
 

@@ -13,7 +13,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 ///      reconcile current_owner == address(this) and previous_owner == depositor before
 ///      presenting a deposit, listing, or offer as valid.
 contract EthscribeMarketV1 is Ownable2Step, Pausable, ReentrancyGuard {
-    uint32 public constant MARKET_VERSION = 1;
     uint16 public constant FEE_BPS = 500;
     uint16 public constant BPS_DENOMINATOR = 10_000;
     uint64 public constant TRANSFER_COOLDOWN_BLOCKS = 5;
@@ -174,7 +173,7 @@ contract EthscribeMarketV1 is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Records one or more packed 32-byte potential Ethscription IDs.
     /// @dev A raw Ethscription transfer uses this fallback. No ownership conclusion is made here.
-    fallback() external payable whenNotPaused {
+    fallback() external payable virtual whenNotPaused {
         if (msg.value != 0) revert UnexpectedEther();
         uint256 dataLength = msg.data.length;
         if (dataLength == 0 || dataLength % ETHSCRIPTION_ID_BYTES != 0) revert InvalidDepositDataLength();
@@ -193,6 +192,10 @@ contract EthscribeMarketV1 is Ownable2Step, Pausable, ReentrancyGuard {
 
     receive() external payable {
         revert DirectEtherNotAccepted();
+    }
+
+    function MARKET_VERSION() public pure virtual returns (uint32) {
+        return 1;
     }
 
     function pause() external onlyOwner {

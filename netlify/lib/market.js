@@ -296,6 +296,41 @@ function reconcileCustody({ record, owner, deposit, currentBlock, indexer }) {
   if (!indexerMatches) {
     return { verified: false, status: 'indexer_mismatch', reason: 'Official ownership does not match the market and depositor.' };
   }
+
+  const directCreation = normalizeAddress(record.initial_owner) === MARKET_ADDRESS_LOWER
+    && normalizeAddress(record.creator) === ownerLower;
+  if (directCreation && !deposit?.active) {
+    const creationBlock = Number(record.block_number);
+    if (!Number.isFinite(creationBlock)) {
+      return { verified: false, status: 'creation_block_unavailable', reason: 'The direct creation block is unavailable.' };
+    }
+    const confirmations = Math.max(0, currentBlock - creationBlock);
+    const cooldownRemaining = Math.max(0, TRANSFER_COOLDOWN_BLOCKS - confirmations);
+    if (cooldownRemaining > 0) {
+      return {
+        verified: false,
+        status: 'cooldown',
+        reason: `${cooldownRemaining} confirmation block${cooldownRemaining === 1 ? '' : 's'} remaining.`,
+        custodyKind: 'direct_creation',
+        confirmations,
+        cooldownRemaining,
+        receivedBlock: creationBlock,
+        nonce: null,
+        active: false,
+      };
+    }
+    return {
+      verified: true,
+      status: 'verified_direct_creation',
+      reason: 'Official creation and ownership place this artifact directly in market custody.',
+      custodyKind: 'direct_creation',
+      confirmations,
+      cooldownRemaining: 0,
+      receivedBlock: creationBlock,
+      nonce: null,
+      active: false,
+    };
+  }
   if (!deposit) {
     return { verified: false, status: 'contract_unavailable', reason: 'Contract deposit state could not be read.' };
   }
@@ -320,6 +355,7 @@ function reconcileCustody({ record, owner, deposit, currentBlock, indexer }) {
     verified: true,
     status: 'verified',
     reason: 'Official ownership and active contract custody agree.',
+    custodyKind: 'registered_deposit',
     confirmations,
     cooldownRemaining: 0,
     ...deposit,

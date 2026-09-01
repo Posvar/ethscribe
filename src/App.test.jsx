@@ -115,7 +115,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
   expect(screen.getByDisplayValue('image/x-xpixmap')).toHaveAttribute('readonly');
-  expect(screen.getByText(/creation does not go directly to the market/i)).toBeInTheDocument();
+  expect(screen.getByText(/direct-to-vault creation/i)).toBeInTheDocument();
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
 }, 10_000);
 
@@ -123,9 +123,9 @@ test('offers a standalone personal Ethscribe flow with expedition handoff explai
   window.history.pushState({}, '', '/ethscribe');
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: /ethscribe a file to your own wallet/i })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /preserve exact bytes in your wallet/i })).toBeInTheDocument();
-  expect(screen.getByText(/does not deposit, list, or assign/i)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /ethscribe a file directly into the vault/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /preserve exact bytes in the market vault/i })).toBeInTheDocument();
+  expect(screen.getByText(/nothing is listed or assigned automatically/i)).toBeInTheDocument();
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Ethscribe' })).toHaveAttribute('aria-current', 'page');
 });

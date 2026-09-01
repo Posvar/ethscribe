@@ -1,8 +1,8 @@
 import { MAINNET_CHAIN_ID, MARKET_ADDRESS } from './marketConfig';
 
-// Every selector in the immutable V1 ABI. A raw Ethscription ID whose first
+// Every selector in the immutable V2 ABI. A raw Ethscription ID whose first
 // four bytes collide would enter Solidity dispatch instead of the deposit fallback.
-const V1_SELECTORS = new Set([
+const V2_SELECTORS = new Set([
   '0x000a7ffb', '0x13888565', '0x1e83409a', '0x24dabda7', '0x2dc78f67',
   '0x3f4ba83a', '0x402914f5', '0x46904840', '0x4838ed19', '0x5c975abb',
   '0x5f5d0655', '0x61f9df78', '0x69644c75', '0x715018a6', '0x733ec0c4',
@@ -10,10 +10,11 @@ const V1_SELECTORS = new Set([
   '0x8a72ea6a', '0x8da5cb5b', '0x92936da3', '0x9299e552', '0xa6edbe87',
   '0xaa3a6b36', '0xbd550a2e', '0xbf333f2c', '0xc815729d', '0xcfdbf254',
   '0xe1a45218', '0xe30c3978', '0xe4dcfa6e', '0xef706adf', '0xf2fde38b',
-  '0xf42af46c', '0xf73579a9',
+  '0xf42af46c', '0xf73579a9', '0x42ea2274', '0x6d12f067', '0xc5c2076f',
 ]);
 
 const WITHDRAW_ETHSCRIPTION_SELECTOR = '0x7e78ba70';
+const WITHDRAW_UNREGISTERED_ETHSCRIPTION_SELECTOR = '0x42ea2274';
 export const RECONCILIATION_TIMEOUT_MS = 10 * 60 * 1000;
 
 export function isAddress(value) {
@@ -26,7 +27,7 @@ export function isEthscriptionId(value) {
 
 export function hasDepositSelectorCollision(ethscriptionId) {
   if (!isEthscriptionId(ethscriptionId)) return false;
-  return V1_SELECTORS.has(ethscriptionId.slice(0, 10).toLowerCase());
+  return V2_SELECTORS.has(ethscriptionId.slice(0, 10).toLowerCase());
 }
 
 export function reconciliationTimedOut(startedAt, now = Date.now()) {
@@ -47,7 +48,7 @@ export function buildDepositTransaction(account, ethscriptionId) {
   const from = requireAddress(account, 'wallet');
   const id = requireEthscriptionId(ethscriptionId);
   if (hasDepositSelectorCollision(id)) {
-    throw new Error('This Ethscription ID collides with a market function selector and cannot use the V1 fallback deposit path.');
+    throw new Error('This Ethscription ID collides with a market function selector and cannot use the V2 fallback deposit path.');
   }
 
   return {
@@ -64,13 +65,21 @@ export function encodeWithdrawEthscription(ethscriptionId, recipient) {
   return `${WITHDRAW_ETHSCRIPTION_SELECTOR}${id.slice(2)}${normalizedRecipient.padStart(64, '0')}`;
 }
 
-export function buildWithdrawTransaction(account, ethscriptionId) {
+export function encodeWithdrawUnregisteredEthscription(ethscriptionId, recipient) {
+  const id = requireEthscriptionId(ethscriptionId);
+  const normalizedRecipient = requireAddress(recipient, 'recipient').slice(2).toLowerCase();
+  return `${WITHDRAW_UNREGISTERED_ETHSCRIPTION_SELECTOR}${id.slice(2)}${normalizedRecipient.padStart(64, '0')}`;
+}
+
+export function buildWithdrawTransaction(account, ethscriptionId, options = {}) {
   const from = requireAddress(account, 'wallet');
   return {
     from,
     to: MARKET_ADDRESS,
     value: '0x0',
-    data: encodeWithdrawEthscription(ethscriptionId, from),
+    data: options.directCreation
+      ? encodeWithdrawUnregisteredEthscription(ethscriptionId, from)
+      : encodeWithdrawEthscription(ethscriptionId, from),
   };
 }
 
@@ -93,15 +102,6 @@ function requireTransactionHash(transactionHash) {
     throw new Error('The wallet did not return a valid transaction hash.');
   }
   return transactionHash;
-}
-
-// Ethscription creation is an intentionally unusual EOA-to-itself calldata
-// transaction. The official creation UI treats gas estimation as optional cost
-// information and does not block the wallet request when estimation fails.
-export async function sendTransactionDirect(provider, transaction) {
-  await requireMainnet(provider);
-  const transactionHash = await provider.request({ method: 'eth_sendTransaction', params: [transaction] });
-  return requireTransactionHash(transactionHash);
 }
 
 export async function simulateAndSendTransaction(provider, transaction) {
@@ -140,19 +140,10 @@ export async function waitForTransactionReceipt(provider, transactionHash, optio
   throw new Error('The transaction is still pending. Check it on Etherscan before trying again.');
 }
 
-export function isInternalAccountCalldataRejection(error) {
-  return /External transactions to internal accounts cannot include data/i.test(
-    typeof error?.message === 'string' ? error.message : '',
-  );
-}
-
 export function friendlyTransactionError(error) {
   if (error?.code === 4001) return 'The transaction was cancelled in the wallet.';
   const message = typeof error?.message === 'string' ? error.message : '';
   if (/user rejected|user denied/i.test(message)) return 'The transaction was cancelled in the wallet.';
-  if (isInternalAccountCalldataRejection(error)) {
-    return 'MetaMask prevents websites from sending calldata to an address managed by the same MetaMask. The bytes remain valid and no transaction was sent.';
-  }
   if (/pause/i.test(message)) return 'The market is paused. No Ethscription was deposited.';
   if (/insufficient funds/i.test(message)) return 'The wallet does not have enough ETH for gas.';
   return message && message.length <= 220
