@@ -2,7 +2,14 @@ const { loadEthscriptionMedia } = require('../lib/ethscriptionMedia');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') return { statusCode: 405, body: 'Method not allowed' };
-  const id = event.queryStringParameters?.id || '';
+  const requestPath = (() => {
+    try {
+      return event.rawUrl ? new URL(event.rawUrl).pathname : event.path;
+    } catch {
+      return event.path || '';
+    }
+  })();
+  const id = event.queryStringParameters?.id || requestPath.split('/').filter(Boolean).pop() || '';
 
   try {
     const media = await loadEthscriptionMedia(id);
