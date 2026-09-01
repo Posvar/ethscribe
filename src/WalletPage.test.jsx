@@ -26,6 +26,7 @@ beforeEach(() => {
           result: {
             owner: owner.toLowerCase(),
             market,
+            claimableWei: '0',
             directlyOwned: [{
               transactionHash: ethscriptionId,
               ethscriptionNumber: 174464,
@@ -62,6 +63,8 @@ test('shows a focused Field Wallet without operational pilot panels', async () =
   fireEvent.click(screen.getByRole('tab', { name: /my wallet/i }));
   expect(await screen.findByText('Ethscription #174464')).toBeInTheDocument();
   expect(screen.getByText('IN MY WALLET')).toBeInTheDocument();
+  expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent('0 ETH');
+  expect(screen.getByRole('button', { name: /nothing to claim/i })).toBeDisabled();
   expect(screen.queryByRole('heading', { name: /marketplace status/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/custody pilot/i)).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: /two records must agree/i })).not.toBeInTheDocument();
@@ -336,6 +339,62 @@ test('sets a fixed ETH price for a verified marketplace deposit', async () => {
   expect(await screen.findByText(/listing confirmed at the selected eth price/i)).toBeInTheDocument();
   const sent = provider.request.mock.calls.find(([request]) => request.method === 'eth_sendTransaction')[0].params[0];
   expect(sent.data).toMatch(/^0x822b4701/);
+});
+
+test('shows and claims accumulated marketplace credit', async () => {
+  const activeMarket = {
+    ...market,
+    paused: false,
+    transactionsEnabled: true,
+    intakeEnabled: true,
+    exitsEnabled: true,
+  };
+  let walletReads = 0;
+  global.fetch = jest.fn(() => {
+    walletReads += 1;
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({
+        result: {
+          owner: owner.toLowerCase(),
+          market: activeMarket,
+          claimableWei: walletReads > 1 ? '0' : '1250000000000000000',
+          directlyOwned: [],
+          escrow: [],
+          pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+        },
+      }),
+    });
+  });
+  const txHash = `0x${'5'.repeat(64)}`;
+  const provider = {
+    request: jest.fn(({ method }) => {
+      if (method === 'eth_chainId') return Promise.resolve('0x1');
+      if (method === 'eth_estimateGas') return Promise.resolve('0x10000');
+      if (method === 'eth_sendTransaction') return Promise.resolve(txHash);
+      if (method === 'eth_getTransactionReceipt') return Promise.resolve({ status: '0x1', transactionHash: txHash });
+      return Promise.reject(new Error(`Unexpected ${method}`));
+    }),
+  };
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    provider={provider}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  await waitFor(() => expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent('1.25 ETH'));
+  fireEvent.click(screen.getByRole('button', { name: /claim 1\.25 eth/i }));
+  expect(screen.getByRole('heading', { name: /claim your marketplace credit/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
+
+  expect(await screen.findByText(/marketplace balance claimed to this wallet/i)).toBeInTheDocument();
+  const sent = provider.request.mock.calls.find(([request]) => request.method === 'eth_sendTransaction')[0].params[0];
+  expect(sent.data).toMatch(/^0x1e83409a/);
 });
 
 test('presents temporary indexer lag as syncing rather than uncertain custody', async () => {

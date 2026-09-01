@@ -535,11 +535,33 @@ export default function WalletPage({
     return { disabled: false, onClick: () => openConfirmation('cancel-listing', record) };
   };
 
-  const claimableWei = inventory?.claimableWei || '0';
-  const hasClaimableProceeds = (() => {
-    try { return BigInt(claimableWei) > 0n; } catch { return false; }
-  })();
-  const claimDisabled = Boolean(transactionBusy || !onMainnet || !market?.transactionsEnabled);
+  const claimableWei = inventory?.claimableWei;
+  const claimableKnown = typeof claimableWei === 'string' && /^\d+$/.test(claimableWei);
+  const hasClaimableCredit = claimableKnown && BigInt(claimableWei) > 0n;
+  const formattedClaimableCredit = claimableKnown ? formatWeiAsEth(claimableWei, 6) : '—';
+  const claimDisabled = Boolean(
+    transactionBusy
+    || !claimableKnown
+    || !hasClaimableCredit
+    || (onMainnet && !market?.transactionsEnabled),
+  );
+  const claimButtonLabel = !claimableKnown
+    ? loading ? 'CHECKING BALANCE…' : 'BALANCE UNAVAILABLE'
+    : !hasClaimableCredit
+      ? 'NOTHING TO CLAIM'
+      : !onMainnet
+        ? 'SWITCH TO MAINNET TO CLAIM'
+        : !market?.transactionsEnabled
+          ? 'CLAIM TEMPORARILY UNAVAILABLE'
+          : `CLAIM ${formattedClaimableCredit} ETH`;
+
+  const claimCredit = () => {
+    if (!onMainnet) {
+      switchToMainnet();
+      return;
+    }
+    openConfirmation('claim');
+  };
 
   return (
     <div className="wallet-page">
@@ -578,12 +600,14 @@ export default function WalletPage({
                   <div className="wallet-inventory-summary"><strong>{loading ? '—' : `${visibleRecords.length}${visibleHasMore ? '+' : ''}`}</strong><button className="wallet-refresh" type="button" onClick={() => refresh()} disabled={loading}>{loading ? 'CHECKING…' : 'REFRESH'}</button></div>
                 </div>
                 {error && <p className="wallet-read-error" role="alert">{error}</p>}
-                {hasClaimableProceeds && (
-                  <div className="wallet-proceeds">
-                    <div><span>CLAIMABLE MARKETPLACE BALANCE</span><strong>{formatWeiAsEth(claimableWei, 6)} ETH</strong></div>
-                    <button type="button" disabled={claimDisabled} onClick={() => openConfirmation('claim')}>CLAIM TO THIS WALLET <ArrowIcon /></button>
+                <div className={`wallet-proceeds${hasClaimableCredit ? ' has-credit' : ''}`} aria-label="Claimable marketplace credit">
+                  <div>
+                    <span>CLAIMABLE MARKETPLACE CREDIT</span>
+                    <strong>{claimableKnown ? `${formattedClaimableCredit} ETH` : loading ? 'CHECKING…' : 'UNAVAILABLE'}</strong>
+                    <small>Seller proceeds and marketplace fees accumulate here until this wallet claims them.</small>
                   </div>
-                )}
+                  <button type="button" disabled={claimDisabled} onClick={claimCredit}>{claimButtonLabel} <ArrowIcon /></button>
+                </div>
                 <div className="wallet-inventory-tabs" role="tablist" aria-label="Ethscription location">
                   <button type="button" role="tab" aria-selected={inventoryView === 'escrow'} className={inventoryView === 'escrow' ? 'active' : ''} onClick={() => setInventoryView('escrow')}>MARKETPLACE CUSTODY <span>{escrow.length}{inventory?.pagination?.escrowHasMore ? '+' : ''}</span></button>
                   <button type="button" role="tab" aria-selected={inventoryView === 'direct'} className={inventoryView === 'direct' ? 'active' : ''} onClick={() => setInventoryView('direct')}>MY WALLET <span>{direct.length}{inventory?.pagination?.directlyOwnedHasMore ? '+' : ''}</span></button>
@@ -630,7 +654,7 @@ export default function WalletPage({
               listing: confirmation.record?.listing?.active ? 'Update this listing?' : 'List this Ethscription?',
               'cancel-listing': 'Cancel this listing?',
               withdraw: 'Withdraw this Ethscription?',
-              claim: 'Claim your marketplace balance?',
+              claim: 'Claim your marketplace credit?',
             }[confirmation.type]}</h2>
             <p>{{
               deposit: 'Transfers this Ethscription into the market contract. It is not listed for sale until you set a price.',

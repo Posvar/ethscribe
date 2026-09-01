@@ -3967,7 +3967,8 @@ footer > span {
 
 .wallet-proceeds span,
 .wallet-proceeds strong,
-.wallet-proceeds button {
+.wallet-proceeds button,
+.wallet-proceeds small {
   font-family: "Courier New", monospace;
 }
 
@@ -3979,6 +3980,13 @@ footer > span {
 
 .wallet-proceeds strong {
   font-size: 19px;
+}
+
+.wallet-proceeds small {
+  color: #c9c6bd;
+  font-size: 9px;
+  line-height: 1.5;
+  max-width: 560px;
 }
 
 .wallet-proceeds button {
