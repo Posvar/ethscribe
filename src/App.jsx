@@ -58,8 +58,8 @@ function walletLabel(account, walletState, walletName, ensName) {
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, walletName, ensName, connectWallet, expedition = false, expeditions = false, docs = false, wallet = false, ethscribe = false }) {
-  const awayFromHome = expedition || expeditions || docs || wallet || ethscribe;
+function SiteHeader({ account, walletState, walletName, ensName, connectWallet, openAccountModal, expedition = false, expeditions = false, docs = false, wallet = false }) {
+  const awayFromHome = expedition || expeditions || docs || wallet;
   const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -87,14 +87,13 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
         <nav className="main-nav" aria-label="Primary navigation">
           <a href={awayFromHome ? '/#mission' : '#mission'}>Mission</a>
           <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" aria-current={expeditionsActive ? 'page' : undefined}>Expeditions</a>
-          <a className={ethscribe ? 'nav-active' : ''} href="/ethscribe" aria-current={ethscribe ? 'page' : undefined}>Ethscribe</a>
-          <a className={docs ? 'nav-active' : ''} href="/docs" aria-current={docs ? 'page' : undefined}>Docs</a>
+          <a className={wallet ? 'nav-active' : ''} href="/wallet" aria-current={wallet ? 'page' : undefined}>Wallet</a>
         </nav>
         {account ? (
-          <a className={`wallet-button desktop-wallet${wallet ? ' wallet-active' : ''}`} href="/wallet" aria-current={wallet ? 'page' : undefined}>
+          <button className="wallet-button desktop-wallet" type="button" onClick={openAccountModal} aria-label="Manage connected wallet">
             <WalletIcon />
             {walletLabel(account, walletState, walletName, ensName)}
-          </a>
+          </button>
         ) : (
           <button className="wallet-button desktop-wallet" type="button" onClick={connectWallet}>
             <WalletIcon />
@@ -114,11 +113,11 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
         {menuOpen && (
           <nav className="mobile-menu" id="mobile-navigation" aria-label="Mobile navigation">
             {account ? (
-              <a className={`mobile-wallet-action${wallet ? ' nav-active' : ''}`} href="/wallet" onClick={closeMenu}>
+              <button className="mobile-wallet-action" type="button" onClick={() => { closeMenu(); openAccountModal?.(); }}>
                 <WalletIcon />
                 <span>{walletLabel(account, walletState, walletName, ensName)}</span>
                 <ArrowIcon />
-              </a>
+              </button>
             ) : (
               <button className="mobile-wallet-action" type="button" onClick={connectFromMenu}>
                 <WalletIcon />
@@ -128,8 +127,7 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
             )}
             <a href={awayFromHome ? '/#mission' : '#mission'} onClick={closeMenu}>Mission</a>
             <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" onClick={closeMenu}>Expeditions</a>
-            <a className={ethscribe ? 'nav-active' : ''} href="/ethscribe" onClick={closeMenu}>Ethscribe</a>
-            <a className={docs ? 'nav-active' : ''} href="/docs" onClick={closeMenu}>Docs</a>
+            <a className={wallet ? 'nav-active' : ''} href="/wallet" onClick={closeMenu}>Wallet</a>
           </nav>
         )}
       </header>
@@ -350,7 +348,6 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
             NATIVE {artifact.dimensions}
           </p>
         )}
-        <span className="evidence-grade">EVIDENCE {artifact.evidence}</span>
       </div>
       <div className="artifact-detail-copy">
         <div className="detail-heading">
@@ -479,16 +476,16 @@ function MethodSection() {
       </div>
       <div className="principle-note">
         <strong>FIRST COME. FIRST SCRIBE.</strong>
-        <p>Each target fixes one canonical wrapper around the original bytes. Ethereum accepts that exact payload only once; Ethscribe also hashes the decoded file so alternate wrappers cannot impersonate a second historical original.</p>
+        <p>Each target fixes one canonical wrapper around the original bytes. The Ethscriptions protocol recognizes that exact payload only once; Ethscribe also hashes the decoded file so alternate wrappers cannot impersonate a second historical original.</p>
       </div>
     </section>
   );
 }
 
-function HomePage({ account, walletState, walletName, connectWallet, resolvedStats = huntStats }) {
+function HomePage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, resolvedStats = huntStats }) {
   return (
     <div className="site-shell home-page">
-      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} />
       <main id="top">
         <section className="hero mission-hero">
           <div className="hero-copy">
@@ -497,6 +494,7 @@ function HomePage({ account, walletState, walletName, connectWallet, resolvedSta
             <p className="hero-intro">Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence. For each expedition’s canonical payload, the protocol recognizes one first inscription: first come, first scribe.</p>
             <div className="hero-actions">
               <a className="primary-action" href={EXPEDITION_PATH}>Enter Expedition 001 <ArrowIcon /></a>
+              <a className="text-action" href="/docs">New here? Learn how Ethscribe works <ArrowIcon /></a>
             </div>
           </div>
 
@@ -552,10 +550,10 @@ function HomePage({ account, walletState, walletName, connectWallet, resolvedSta
   );
 }
 
-function ExpeditionsPage({ account, walletState, walletName, connectWallet, resolvedStats = huntStats }) {
+function ExpeditionsPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, resolvedStats = huntStats }) {
   return (
     <div className="site-shell expeditions-page">
-      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expeditions />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expeditions />
       <main id="top">
         <section className="expeditions-index-hero">
           <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
@@ -612,7 +610,7 @@ function friendlyProposalError(error) {
   return error?.message || 'The proposal could not be published.';
 }
 
-function ProposeExpeditionPage({ account, walletState, walletName, connectWallet, provider }) {
+function ProposeExpeditionPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, provider }) {
   const [proposals, setProposals] = useState([]);
   const [listState, setListState] = useState('loading');
   const [submitState, setSubmitState] = useState('idle');
@@ -661,7 +659,7 @@ function ProposeExpeditionPage({ account, walletState, walletName, connectWallet
 
   return (
     <div className="site-shell propose-expedition-page">
-      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expeditions />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expeditions />
       <main id="top">
         <section className="proposal-page-hero">
           <div>
@@ -743,7 +741,7 @@ function ProposeExpeditionPage({ account, walletState, walletName, connectWallet
   );
 }
 
-function ExpeditionPage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, resolvedStats = huntStats, onFindingPublished }) {
+function ExpeditionPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, resolvedStats = huntStats, onFindingPublished }) {
   const requestedArtifactId = new URLSearchParams(window.location.search).get('artifact');
   const artifactForId = (id) => (id === lostArtifact.id ? lostArtifact : resolvedArtifacts.find((artifact) => artifact.id === id));
   const [selectedArtifactId, setSelectedArtifactId] = useState(
@@ -783,7 +781,7 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
 
   return (
     <div className="site-shell expedition-page">
-      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} expedition />
+      <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expedition />
       <main id="top">
         <section className="expedition-hero" id="expedition">
           <div className="expedition-hero-copy">
@@ -888,21 +886,6 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
             </div>
           </section>
 
-          <section className="xpm-lab" id="byte-lab" aria-labelledby="xpm-title">
-            <div className="xpm-lab-preview">
-              <div className="sealed-preview" aria-label="XPM target preview sealed during the active hunt">
-                <span>?</span><strong>XPM PREVIEW SEALED</strong><small>REVEALED WITH THE ACCESSION</small>
-              </div>
-              <span>CLIENT-SIDE DECODER READY</span>
-            </div>
-            <div className="xpm-lab-copy">
-              <p className="card-index">BYTE LAB / X PIXMAP</p><h3 id="xpm-title">The browser cannot see it. Ethscribe can.</h3>
-              <p>XPM is C-style text containing a palette and pixel rows. Modern browsers do not natively display it as an image. Ethscribe preserves and hashes the original XPM payload, then derives a canvas preview without rewriting the artifact.</p>
-              <code>data:image/x-xpixmap;base64,&lt;base64 of the exact .xpm file&gt;</code>
-              <strong>Do not open and resave the source. CRLF line-ending conversion changes the hash.</strong>
-            </div>
-          </section>
-
           <div className="hunt-callout">
             <div><span className="callout-number">1</span><p>attested artifact has no verified surviving bytes</p></div>
             <a className="primary-action dark" href={`${EXPEDITION_PATH}?artifact=${lostArtifact.id}#record-${lostArtifact.id}`}>Open the recovery target <ArrowIcon /></a>
@@ -914,41 +897,11 @@ function ExpeditionPage({ account, walletState, walletName, connectWallet, chain
   );
 }
 
-function EthscribePage({ account, walletState, walletName, connectWallet, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, onFindingPublished }) {
-  const submissionTargets = [...resolvedArtifacts.filter((artifact) => artifact.status === 'open'), lostArtifact];
-
-  return (
-    <div className="site-shell ethscribe-page">
-      <SiteHeader account={account} walletState={walletState} walletName={walletName} connectWallet={connectWallet} ethscribe />
-      <main id="top">
-        <section className="ethscribe-page-hero">
-          <div>
-            <p className="kicker"><span /> Exact-byte preservation</p>
-            <h1>Ethscribe a file directly into the vault.</h1>
-          </div>
-          <p>Your wallet remains the creator while the vault safeguards the artifact. Nothing is listed or assigned automatically; after verification, keep it vaulted, withdraw it, or submit it to a compatible expedition.</p>
-        </section>
-        <EthscribeWorkbench
-          mode="personal"
-          submissionTargets={submissionTargets}
-          account={account}
-          chainId={chainId}
-          connectWallet={connectWallet}
-          switchToMainnet={switchToMainnet}
-          provider={provider}
-          onFindingPublished={onFindingPublished}
-        />
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
-
 function SiteFooter({ expedition = false }) {
   return (
     <footer>
       <img src="/icon.svg" alt="Ethscribe" /><p>Find the bytes. Establish the provenance. Own the artifact.</p>
-      <div><a href="/">Mission</a><a href="/expeditions">Expeditions</a>{expedition && <a href="#timeline">Expedition 001</a>}<a href="/ethscribe">Ethscribe</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
+      <div><a href="/">Mission</a><a href="/expeditions">Expeditions</a>{expedition && <a href="#timeline">Expedition 001</a>}<a href="/wallet">Field Wallet</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
 }
@@ -977,7 +930,7 @@ function App() {
   );
 
   useEffect(() => {
-    if (!['/', '/expeditions', EXPEDITION_PATH, '/ethscribe'].includes(pathname)) return undefined;
+    if (!['/', '/expeditions', EXPEDITION_PATH].includes(pathname)) return undefined;
     let active = true;
     fetchVerifiedFindings()
       .then((records) => {
@@ -999,14 +952,11 @@ function App() {
   const isProposal = pathname === '/expeditions/propose';
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
-  const isEthscribe = pathname === '/ethscribe';
 
   useEffect(() => {
     if (isDocs) return;
     document.title = isWallet
       ? 'Wallet — Ethscribe'
-      : isEthscribe
-        ? 'Ethscribe a File — Ethscribe'
       : isProposal
         ? 'Propose an Expedition — Ethscribe'
       : isExpeditions
@@ -1014,7 +964,7 @@ function App() {
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isEthscribe, isExpedition, isExpeditions, isProposal, isWallet]);
+  }, [isDocs, isExpedition, isExpeditions, isProposal, isWallet]);
 
   const switchToMainnet = async () => {
     try {
@@ -1029,6 +979,7 @@ function App() {
     walletState,
     walletName,
     ensName,
+    openAccountModal,
     connectWallet,
     chainId,
     switchToMainnet,
@@ -1037,7 +988,7 @@ function App() {
     resolvedStats,
     onFindingPublished: recordPublishedFinding,
   };
-  const headerProps = { account, walletState, walletName, ensName, connectWallet };
+  const headerProps = { account, walletState, walletName, ensName, connectWallet, openAccountModal };
 
   return (
     <>
@@ -1052,13 +1003,10 @@ function App() {
               provider={provider}
               walletName={walletName}
               ensName={ensName}
-              openAccountModal={openAccountModal}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />
-          : isEthscribe
-            ? <EthscribePage {...pageProps} />
-            : isProposal
+          : isProposal
               ? <ProposeExpeditionPage {...pageProps} />
             : isExpeditions
               ? <ExpeditionsPage {...pageProps} />

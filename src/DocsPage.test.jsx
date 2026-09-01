@@ -34,7 +34,8 @@ test('renders the Git-backed documentation with active navigation and parsed con
   render(<App />);
 
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
-  expect(within(primaryNavigation).getByRole('link', { name: 'Docs' })).toHaveAttribute('aria-current', 'page');
+  expect(within(primaryNavigation).queryByRole('link', { name: 'Docs' })).not.toBeInTheDocument();
+  expect(within(primaryNavigation).getByRole('link', { name: 'Wallet' })).toHaveAttribute('href', '/wallet');
   expect(await screen.findByRole('heading', { name: 'Welcome to Ethscribe' })).toBeInTheDocument();
   expect(screen.getByText('public field guide')).toBeInTheDocument();
   expect(screen.getByRole('table')).toHaveTextContent('SHA-256');

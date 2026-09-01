@@ -45,7 +45,7 @@ afterEach(() => {
   global.fetch = originalFetch;
 });
 
-test('shows live paused-market state and read-only wallet inventory', async () => {
+test('shows a focused Field Wallet without operational pilot panels', async () => {
   render(<WalletPage
     account={owner}
     chainId="0x1"
@@ -55,16 +55,16 @@ test('shows live paused-market state and read-only wallet inventory', async () =
     footer={<div>FOOTER</div>}
   />);
 
-  expect(screen.getByRole('heading', { name: /your field wallet/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /field wallet/i })).toBeInTheDocument();
+  expect(screen.getByText(/view your ethscriptions.*deposit into or withdraw from the ethscribe marketplace/i)).toBeInTheDocument();
   expect(await screen.findByRole('tab', { name: /marketplace custody/i })).toHaveAttribute('aria-selected', 'true');
   expect(await screen.findByText(/no ethscriptions from this wallet are currently verified/i)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('tab', { name: /my wallet/i }));
   expect(await screen.findByText('Ethscription #174464')).toBeInTheDocument();
-  expect(screen.getByText('PAUSED')).toBeInTheDocument();
-  expect(screen.getByText('LOCKED')).toBeInTheDocument();
-  expect(screen.getByText('CURRENT')).toBeInTheDocument();
   expect(screen.getByText('IN MY WALLET')).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /two records must agree/i })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /marketplace status/i })).not.toBeInTheDocument();
+  expect(screen.queryByText(/custody pilot/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /two records must agree/i })).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: /test before you deposit/i })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /deposit test locked/i })).toBeDisabled();
   await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(`/api/market/wallet?owner=${owner}`, { headers: { accept: 'application/json' } }));
@@ -265,6 +265,77 @@ test('withdraws verified custody back to the connected wallet while intake is pa
   fireEvent.click(await screen.findByRole('button', { name: /withdraw to this wallet/i }));
   fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
   expect(await screen.findByText(/withdrawal verified\. the official indexer/i)).toBeInTheDocument();
+});
+
+test('sets a fixed ETH price for a verified marketplace deposit', async () => {
+  const activeMarket = {
+    ...market,
+    paused: false,
+    transactionsEnabled: true,
+    intakeEnabled: true,
+    exitsEnabled: true,
+  };
+  let walletReads = 0;
+  global.fetch = jest.fn(() => {
+    walletReads += 1;
+    const listingActive = walletReads > 1;
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({
+        result: {
+          owner: owner.toLowerCase(),
+          market: activeMarket,
+          claimableWei: '0',
+          directlyOwned: [],
+          escrow: [{
+            transactionHash: ethscriptionId,
+            ethscriptionNumber: 174464,
+            blockTimestamp: 1687470000,
+            mimetype: 'image/png',
+            custody: { verified: true, status: 'verified', custodyKind: 'registered_deposit' },
+            listing: {
+              active: listingActive,
+              expired: false,
+              priceWei: listingActive ? '250000000000000000' : '0',
+              listingNonce: listingActive ? '1' : '0',
+            },
+          }],
+          pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+        },
+      }),
+    });
+  });
+  const txHash = `0x${'4'.repeat(64)}`;
+  const provider = {
+    request: jest.fn(({ method }) => {
+      if (method === 'eth_chainId') return Promise.resolve('0x1');
+      if (method === 'eth_estimateGas') return Promise.resolve('0x10000');
+      if (method === 'eth_sendTransaction') return Promise.resolve(txHash);
+      if (method === 'eth_getTransactionReceipt') return Promise.resolve({ status: '0x1', transactionHash: txHash });
+      return Promise.reject(new Error(`Unexpected ${method}`));
+    }),
+  };
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    provider={provider}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  const price = await screen.findByPlaceholderText('0.10');
+  fireEvent.change(price, { target: { value: '0.25' } });
+  fireEvent.click(screen.getByRole('button', { name: /list for sale/i }));
+  expect(screen.getByRole('heading', { name: /list this ethscription/i })).toBeInTheDocument();
+  expect(screen.getByText(/credits 95% to you and 5% to the ethscribe treasury/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
+
+  expect(await screen.findByText(/listing confirmed at the selected eth price/i)).toBeInTheDocument();
+  const sent = provider.request.mock.calls.find(([request]) => request.method === 'eth_sendTransaction')[0].params[0];
+  expect(sent.data).toMatch(/^0x822b4701/);
 });
 
 test('presents temporary indexer lag as syncing rather than uncertain custody', async () => {

@@ -15,6 +15,10 @@ const V2_SELECTORS = new Set([
 
 const WITHDRAW_ETHSCRIPTION_SELECTOR = '0x7e78ba70';
 const WITHDRAW_UNREGISTERED_ETHSCRIPTION_SELECTOR = '0x42ea2274';
+const CREATE_LISTING_SELECTOR = '0x822b4701';
+const CANCEL_LISTING_SELECTOR = '0x9299e552';
+const CLAIM_SELECTOR = '0x1e83409a';
+const MAX_UINT128 = (1n << 128n) - 1n;
 export const RECONCILIATION_TIMEOUT_MS = 10 * 60 * 1000;
 
 export function isAddress(value) {
@@ -42,6 +46,20 @@ function requireAddress(value, label) {
 function requireEthscriptionId(value) {
   if (!isEthscriptionId(value)) throw new Error('Invalid Ethscription ID.');
   return value.toLowerCase();
+}
+
+function uintWord(value) {
+  return BigInt(value).toString(16).padStart(64, '0');
+}
+
+export function parseEthPriceToWei(value) {
+  const normalized = String(value || '').trim();
+  const match = normalized.match(/^(0|[1-9]\d*)(?:\.(\d{1,18}))?$/);
+  if (!match) throw new Error('Enter a valid ETH price with no more than 18 decimal places.');
+  const wei = (BigInt(match[1]) * 10n ** 18n) + BigInt((match[2] || '').padEnd(18, '0') || '0');
+  if (wei <= 0n) throw new Error('Listing price must be greater than zero.');
+  if (wei > MAX_UINT128) throw new Error('Listing price exceeds the market limit.');
+  return wei;
 }
 
 export function buildDepositTransaction(account, ethscriptionId) {
@@ -80,6 +98,39 @@ export function buildWithdrawTransaction(account, ethscriptionId, options = {}) 
     data: options.directCreation
       ? encodeWithdrawUnregisteredEthscription(ethscriptionId, from)
       : encodeWithdrawEthscription(ethscriptionId, from),
+  };
+}
+
+export function buildCreateListingTransaction(account, ethscriptionId, ethPrice) {
+  const from = requireAddress(account, 'wallet');
+  const id = requireEthscriptionId(ethscriptionId);
+  const priceWei = parseEthPriceToWei(ethPrice);
+  return {
+    from,
+    to: MARKET_ADDRESS,
+    value: '0x0',
+    data: `${CREATE_LISTING_SELECTOR}${id.slice(2)}${uintWord(priceWei)}${uintWord(0)}${uintWord(0)}${uintWord(0)}`,
+  };
+}
+
+export function buildCancelListingTransaction(account, ethscriptionId) {
+  const from = requireAddress(account, 'wallet');
+  const id = requireEthscriptionId(ethscriptionId);
+  return {
+    from,
+    to: MARKET_ADDRESS,
+    value: '0x0',
+    data: `${CANCEL_LISTING_SELECTOR}${id.slice(2)}`,
+  };
+}
+
+export function buildClaimTransaction(account) {
+  const from = requireAddress(account, 'wallet');
+  return {
+    from,
+    to: MARKET_ADDRESS,
+    value: '0x0',
+    data: `${CLAIM_SELECTOR}${from.slice(2).toLowerCase().padStart(64, '0')}`,
   };
 }
 

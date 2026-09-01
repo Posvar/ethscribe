@@ -19,6 +19,8 @@ const SELECTORS = Object.freeze({
   lockedOfferTotal: '0x7dbb4bbb',
   totalClaimable: '0x4838ed19',
   potentialDeposits: '0x61f9df78',
+  listings: '0xaa3a6b36',
+  claimable: '0x402914f5',
 });
 
 function rpcUrl() {
@@ -81,11 +83,38 @@ function encodePotentialDepositCall(owner, ethscriptionId) {
   return `${SELECTORS.potentialDeposits}${owner.slice(2).toLowerCase().padStart(64, '0')}${ethscriptionId.slice(2).toLowerCase()}`;
 }
 
+function encodeListingCall(owner, ethscriptionId) {
+  if (!isAddress(owner)) throw new Error('Invalid owner address');
+  if (!isEthscriptionId(ethscriptionId)) throw new Error('Invalid Ethscription ID');
+  return `${SELECTORS.listings}${owner.slice(2).toLowerCase().padStart(64, '0')}${ethscriptionId.slice(2).toLowerCase()}`;
+}
+
+function encodeClaimableCall(owner) {
+  if (!isAddress(owner)) throw new Error('Invalid owner address');
+  return `${SELECTORS.claimable}${owner.slice(2).toLowerCase().padStart(64, '0')}`;
+}
+
 function decodePotentialDeposit(data) {
   return {
     receivedBlock: safeNumber(decodeUint(data, 0), 'receivedBlock'),
     nonce: decodeUint(data, 1).toString(),
     active: decodeBool(data, 2),
+  };
+}
+
+function decodeListing(data, nowSeconds = Math.floor(Date.now() / 1000)) {
+  const price = decodeUint(data, 0);
+  const expiry = safeNumber(decodeUint(data, 3), 'listing expiry');
+  return {
+    active: price > 0n,
+    expired: price > 0n && expiry > 0 && expiry <= nowSeconds,
+    priceWei: price.toString(),
+    depositNonce: decodeUint(data, 1).toString(),
+    listingNonce: decodeUint(data, 2).toString(),
+    expiry,
+    onlyBuyer: decodeAddress(data, 4),
+    feeRecipient: decodeAddress(data, 5),
+    contextHash: `0x${wordAt(data, 6)}`,
   };
 }
 
@@ -393,10 +422,26 @@ async function getWalletInventory(owner, options = {}) {
       data: encodePotentialDepositCall(normalizedOwner, record.transaction_hash),
     }, 'latest'],
   }));
-  const depositResponses = depositRequests.length > 0 ? await rpcBatch(depositRequests) : [];
+  const listingRequests = escrowCandidates.records.map((record) => ({
+    method: 'eth_call',
+    params: [{
+      to: MARKET_ADDRESS,
+      data: encodeListingCall(normalizedOwner, record.transaction_hash),
+    }, 'latest'],
+  }));
+  const claimableRequests = [{
+    method: 'eth_call',
+    params: [{ to: MARKET_ADDRESS, data: encodeClaimableCall(normalizedOwner) }, 'latest'],
+  }];
+  const [depositResponses, listingResponses, claimableResponses] = await Promise.all([
+    depositRequests.length > 0 ? rpcBatch(depositRequests) : [],
+    listingRequests.length > 0 ? rpcBatch(listingRequests) : [],
+    rpcBatch(claimableRequests),
+  ]);
 
   const escrow = escrowCandidates.records.map((record, index) => {
     let deposit = null;
+    let listing = null;
     const response = depositResponses[index];
     if (response && !response.error && typeof response.result === 'string') {
       try {
@@ -405,9 +450,18 @@ async function getWalletInventory(owner, options = {}) {
         deposit = null;
       }
     }
+    const listingResponse = listingResponses[index];
+    if (listingResponse && !listingResponse.error && typeof listingResponse.result === 'string') {
+      try {
+        listing = decodeListing(listingResponse.result);
+      } catch {
+        listing = null;
+      }
+    }
 
     return {
       ...publicEthscriptionRecord(record),
+      listing,
       custody: reconcileCustody({
         record,
         owner: normalizedOwner,
@@ -418,11 +472,22 @@ async function getWalletInventory(owner, options = {}) {
     };
   });
 
+  let claimableWei = null;
+  const claimableResponse = claimableResponses[0];
+  if (claimableResponse && !claimableResponse.error && typeof claimableResponse.result === 'string') {
+    try {
+      claimableWei = decodeUint(claimableResponse.result).toString();
+    } catch {
+      claimableWei = null;
+    }
+  }
+
   return {
     owner: normalizedOwner,
     market,
     directlyOwned: direct.records.map(publicEthscriptionRecord),
     escrow,
+    claimableWei,
     pagination: {
       directlyOwnedHasMore: direct.pagination.hasMore,
       directlyOwnedNextPageKey: direct.pagination.pageKey,
@@ -453,6 +518,9 @@ module.exports = {
   SELECTORS,
   TRANSFER_COOLDOWN_BLOCKS,
   decodePotentialDeposit,
+  decodeListing,
+  encodeClaimableCall,
+  encodeListingCall,
   encodePotentialDepositCall,
   getMarketStatus,
   getWalletInventory,

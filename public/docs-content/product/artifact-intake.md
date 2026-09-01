@@ -1,6 +1,6 @@
 # Ethscribe, vault, and assign
 
-Artifacts can enter Ethscribe through the site or arrive from anywhere else in the Ethscriptions ecosystem. The product recognizes the bytes either way.
+Artifacts can enter Ethscribe through an active expedition or arrive from anywhere else in the Ethscriptions ecosystem. Ethscribe deliberately does not expose a general-purpose creation utility: every new on-site inscription begins with a defined historical target.
 
 Three actions remain distinct:
 
@@ -33,7 +33,7 @@ Each expedition therefore freezes one accepted wrapper per target. Expedition 00
 
 For a bytes-unknown target, no expected raw hash exists. Ethscribe cannot recognize the artifact before someone presents candidate bytes. A Finding supplies those bytes and a reproducible provenance case.
 
-## Path 1 — submit against an expedition target
+## Path 1 — create and submit against an expedition target
 
 Every open target exposes an inline **Ethscribe + Submit** action.
 
@@ -84,19 +84,7 @@ A receipt proves an onchain attempt and its ordering. It is not the canonical ar
 
 This guarantee depends on the official protocol rules that process transaction input before ESIP-3 events and accept `rule=esip6` content without the ordinary uniqueness condition.
 
-## Path 2 — personal Ethscribe, then optional assignment
-
-The global **Ethscribe** action preserves bytes without requiring an expedition decision.
-
-1. Upload and inspect the file.
-2. Create it directly into the vault if no checked wrapper already exists.
-3. Verify creator attribution and direct market custody through the official indexer.
-4. Keep it vaulted, withdraw it to the connected wallet, or continue into a compatible live target.
-5. If a target is selected, test the same local bytes against its sealed commitment and sign a Finding.
-
-A personal creation is not a Finding, Finalist, Accession, or listing. The vault is custody, not curatorial approval.
-
-## Path 3 — deposit an existing Ethscription
+## Path 2 — use an existing Ethscription
 
 The wallet experience queries the official API by `current_owner` and shows Ethscriptions directly controlled by the connected address.
 
@@ -104,7 +92,7 @@ The wallet experience queries the official API by `current_owner` and shows Eths
 2. Select an owned Ethscription.
 3. Transfer its raw 32-byte ID to the market.
 4. Wait for indexer reconciliation and the five-block cooldown.
-5. Keep it unassigned, attach it to a compatible target, or later create a listing.
+5. Return to an open expedition target and choose **Use existing Ethscription** to test and submit it as a Finding, or manage it independently in marketplace custody.
 
 An existing-ID deposit creates a depositor-scoped contract record. A direct creation does not, because an EVM contract cannot read the hash of the transaction currently executing. The first-party application distinguishes the two custody forms.
 
@@ -137,7 +125,7 @@ Intake may be paused without disabling either withdrawal path. The interface sti
 
 ## Current release boundary
 
-The standard browser creation path supports uncompressed Data URIs for files up to approximately 90 KB. Gzip transport, blob attachments, and larger files are deferred. The site does not yet provide a protocol-wide decoded-byte index, public Finding pages, listings, offers, purchases, or claims.
+The standard browser creation path supports uncompressed Data URIs for files up to approximately 90 KB. Gzip transport, blob attachments, and larger files are deferred. The Field Wallet now supports custody, direct-creation registration, fixed-price listing and cancellation, withdrawal, and seller-proceeds claims. Public purchase pages, funded offers, public Finding pages, and a protocol-wide decoded-byte index remain deferred.
 
 Every custody transaction is simulated before the wallet opens, checked after its Ethereum receipt, and reconciled against the official indexer. The server independently verifies a Finding's signature, complete content URI, decoded bytes, frozen wrapper, target commitment, and custody before storing it.
 

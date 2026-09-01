@@ -9,6 +9,12 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/ethscribe"
+  to = "/expeditions"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/api/market/status"
   to = "/.netlify/functions/market-status"
   status = 200

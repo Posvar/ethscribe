@@ -1,10 +1,14 @@
 import {
+  buildCancelListingTransaction,
+  buildClaimTransaction,
+  buildCreateListingTransaction,
   buildDepositTransaction,
   buildWithdrawTransaction,
   encodeWithdrawEthscription,
   encodeWithdrawUnregisteredEthscription,
   friendlyTransactionError,
   hasDepositSelectorCollision,
+  parseEthPriceToWei,
   reconciliationTimedOut,
   simulateAndSendTransaction,
   waitForTransactionReceipt,
@@ -48,6 +52,23 @@ test('ABI-encodes withdrawal to the connected wallet', () => {
   expect(calldata.slice(10, 74)).toBe(id.slice(2));
   expect(calldata.slice(-40)).toBe(account.slice(2).toLowerCase());
   expect(buildWithdrawTransaction(account, id).data).toBe(calldata);
+});
+
+test('builds fixed-price listing, cancellation, and proceeds claim transactions', () => {
+  expect(parseEthPriceToWei('1.25')).toBe(1_250_000_000_000_000_000n);
+  expect(() => parseEthPriceToWei('0')).toThrow(/greater than zero/i);
+  expect(() => parseEthPriceToWei('1.0000000000000000001')).toThrow(/valid ETH price/i);
+
+  const listing = buildCreateListingTransaction(account, id, '1.25');
+  expect(listing.data.slice(0, 10)).toBe('0x822b4701');
+  expect(listing.data.slice(10, 74)).toBe(id.slice(2));
+  expect(BigInt(`0x${listing.data.slice(74, 138)}`)).toBe(1_250_000_000_000_000_000n);
+  expect(listing.data).toHaveLength(2 + 8 + (64 * 5));
+
+  expect(buildCancelListingTransaction(account, id).data).toBe(`0x9299e552${id.slice(2)}`);
+  const claim = buildClaimTransaction(account);
+  expect(claim.data.slice(0, 10)).toBe('0x1e83409a');
+  expect(claim.data.slice(-40)).toBe(account.slice(2).toLowerCase());
 });
 
 test('simulates on mainnet before asking the wallet to send', async () => {

@@ -2,7 +2,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   MARKET_ADDRESS,
+  decodeListing,
   decodePotentialDeposit,
+  encodeClaimableCall,
+  encodeListingCall,
   encodePotentialDepositCall,
   isAddress,
   marketCapabilities,
@@ -29,6 +32,22 @@ test('validates and ABI-encodes only exact addresses and Ethscription IDs', () =
 test('decodes the public PotentialDeposit tuple', () => {
   const decoded = decodePotentialDeposit(`0x${word(25_873_370)}${word(7)}${word(1)}`);
   assert.deepEqual(decoded, { receivedBlock: 25_873_370, nonce: '7', active: true });
+});
+
+test('encodes and decodes seller listing state and claimable proceeds', () => {
+  assert.equal(encodeListingCall(OWNER, ID).slice(0, 10), '0xaa3a6b36');
+  assert.equal(encodeClaimableCall(OWNER).slice(0, 10), '0x402914f5');
+  const onlyBuyer = '0000000000000000000000000000000000000001'.padStart(64, '0');
+  const feeRecipient = OWNER.slice(2).toLowerCase().padStart(64, '0');
+  const contextHash = 'cd'.repeat(32);
+  const listing = decodeListing(`0x${word(1_500_000_000_000_000_000n)}${word(2)}${word(3)}${word(0)}${onlyBuyer}${feeRecipient}${contextHash}`);
+  assert.equal(listing.active, true);
+  assert.equal(listing.expired, false);
+  assert.equal(listing.priceWei, '1500000000000000000');
+  assert.equal(listing.depositNonce, '2');
+  assert.equal(listing.listingNonce, '3');
+  assert.equal(listing.feeRecipient, OWNER.toLowerCase());
+  assert.equal(listing.contextHash, `0x${contextHash}`);
 });
 
 test('verifies custody only when indexer and active contract state agree after cooldown', () => {

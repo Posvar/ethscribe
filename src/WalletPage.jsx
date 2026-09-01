@@ -4,15 +4,16 @@ import { fetchMarketStatus, fetchWalletInventory } from './marketApi';
 import {
   MAINNET_CHAIN_ID,
   MARKET_ADDRESS,
-  MARKET_DEPLOYMENT_BLOCK,
-  MARKET_DEPLOYMENT_DOCS_PATH,
-  MARKET_ETHERSCAN_URL,
 } from './marketConfig';
 import {
+  buildCancelListingTransaction,
+  buildClaimTransaction,
+  buildCreateListingTransaction,
   buildDepositTransaction,
   buildWithdrawTransaction,
   friendlyTransactionError,
   hasDepositSelectorCollision,
+  parseEthPriceToWei,
   reconciliationTimedOut,
   simulateAndSendTransaction,
   waitForTransactionReceipt,
@@ -33,16 +34,40 @@ function formatDate(timestamp) {
   }).format(new Date(timestamp * 1000));
 }
 
+function formatWeiAsEth(value, maximumDecimals = 4) {
+  try {
+    const wei = BigInt(value || 0);
+    const whole = wei / 10n ** 18n;
+    const fraction = (wei % 10n ** 18n).toString().padStart(18, '0').slice(0, maximumDecimals).replace(/0+$/, '');
+    return fraction ? `${whole}.${fraction}` : whole.toString();
+  } catch {
+    return '—';
+  }
+}
+
 function TransactionStatus({ transaction, onDismiss }) {
   if (!transaction) return null;
-  const action = transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal';
+  const action = {
+    deposit: 'Deposit',
+    register: 'Trading registration',
+    listing: 'Listing',
+    'cancel-listing': 'Listing cancellation',
+    withdraw: 'Withdrawal',
+    claim: 'Marketplace balance claim',
+  }[transaction.type] || 'Transaction';
+  const completeMessage = {
+    deposit: 'Custody verified. The official indexer and active contract deposit agree after the cooldown.',
+    register: 'Trading enabled. Contract registration and verified custody now agree.',
+    listing: 'Listing confirmed at the selected ETH price.',
+    'cancel-listing': 'Listing cancelled. The artifact remains in marketplace custody.',
+    withdraw: 'Withdrawal verified. The official indexer reports the artifact back in this wallet.',
+    claim: 'Marketplace balance claimed to this wallet.',
+  }[transaction.type];
   const copy = {
     simulating: 'Simulating against Ethereum mainnet. Your wallet opens only if the transaction is expected to succeed.',
     mining: 'Transaction submitted. Waiting for an Ethereum receipt.',
     reconciling: transaction.message || 'Ethereum confirmed the transaction. Waiting for the official indexer and contract record to agree.',
-    complete: transaction.type === 'deposit'
-      ? 'Custody verified. The official indexer and active contract deposit agree after the cooldown.'
-      : 'Withdrawal verified. The official indexer reports the artifact back in this wallet.',
+    complete: completeMessage,
     error: transaction.message || 'The transaction could not be completed.',
   };
 
@@ -111,7 +136,51 @@ function AssetPreview({ record }) {
   return <div className="wallet-asset-fallback"><span>DIGITAL ARTIFACT</span><strong>{record.mimetype || 'UNKNOWN MEDIA'}</strong></div>;
 }
 
-function InventoryCard({ record, escrow = false, action = null }) {
+function MarketplaceControls({ record, registerAction, listingAction, cancelAction }) {
+  const listing = record.listing;
+  const registered = record.custody?.custodyKind === 'registered_deposit';
+  const [price, setPrice] = useState(listing?.active ? formatWeiAsEth(listing.priceWei, 18) : '');
+  const [priceError, setPriceError] = useState('');
+
+  const prepareListing = () => {
+    try {
+      parseEthPriceToWei(price);
+      setPriceError('');
+      listingAction.onClick(price);
+    } catch (listingError) {
+      setPriceError(listingError.message);
+    }
+  };
+
+  if (!registered) {
+    return (
+      <div className="wallet-market-actions">
+        <div><span>MARKETPLACE</span><strong>NOT ENABLED FOR TRADING</strong></div>
+        <p>This direct-to-vault artifact is safely held, but needs one registration transaction before it can be listed.</p>
+        <button type="button" disabled={registerAction.disabled} onClick={registerAction.onClick}>{registerAction.label} <ArrowIcon /></button>
+        <small>{registerAction.hint}</small>
+      </div>
+    );
+  }
+
+  return (
+    <div className="wallet-market-actions">
+      <div><span>MARKETPLACE</span><strong>{listing?.active ? `${formatWeiAsEth(listing.priceWei)} ETH` : 'NOT LISTED'}</strong></div>
+      <label>
+        <span>PRICE IN ETH</span>
+        <input type="text" inputMode="decimal" value={price} onChange={(event) => { setPrice(event.target.value); setPriceError(''); }} placeholder="0.10" />
+      </label>
+      {priceError && <small className="wallet-price-error">{priceError}</small>}
+      <div className="wallet-market-buttons">
+        <button type="button" disabled={listingAction.disabled || !price} onClick={prepareListing}>{listing?.active ? 'UPDATE PRICE' : 'LIST FOR SALE'} <ArrowIcon /></button>
+        {listing?.active && <button className="secondary-market-action" type="button" disabled={cancelAction.disabled} onClick={cancelAction.onClick}>CANCEL LISTING</button>}
+      </div>
+      <small>{listingAction.hint}</small>
+    </div>
+  );
+}
+
+function InventoryCard({ record, escrow = false, action = null, marketControls = null }) {
   const custody = record.custody;
   const indexerSyncing = ['indexer_lagging', 'indexer_unavailable'].includes(custody?.status);
   const custodyLabel = custody?.verified
@@ -136,6 +205,7 @@ function InventoryCard({ record, escrow = false, action = null }) {
         <div><dt>ETHSCRIPTION ID</dt><dd><a href={`https://ethscriptions.com/ethscriptions/${record.transactionHash}`} target="_blank" rel="noreferrer">{shortAddress(record.transactionHash)}</a></dd></div>
         <div><dt>ETHSCRIBED</dt><dd>{formatDate(record.blockTimestamp)}</dd></div>
       </dl>
+      {marketControls}
       {action && (
         <div className="wallet-custody-action">
           <button type="button" disabled={action.disabled} onClick={action.onClick}>{action.label} <ArrowIcon /></button>
@@ -154,7 +224,6 @@ export default function WalletPage({
   provider,
   walletName,
   ensName,
-  openAccountModal,
   header,
   footer,
 }) {
@@ -266,14 +335,32 @@ export default function WalletPage({
         setTransaction((current) => current?.id === transaction.id ? { ...current, phase: 'complete', message: '' } : current);
         return;
       }
+      if (transaction.type === 'register' && escrowMatch?.custody?.verified
+        && escrowMatch.custody.custodyKind === 'registered_deposit') {
+        setTransaction((current) => current?.id === transaction.id ? { ...current, phase: 'complete', message: '' } : current);
+        return;
+      }
+      if (transaction.type === 'listing' && escrowMatch?.listing?.active
+        && escrowMatch.listing.priceWei === transaction.expectedPriceWei) {
+        setTransaction((current) => current?.id === transaction.id ? { ...current, phase: 'complete', message: '' } : current);
+        return;
+      }
+      if (transaction.type === 'cancel-listing' && escrowMatch?.listing && !escrowMatch.listing.active) {
+        setTransaction((current) => current?.id === transaction.id ? { ...current, phase: 'complete', message: '' } : current);
+        return;
+      }
       if (transaction.type === 'withdraw' && directMatch && !escrowMatch) {
         setTransaction((current) => current?.id === transaction.id ? { ...current, phase: 'complete', message: '' } : current);
         return;
       }
 
-      const message = transaction.type === 'deposit'
-        ? escrowMatch?.custody?.reason || 'Waiting for the official indexer to report the market as current owner.'
-        : 'Waiting for the official indexer to report this wallet as current owner.';
+      const message = {
+        deposit: escrowMatch?.custody?.reason || 'Waiting for the official indexer to report the market as current owner.',
+        register: escrowMatch?.custody?.reason || 'Waiting for trading registration and the custody cooldown to reconcile.',
+        listing: 'Waiting for the contract to return the new listing terms.',
+        'cancel-listing': 'Waiting for the contract to report the listing as cancelled.',
+        withdraw: 'Waiting for the official indexer to report this wallet as current owner.',
+      }[transaction.type] || 'Waiting for the market state to reconcile.';
       setTransaction((current) => current?.id === transaction.id ? { ...current, message } : current);
       timer = setTimeout(reconcile, 12_000);
     };
@@ -283,7 +370,7 @@ export default function WalletPage({
       stopped = true;
       clearTimeout(timer);
     };
-  }, [account, refresh, transaction?.account, transaction?.id, transaction?.phase, transaction?.reconcileStartedAt, transaction?.type]);
+  }, [account, refresh, transaction?.account, transaction?.expectedPriceWei, transaction?.id, transaction?.phase, transaction?.reconcileStartedAt, transaction?.type]);
 
   const market = inventory?.market || status;
   const onMainnet = chainId?.toLowerCase() === MAINNET_CHAIN_ID;
@@ -339,36 +426,47 @@ export default function WalletPage({
     setPageKeys((current) => ({ ...current, [pageKeyName]: previousPageKey }));
   };
 
-  const openConfirmation = (type, record) => {
+  const openConfirmation = (type, record = null, details = {}) => {
     setRiskAccepted(false);
-    setConfirmation({ type, record });
+    setConfirmation({ type, record, ...details });
   };
 
   const executeConfirmedTransaction = async () => {
     if (!confirmation || !account) return;
-    const { type, record } = confirmation;
-    const id = record.transactionHash;
+    const { type, record, price } = confirmation;
+    const id = record?.transactionHash || account;
+    const expectedPriceWei = type === 'listing' ? parseEthPriceToWei(price).toString() : '';
     setConfirmation(null);
-    setTransaction({ type, id, account, phase: 'simulating', hash: '', message: '' });
+    setTransaction({ type, id, account, expectedPriceWei, phase: 'simulating', hash: '', message: '' });
 
     try {
-      const request = type === 'deposit'
-        ? buildDepositTransaction(account, id)
-        : buildWithdrawTransaction(account, id, {
-          directCreation: record.custody?.custodyKind === 'direct_creation',
-        });
+      let request;
+      if (type === 'deposit' || type === 'register') request = buildDepositTransaction(account, id);
+      else if (type === 'withdraw') request = buildWithdrawTransaction(account, id, {
+        directCreation: record.custody?.custodyKind === 'direct_creation',
+      });
+      else if (type === 'listing') request = buildCreateListingTransaction(account, id, price);
+      else if (type === 'cancel-listing') request = buildCancelListingTransaction(account, id);
+      else if (type === 'claim') request = buildClaimTransaction(account);
+      else throw new Error('Unsupported marketplace action.');
       const hash = await simulateAndSendTransaction(provider, request);
-      setTransaction({ type, id, account, phase: 'mining', hash, message: '' });
+      setTransaction({ type, id, account, expectedPriceWei, phase: 'mining', hash, message: '' });
       await waitForTransactionReceipt(provider, hash);
       setPageKeys({ directPageKey: '', escrowPageKey: '' });
       setPageHistory({ direct: [], escrow: [] });
-      setInventoryView(type === 'deposit' ? 'escrow' : 'direct');
-      setTransaction({ type, id, account, phase: 'reconciling', reconcileStartedAt: Date.now(), hash, message: '' });
+      setInventoryView(type === 'withdraw' ? 'direct' : 'escrow');
+      if (type === 'claim') {
+        await refresh({ quiet: true });
+        setTransaction({ type, id, account, phase: 'complete', hash, message: '' });
+      } else {
+        setTransaction({ type, id, account, expectedPriceWei, phase: 'reconciling', reconcileStartedAt: Date.now(), hash, message: '' });
+      }
     } catch (transactionError) {
       setTransaction((current) => ({
         type,
         id,
         account,
+        expectedPriceWei,
         phase: 'error',
         hash: current?.hash || '',
         message: friendlyTransactionError(transactionError),
@@ -410,6 +508,39 @@ export default function WalletPage({
     };
   };
 
+  const registerAction = (record) => {
+    if (hasDepositSelectorCollision(record.transactionHash)) return { disabled: true, label: 'TRADING UNAVAILABLE', hint: 'This Ethscription ID conflicts with a reserved market action.' };
+    if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
+    if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Trading registration uses Ethereum mainnet.' };
+    if (!market?.intakeEnabled) return { disabled: true, label: 'ENABLE TRADING UNAVAILABLE', hint: 'Market intake or official ownership data is temporarily unavailable.' };
+    return { disabled: false, label: 'ENABLE TRADING', hint: 'Registers this vault-held Ethscription with the market. It does not list the artifact yet.', onClick: () => openConfirmation('register', record) };
+  };
+
+  const listingAction = (record) => {
+    if (record.listing == null) return { disabled: true, hint: 'Listing state is temporarily unavailable. Refresh before setting a price.', onClick: () => {} };
+    if (transactionBusy) return { disabled: true, hint: 'Complete the active wallet operation first.', onClick: () => {} };
+    if (!onMainnet) return { disabled: true, hint: 'Listings use Ethereum mainnet.', onClick: () => switchToMainnet() };
+    if (!market?.intakeEnabled) return { disabled: true, hint: 'New and updated listings are temporarily unavailable.', onClick: () => {} };
+    return {
+      disabled: false,
+      hint: 'A sale sends 95% to your claimable balance and 5% to the Ethscribe treasury.',
+      onClick: (price) => openConfirmation('listing', record, { price }),
+    };
+  };
+
+  const cancelListingAction = (record) => {
+    if (transactionBusy) return { disabled: true, onClick: () => {} };
+    if (!onMainnet) return { disabled: true, onClick: () => switchToMainnet() };
+    if (!market?.transactionsEnabled || !market?.exitsEnabled) return { disabled: true, onClick: () => {} };
+    return { disabled: false, onClick: () => openConfirmation('cancel-listing', record) };
+  };
+
+  const claimableWei = inventory?.claimableWei || '0';
+  const hasClaimableProceeds = (() => {
+    try { return BigInt(claimableWei) > 0n; } catch { return false; }
+  })();
+  const claimDisabled = Boolean(transactionBusy || !onMainnet || !market?.transactionsEnabled);
+
   return (
     <div className="wallet-page">
       {header}
@@ -417,30 +548,9 @@ export default function WalletPage({
         <section className="wallet-hero">
           <div>
             <p className="kicker"><span /> Researcher inventory</p>
-            <h1>Your field wallet.</h1>
-            <p>Inspect Ethscriptions held by your address and independently reconcile anything deposited with the Ethscribe marketplace.</p>
+            <h1>Field wallet.</h1>
+            <p>View your Ethscriptions—deposit into or withdraw from the Ethscribe marketplace.</p>
           </div>
-          <div className="wallet-contract-seal">
-            <span>ETHSCRI.BE MARKET</span>
-            <strong>{market?.paused === false ? 'ACTIVE' : 'PAUSED'}</strong>
-            <small>MAINNET · BLOCK {MARKET_DEPLOYMENT_BLOCK.toLocaleString('en-US')}</small>
-          </div>
-        </section>
-
-        <section className="wallet-market-status" aria-labelledby="market-status-title">
-          <div className="wallet-section-heading">
-            <div><p className="kicker"><span /> Live verification</p><h2 id="market-status-title">Marketplace status</h2></div>
-            <button className="wallet-refresh" type="button" onClick={() => refresh()} disabled={loading}>{loading ? 'CHECKING…' : 'REFRESH'}</button>
-          </div>
-
-          {error ? <p className="wallet-read-error" role="alert">{error}</p> : (
-            <div className="market-status-grid" aria-busy={loading}>
-              <div><span>CONTRACT</span><strong>{market?.deployed ? 'DEPLOYED' : loading ? 'CHECKING…' : 'UNAVAILABLE'}</strong><a href={MARKET_ETHERSCAN_URL} target="_blank" rel="noreferrer">{shortAddress(MARKET_ADDRESS)}</a></div>
-              <div><span>TRANSACTION UI</span><strong>{market?.transactionsEnabled ? 'PILOT READY' : 'LOCKED'}</strong><small>{!market?.transactionsEnabled ? 'Operational gate is closed' : market?.paused ? 'Intake paused · exits available' : 'Intake and exits enabled'}</small></div>
-              <div><span>OFFICIAL INDEXER</span><strong>{market?.indexer?.healthy ? 'CURRENT' : loading ? 'CHECKING…' : 'TEMPORARILY UNAVAILABLE'}</strong><small>{market?.indexer?.blocksBehind != null ? `${market.indexer.blocksBehind} block${market.indexer.blocksBehind === 1 ? '' : 's'} behind` : 'Deposits wait for the next successful check'}</small></div>
-              <div><span>MARKET FEE</span><strong>{market?.feeBps != null ? `${market.feeBps / 100}%` : '—'}</strong><a href={MARKET_DEPLOYMENT_DOCS_PATH}>Deployment record</a></div>
-            </div>
-          )}
         </section>
 
         <section className="wallet-identity">
@@ -457,28 +567,44 @@ export default function WalletPage({
                     <button type="button" onClick={copyAddress}>{addressCopied ? 'COPIED' : 'COPY ADDRESS'}</button>
                   </div>
                 </div>
-                <div className="wallet-account-actions">
-                  {openAccountModal && <button className="wallet-manage" type="button" onClick={openAccountModal}>MANAGE WALLET</button>}
-                  {!onMainnet && <button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button>}
-                </div>
+                {!onMainnet && <button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button>}
               </div>
 
               <TransactionStatus transaction={transaction} onDismiss={() => setTransaction(null)} />
 
-              <div className={`wallet-pilot-gate ${market?.transactionsEnabled ? 'pilot-ready' : ''}`}>
-                <span>CUSTODY PILOT</span>
-                <strong>{market?.transactionsEnabled ? market?.paused ? 'TRANSACTIONS READY · INTAKE PAUSED' : 'CONTROLLED INTAKE OPEN' : 'TRANSACTION CONTROLS LOCKED'}</strong>
-                <p>Deposits require the operational gate, an unpaused contract, Ethereum mainnet, and a current official indexer. Verified withdrawals remain contract-available during a pause.</p>
-              </div>
-
               <div className="wallet-inventory-section">
-                <div className="wallet-inventory-title"><div><span>01</span><h2>Your Ethscriptions</h2></div><strong>{loading ? '—' : `${visibleRecords.length}${visibleHasMore ? '+' : ''}`}</strong></div>
+                <div className="wallet-inventory-title">
+                  <div><span>01</span><h2>Your Ethscriptions</h2></div>
+                  <div className="wallet-inventory-summary"><strong>{loading ? '—' : `${visibleRecords.length}${visibleHasMore ? '+' : ''}`}</strong><button className="wallet-refresh" type="button" onClick={() => refresh()} disabled={loading}>{loading ? 'CHECKING…' : 'REFRESH'}</button></div>
+                </div>
+                {error && <p className="wallet-read-error" role="alert">{error}</p>}
+                {hasClaimableProceeds && (
+                  <div className="wallet-proceeds">
+                    <div><span>CLAIMABLE MARKETPLACE BALANCE</span><strong>{formatWeiAsEth(claimableWei, 6)} ETH</strong></div>
+                    <button type="button" disabled={claimDisabled} onClick={() => openConfirmation('claim')}>CLAIM TO THIS WALLET <ArrowIcon /></button>
+                  </div>
+                )}
                 <div className="wallet-inventory-tabs" role="tablist" aria-label="Ethscription location">
                   <button type="button" role="tab" aria-selected={inventoryView === 'escrow'} className={inventoryView === 'escrow' ? 'active' : ''} onClick={() => setInventoryView('escrow')}>MARKETPLACE CUSTODY <span>{escrow.length}{inventory?.pagination?.escrowHasMore ? '+' : ''}</span></button>
                   <button type="button" role="tab" aria-selected={inventoryView === 'direct'} className={inventoryView === 'direct' ? 'active' : ''} onClick={() => setInventoryView('direct')}>MY WALLET <span>{direct.length}{inventory?.pagination?.directlyOwnedHasMore ? '+' : ''}</span></button>
                 </div>
                 {!loading && visibleRecords.length === 0 && !error && <p className="wallet-empty-record">{inventoryView === 'escrow' ? 'No Ethscriptions from this wallet are currently verified in marketplace custody.' : 'The official indexer reports no Ethscriptions directly held by this address.'}</p>}
-                <div className="wallet-inventory-grid">{visibleRecords.map((record) => <InventoryCard key={record.transactionHash} record={record} escrow={inventoryView === 'escrow'} action={inventoryView === 'escrow' ? withdrawAction(record) : depositAction(record)} />)}</div>
+                <div className="wallet-inventory-grid">{visibleRecords.map((record) => (
+                  <InventoryCard
+                    key={record.transactionHash}
+                    record={record}
+                    escrow={inventoryView === 'escrow'}
+                    action={inventoryView === 'escrow' ? withdrawAction(record) : depositAction(record)}
+                    marketControls={inventoryView === 'escrow' && record.custody?.verified ? (
+                      <MarketplaceControls
+                        record={record}
+                        registerAction={registerAction(record)}
+                        listingAction={listingAction(record)}
+                        cancelAction={cancelListingAction(record)}
+                      />
+                    ) : null}
+                  />
+                ))}</div>
                 {(visibleHistory.length > 0 || visibleHasMore) && (
                   <div className="wallet-pagination" aria-label="Inventory pagination">
                     <button type="button" onClick={showPreviousInventoryPage} disabled={visibleHistory.length === 0}>PREVIOUS</button>
@@ -491,25 +617,35 @@ export default function WalletPage({
           )}
         </section>
 
-        <section className="custody-method">
-          <p className="kicker"><span /> Fail-closed custody</p>
-          <h2>Two records must agree.</h2>
-          <p>An artifact is shown as verified in marketplace custody only when the official Ethscriptions indexer names the market as current owner and the connected wallet as previous owner. Existing-ID deposits must also have an active contract record; direct-to-vault creations must name that same wallet as creator and the market as initial owner. Both paths wait through the five-block safety window.</p>
-        </section>
       </main>
       {footer}
       {confirmation && (
         <div className="wallet-confirmation-backdrop" role="presentation" onMouseDown={() => setConfirmation(null)}>
           <section className="wallet-confirmation" role="dialog" aria-modal="true" aria-labelledby="wallet-confirmation-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" type="button" onClick={() => setConfirmation(null)} aria-label="Close">×</button>
-            <p className="kicker"><span /> Controlled custody pilot</p>
-            <h2 id="wallet-confirmation-title">{confirmation.type === 'deposit' ? 'Deposit this Ethscription?' : 'Withdraw this Ethscription?'}</h2>
-            <p>{confirmation.type === 'deposit'
-              ? 'A successful zero-ETH transaction transfers the complete Ethscription to the immutable market contract for custody only. It does not create an expedition Finding. A transaction receipt alone is not proof of custody; Ethscribe will wait for the official indexer and contract record to agree.'
-              : 'The vault will return the Ethscription to this connected wallet after confirming it as the previous owner. This exit remains available while market intake is paused.'}</p>
+            <p className="kicker"><span /> Marketplace action</p>
+            <h2 id="wallet-confirmation-title">{{
+              deposit: 'Deposit this Ethscription?',
+              register: 'Enable trading for this Ethscription?',
+              listing: confirmation.record?.listing?.active ? 'Update this listing?' : 'List this Ethscription?',
+              'cancel-listing': 'Cancel this listing?',
+              withdraw: 'Withdraw this Ethscription?',
+              claim: 'Claim your marketplace balance?',
+            }[confirmation.type]}</h2>
+            <p>{{
+              deposit: 'Transfers this Ethscription into the market contract. It is not listed for sale until you set a price.',
+              register: 'Registers this direct-to-vault Ethscription for trading while it remains in marketplace custody. You will set a price separately.',
+              listing: `Creates a public fixed-price listing for ${confirmation.price} ETH. A completed sale credits 95% to you and 5% to the Ethscribe treasury.`,
+              'cancel-listing': 'Removes the fixed-price listing. The Ethscription remains safely in marketplace custody.',
+              withdraw: confirmation.record?.listing?.active
+                ? 'Returns this Ethscription to your wallet and automatically cancels its active listing.'
+                : 'Returns this Ethscription from the market contract to your connected wallet.',
+              claim: 'Transfers this wallet’s accumulated seller proceeds or marketplace fees to the connected wallet.',
+            }[confirmation.type]}</p>
             <dl>
-              <div><dt>ETHSCRIPTION</dt><dd><code>{confirmation.record.transactionHash}</code></dd></div>
-              <div><dt>{confirmation.type === 'deposit' ? 'DESTINATION' : 'RECIPIENT'}</dt><dd><code>{confirmation.type === 'deposit' ? MARKET_ADDRESS : account}</code></dd></div>
+              {confirmation.record && <div><dt>ETHSCRIPTION</dt><dd><code>{confirmation.record.transactionHash}</code></dd></div>}
+              {confirmation.type === 'listing' && <div><dt>FIXED PRICE</dt><dd>{confirmation.price} ETH</dd></div>}
+              <div><dt>{['deposit', 'register'].includes(confirmation.type) ? 'MARKET CONTRACT' : 'CONNECTED WALLET'}</dt><dd><code>{['deposit', 'register'].includes(confirmation.type) ? MARKET_ADDRESS : account}</code></dd></div>
               <div><dt>ETH VALUE</dt><dd>0 ETH · GAS ONLY</dd></div>
             </dl>
             {confirmation.type === 'deposit' && (

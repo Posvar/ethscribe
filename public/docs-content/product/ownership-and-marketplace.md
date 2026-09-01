@@ -175,6 +175,8 @@ Direct creations can be withdrawn immediately through a conditional ESIP-2 exit 
 
 ## Fixed-price settlement
 
+The Field Wallet exposes the seller side of this lifecycle for verified custody: register a direct-to-vault creation when necessary, set or update a fixed ETH price, cancel a listing, withdraw the artifact, and claim accumulated proceeds. Buying belongs on the public artifact or Accession surface rather than inside a visitor's personal wallet, and remains deferred until the low-value settlement flow is rehearsed end to end.
+
 ```text
 verified escrow
   -> seller creates listing
@@ -281,7 +283,8 @@ Still required before mainnet value is accepted:
 
 - an independent security review;
 - the controlled low-value mainnet custody round trip;
-- transaction slices and tests for listings, purchases, offers, cancellation, and claims;
+- public purchase and funded-offer transaction slices;
+- low-value listing, purchase, cancellation, and claim rehearsal on mainnet;
 - low-value end-to-end settlement checks; and
 - a separate, explicitly reviewed unpause transaction.
 

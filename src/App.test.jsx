@@ -49,8 +49,11 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(within(primaryNavigation).queryByRole('link', { name: 'Method' })).not.toBeInTheDocument();
   expect(within(primaryNavigation).getByRole('link', { name: 'Expeditions' })).toHaveAttribute('href', '/expeditions');
   expect(within(primaryNavigation).queryByRole('link', { name: 'Propose' })).not.toBeInTheDocument();
-  expect(within(primaryNavigation).getByRole('link', { name: 'Ethscribe' })).toHaveAttribute('href', '/ethscribe');
-  expect(within(primaryNavigation).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', '/docs');
+  expect(within(primaryNavigation).getByRole('link', { name: 'Wallet' })).toHaveAttribute('href', '/wallet');
+  expect(within(primaryNavigation).queryByRole('link', { name: 'Ethscribe' })).not.toBeInTheDocument();
+  expect(within(primaryNavigation).queryByRole('link', { name: 'Docs' })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /new here.*learn how ethscribe works/i })).toHaveAttribute('href', '/docs');
+  expect(screen.getByText(/the ethscriptions protocol recognizes that exact payload only once/i)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
   expect(screen.getAllByText(/find the bytes\. establish the provenance\. own the artifact\./i)).toHaveLength(2);
 });
@@ -65,9 +68,29 @@ test('opens a mobile navigation menu with wallet connection first', () => {
   expect(within(mobileNavigation).queryByRole('link', { name: 'Method' })).not.toBeInTheDocument();
   expect(within(mobileNavigation).getByRole('link', { name: 'Expeditions' })).toHaveAttribute('href', '/expeditions');
   expect(within(mobileNavigation).queryByRole('link', { name: 'Propose' })).not.toBeInTheDocument();
-  expect(within(mobileNavigation).getByRole('link', { name: 'Ethscribe' })).toHaveAttribute('href', '/ethscribe');
-  expect(within(mobileNavigation).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', '/docs');
+  expect(within(mobileNavigation).getByRole('link', { name: 'Wallet' })).toHaveAttribute('href', '/wallet');
+  expect(within(mobileNavigation).queryByRole('link', { name: 'Ethscribe' })).not.toBeInTheDocument();
+  expect(within(mobileNavigation).queryByRole('link', { name: 'Docs' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /close menu/i })).toHaveAttribute('aria-expanded', 'true');
+});
+
+test('uses the connected-address control to open RainbowKit account management', () => {
+  useEthscribeWallet.mockReturnValue({
+    account: '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba',
+    chainId: '0x1',
+    walletState: 'idle',
+    walletName: 'MetaMask',
+    ensName: 'jeremy.eth',
+    provider: null,
+    connectWallet,
+    switchToMainnet,
+    openAccountModal,
+  });
+  render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /manage connected wallet/i }));
+  expect(openAccountModal).toHaveBeenCalledTimes(1);
+  expect(within(screen.getByRole('navigation', { name: /primary navigation/i })).getByRole('link', { name: 'Wallet' })).toHaveAttribute('href', '/wallet');
 });
 
 test('expands secured and open artifact records directly in the timeline', async () => {
@@ -110,6 +133,8 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByText(/raw file keccak-256/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/ethereum block/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/collection status/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^evidence a$/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/byte lab \/ x pixmap/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
@@ -171,15 +196,14 @@ test('loads existing wallet Ethscriptions from an expedition target', async () =
   expect(await screen.findByText(/01 · ethscription in my wallet/i)).toBeInTheDocument();
 });
 
-test('offers a standalone personal Ethscribe flow with expedition handoff explained', () => {
+test('does not expose a standalone Ethscribe utility outside expeditions', () => {
   window.history.pushState({}, '', '/ethscribe');
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: /ethscribe a file directly into the vault/i })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /preserve exact bytes in the market vault/i })).toBeInTheDocument();
-  expect(screen.getByText(/nothing is listed or assigned automatically/i)).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /ethscribe a file directly into the vault/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /find the bytes.*establish the provenance/i })).toBeInTheDocument();
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
-  expect(within(primaryNavigation).getByRole('link', { name: 'Ethscribe' })).toHaveAttribute('aria-current', 'page');
+  expect(within(primaryNavigation).queryByRole('link', { name: 'Ethscribe' })).not.toBeInTheDocument();
 });
 
 test('promotes an exact verified Finding into the live expedition grid and counter', async () => {
