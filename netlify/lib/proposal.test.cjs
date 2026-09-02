@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { Wallet } = require('ethers');
+const { handler: proposalsHandler } = require('../functions/proposals');
 const {
   listProposals,
   proposalMessage,
@@ -30,6 +31,19 @@ function proposal(overrides = {}) {
     ...overrides,
   };
 }
+
+test('keeps the public proposal endpoint closed unless explicitly enabled', async () => {
+  const previous = process.env.PUBLIC_PROPOSALS_ENABLED;
+  delete process.env.PUBLIC_PROPOSALS_ENABLED;
+  try {
+    const response = await proposalsHandler({ httpMethod: 'GET' });
+    assert.equal(response.statusCode, 404);
+    assert.equal(JSON.parse(response.body).error, 'proposal_intake_closed');
+  } finally {
+    if (previous === undefined) delete process.env.PUBLIC_PROPOSALS_ENABLED;
+    else process.env.PUBLIC_PROPOSALS_ENABLED = previous;
+  }
+});
 
 test('validates and verifies a wallet-authored proposal before immutable storage', async () => {
   const value = proposal();

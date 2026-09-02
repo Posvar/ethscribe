@@ -296,6 +296,52 @@
   max-width: 680px;
 }
 
+.expedition-hero-brief {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: minmax(150px, 0.65fr) minmax(240px, 1.35fr);
+  margin: -5px 0 30px;
+  max-width: 680px;
+  width: 100%;
+}
+
+.expedition-hero-brief p {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 15px 17px 15px 0;
+}
+
+.expedition-hero-brief p + p {
+  border-left: 1px solid var(--line);
+  padding-left: 17px;
+}
+
+.expedition-hero-brief strong,
+.expedition-hero-brief span {
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+}
+
+.expedition-hero-brief p:first-child strong {
+  color: #334900;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.expedition-hero-brief span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .unknown-lane {
   background: #f8f4ea;
 }
@@ -540,6 +586,16 @@
     padding: 70px 24px;
   }
 
+  .expedition-hero-brief {
+    grid-template-columns: 1fr;
+  }
+
+  .expedition-hero-brief p + p {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+  }
+
   .expedition-hero h1 {
     font-size: clamp(60px, 18vw, 88px);
   }
@@ -582,8 +638,8 @@
 }
 
 .expeditions-index-hero h1 {
-  font-size: clamp(60px, 8vw, 116px);
-  line-height: 0.9;
+  font-size: clamp(54px, 6.5vw, 96px);
+  line-height: 0.92;
 }
 
 .proposal-page-hero h1 {
@@ -2085,6 +2141,14 @@ footer > span {
   scroll-margin-top: 30px;
 }
 
+.expedition-record-section {
+  padding-top: 72px;
+}
+
+.expedition-record-section .timeline-section {
+  border-top: 1px solid var(--ink);
+}
+
 .timeline-heading {
   align-items: flex-end;
   display: flex;
@@ -2491,14 +2555,17 @@ footer > span {
   letter-spacing: 0.1em;
 }
 
-.artifact-proof-grid {
-  border-top: 1px solid var(--ink);
+.artifact-found-record {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
 }
 
-.artifact-proof-grid > .artifact-record-section + .artifact-record-section {
+.artifact-found-record > .artifact-record-section + .artifact-record-section {
   border-left: 1px solid var(--ink);
+}
+
+.artifact-file-section .compact-record-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .artifact-detail-below {
@@ -3166,6 +3233,10 @@ footer > span {
     padding: 85px 24px;
   }
 
+  .expedition-record-section {
+    padding-top: 48px;
+  }
+
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -3265,11 +3336,11 @@ footer > span {
     padding: 35px;
   }
 
-  .artifact-proof-grid {
+  .artifact-found-record {
     grid-template-columns: 1fr;
   }
 
-  .artifact-proof-grid > .artifact-record-section + .artifact-record-section {
+  .artifact-found-record > .artifact-record-section + .artifact-record-section {
     border-left: 0;
     border-top: 1px solid var(--ink);
   }
@@ -4830,12 +4901,12 @@ footer > span {
 }
 
 .expeditions-index-hero {
-  align-items: end;
+  align-items: center;
   border-bottom: 1px solid var(--ink);
   display: grid;
-  gap: 70px;
+  gap: 50px;
   grid-template-columns: minmax(0, 1.3fr) minmax(330px, 0.7fr);
-  padding: 105px 0 75px;
+  padding: 52px 0 48px;
 }
 
 .expeditions-index-hero h1 {
@@ -4844,7 +4915,7 @@ footer > span {
   font-weight: 400;
   letter-spacing: -0.065em;
   line-height: 0.82;
-  margin: 30px 0 0;
+  margin: 18px 0 0;
 }
 
 .expeditions-index-hero > div:last-child > p,
@@ -4862,7 +4933,7 @@ footer > span {
 }
 
 .expedition-index-list {
-  padding: 95px 0 110px;
+  padding: 48px 0 90px;
 }
 
 .expedition-archive-label {
@@ -5075,8 +5146,8 @@ footer > span {
   }
 
   .expeditions-index-hero {
-    gap: 40px;
-    padding: 75px 4px 55px;
+    gap: 30px;
+    padding: 48px 4px 38px;
   }
 
   .expeditions-index-hero h1 {
@@ -5084,7 +5155,7 @@ footer > span {
   }
 
   .expedition-index-list {
-    padding: 70px 0;
+    padding: 45px 0 65px;
   }
 
   .expedition-index-heading {
@@ -6362,8 +6433,8 @@ footer > span {
 }
 
 .expeditions-index-hero h1 {
-  font-size: clamp(60px, 8vw, 116px);
-  line-height: 0.9;
+  font-size: clamp(54px, 6.5vw, 96px);
+  line-height: 0.92;
 }
 
 .proposal-page-hero h1 {
@@ -6399,7 +6470,7 @@ footer > span {
   }
 
   .expeditions-index-hero h1 {
-    font-size: clamp(50px, 15vw, 72px);
+    font-size: clamp(48px, 14vw, 64px);
   }
 
   .proposal-page-hero h1 {

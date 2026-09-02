@@ -14,22 +14,10 @@ import {
   simulateAndSendTransaction,
   waitForTransactionReceipt,
 } from './marketTransactions';
-import {
-  buildExpeditionProposal,
-  fetchExpeditionProposals,
-  publishExpeditionProposal,
-  signExpeditionProposal,
-} from './proposalApi';
 import { useEthscribeWallet } from './useEthscribeWallet';
 
 const EXPEDITION_PATH = '/expeditions/lost-pixels-of-satoshi';
 const referenceImage = artifactById('new-png-48').previewUrl;
-
-const proposalDirections = [
-  { eyebrow: 'PRE-INTERNET SOFTWARE', title: 'The Desktop Before the Web', description: 'Recover formative icons, cursors, and interface assets from early personal computing.' },
-  { eyebrow: 'WEB HISTORY', title: 'The First PNG', description: 'Trace the earliest surviving Portable Network Graphics files back to their exact sources.' },
-  { eyebrow: 'INTERNET CULTURE', title: 'Before Emoji', description: 'Find the tiny images and glyphs that taught networked culture how to feel.' },
-];
 
 const processSteps = [
   { number: '01', title: 'Define the target', body: 'A hunt begins with a culturally significant artifact and a precise definition of what counts.' },
@@ -509,34 +497,27 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
             <h4><span>01</span> File information</h4>
             <dl className="artifact-record-grid compact-record-grid">
               <RecordFact label="FORMAT" value={artifact.format} />
-              <RecordFact label="NATIVE DIMENSIONS" value={artifact.dimensions} />
               <RecordFact label="RAW FILE SIZE" value={formatBytes(artifact.bytes)} />
-              <RecordFact label="VERIFIED SOURCE" value={artifact.sourceLabel} className="record-fact-wide" />
+              <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
             </dl>
           </section>
-          <div className="artifact-proof-grid">
-            <section className="artifact-record-section">
-              <h4><span>02</span> Byte identity</h4>
-              <dl className="artifact-record-grid">
-                <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
-              </dl>
-              <p className="record-section-note">Matches the decoded historical file independently of its Data URI wrapper.</p>
-            </section>
-            <section className="artifact-record-section">
-              <h4><span>03</span> Ethscription transaction</h4>
-              <dl className="artifact-record-grid">
-                <div className="record-fact record-fact-wide">
-                  <dt>ETHSCRIPTION ID / CREATION TRANSACTION</dt>
-                  <dd className="linked-record-value">
-                    <a href={`https://etherscan.io/tx/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">{artifact.ethscriptionId}</a>
-                    <span><a href={`https://ethscriptions.com/ethscriptions/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">View Ethscription <ArrowIcon /></a></span>
-                  </dd>
-                  </div>
-                <RecordFact label="ETHSCRIBED" value={artifact.ethscribedAt} />
-                <RecordFact label="PROTOCOL CONTENT SHA-256 (FULL DATA URI)" value={artifact.contentSha} className="record-fact-wide" />
-              </dl>
-            </section>
-          </div>
+          <section className="artifact-record-section artifact-transaction-section">
+            <h4><span>02</span> Ethscription transaction</h4>
+            <dl className="artifact-record-grid">
+              <div className="record-fact record-fact-wide">
+                <dt>ETHSCRIPTION ID / CREATION TRANSACTION</dt>
+                <dd className="linked-record-value">
+                  <a href={`https://etherscan.io/tx/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">{artifact.ethscriptionId}</a>
+                  <span><a href={`https://ethscriptions.com/ethscriptions/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">View Ethscription <ArrowIcon /></a></span>
+                </dd>
+              </div>
+              <RecordFact label="ETHSCRIBED" value={artifact.ethscribedAt} />
+              <div className="record-fact">
+                <dt>ETHSCRIBING WALLET</dt>
+                <dd>{artifact.creator ? <a href={`https://etherscan.io/address/${artifact.creator}`} target="_blank" rel="noreferrer">{artifact.creator}</a> : 'Unknown'}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
       )}
 
@@ -660,7 +641,6 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
           <div className="expeditions-index-actions">
             <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as singular onchain artifacts.</p>
             <a className="primary-action" href="#live-expeditions">Enter the live expedition <ArrowIcon /></a>
-            <a className="text-action" href="/expeditions/propose">Propose a future expedition</a>
           </div>
         </section>
 
@@ -682,159 +662,6 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
           </a>
         </section>
 
-        <aside className="expedition-proposal-secondary">
-          <div><span>NEXT FIELD QUESTION</span><p>Know a piece of digital history worth recovering byte by byte?</p></div>
-          <a className="text-action" href="/expeditions/propose">Open the proposal notebook <ArrowIcon /></a>
-        </aside>
-
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
-
-function formatProposalDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'DATE UNAVAILABLE';
-  return new Intl.DateTimeFormat('en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date).toUpperCase();
-}
-
-function friendlyProposalError(error) {
-  if (error?.code === 4001 || /user rejected|user denied/i.test(error?.message || '')) {
-    return 'The proposal signature was cancelled in the wallet. Nothing was published.';
-  }
-  return error?.message || 'The proposal could not be published.';
-}
-
-function ProposeExpeditionPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, provider }) {
-  const [proposals, setProposals] = useState([]);
-  const [listState, setListState] = useState('loading');
-  const [submitState, setSubmitState] = useState('idle');
-  const [submitMessage, setSubmitMessage] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    fetchExpeditionProposals()
-      .then((records) => {
-        if (!active) return;
-        setProposals(records);
-        setListState('ready');
-      })
-      .catch((error) => {
-        if (!active) return;
-        setListState('error');
-        setSubmitMessage(error.message);
-      });
-    return () => { active = false; };
-  }, []);
-
-  const submitProposal = async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const fields = Object.fromEntries(new FormData(form));
-    setSubmitMessage('');
-
-    try {
-      const activeAccount = account || (await connectWallet());
-      if (!activeAccount) return;
-      setSubmitState('signing');
-      const proposal = buildExpeditionProposal({ ...fields, authorAddress: activeAccount });
-      const signed = await signExpeditionProposal(provider, activeAccount, proposal);
-      setSubmitState('publishing');
-      const published = await publishExpeditionProposal(proposal, signed.message, signed.signature);
-      setProposals((current) => [published, ...current.filter((item) => item.proposalId !== published.proposalId)]);
-      setListState('ready');
-      setSubmitState('complete');
-      setSubmitMessage('Proposal published to the public expedition notebook.');
-      form.reset();
-    } catch (error) {
-      setSubmitState('error');
-      setSubmitMessage(friendlyProposalError(error));
-    }
-  };
-
-  return (
-    <div className="site-shell propose-expedition-page">
-      <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expeditions />
-      <main id="top">
-        <section className="proposal-page-hero">
-          <div>
-            <p className="page-breadcrumb"><a href="/expeditions">EXPEDITIONS</a><span>/</span>PROPOSE</p>
-            <p className="kicker"><span /> Community fieldwork</p>
-            <h1>Propose the next expedition.</h1>
-          </div>
-          <p>A compelling expedition starts with a culturally important digital artifact, a bounded exact-file target, and at least one credible place to begin the search.</p>
-        </section>
-
-        <section className="proposal-directions" aria-labelledby="proposal-directions-title">
-          <div className="section-heading compact">
-            <div><p className="kicker"><span /> Possible directions</p><h2 id="proposal-directions-title">Digital history is bigger than the web.</h2></div>
-            <p className="section-intro">These are prompts, not a fixed roadmap. The strongest proposal turns a broad theme into a finite set of files whose identity can be investigated and proven.</p>
-          </div>
-          <div className="proposal-grid">
-            {proposalDirections.map((proposal, index) => (
-              <article key={proposal.title}>
-                <div className="proposal-meta"><span>{proposal.eyebrow}</span><span>0{index + 1}</span></div>
-                <h3>{proposal.title}</h3>
-                <p>{proposal.description}</p>
-                <span className="under-consideration">EXAMPLE DIRECTION</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="proposal-notebook" aria-labelledby="proposal-form-title">
-          <div className="proposal-form-copy">
-            <p className="kicker"><span /> Expedition notebook</p>
-            <h2 id="proposal-form-title">Make the case.</h2>
-            <p>Submitting costs no gas. Your wallet signs the exact proposal to establish authorship; it does not send a transaction or grant Ethscribe custody of anything.</p>
-            <dl>
-              <div><dt>GOOD TARGETS</dt><dd>Historically meaningful, exact-file oriented, and bounded enough to finish.</dd></div>
-              <div><dt>GOOD SOURCES</dt><dd>Release archives, source repositories, contemporary posts, or verifiable custody trails.</dd></div>
-              <div><dt>WHAT HAPPENS NEXT</dt><dd>Proposals enter the public notebook. Publication does not automatically activate an expedition.</dd></div>
-            </dl>
-          </div>
-          <form className="proposal-inline-form" onSubmit={submitProposal}>
-            <label>Expedition title<input name="title" type="text" maxLength="120" placeholder="The first…" required /></label>
-            <label>What should researchers find?<textarea name="target" rows="4" maxLength="1200" placeholder="Describe the exact digital artifacts and the boundary of the hunt." required /></label>
-            <label>Why does it matter?<textarea name="rationale" rows="4" maxLength="1200" placeholder="Explain the historical significance and why people would want to participate." required /></label>
-            <label>Starting source<input name="source" type="url" maxLength="2048" placeholder="https://…" required /></label>
-            <button className="primary-action" type="submit" disabled={['signing', 'publishing'].includes(submitState)}>
-              {submitState === 'signing' ? 'SIGN IN WALLET…' : submitState === 'publishing' ? 'PUBLISHING…' : account ? 'SIGN + PUBLISH PROPOSAL' : 'CONNECT + PUBLISH PROPOSAL'} <ArrowIcon />
-            </button>
-            {submitMessage && <p className={`proposal-submit-message state-${submitState}`} role="status">{submitMessage}</p>}
-            {account && <p className="connected-as">PROPOSER {shortAddress(account)}</p>}
-          </form>
-        </section>
-
-        <section className="proposal-submissions" aria-labelledby="proposal-submissions-title">
-          <div className="proposal-submissions-heading">
-            <div><p className="kicker"><span /> Public notebook</p><h2 id="proposal-submissions-title">Proposed expeditions.</h2></div>
-            <span>{proposals.length.toString().padStart(2, '0')} SUBMISSION{proposals.length === 1 ? '' : 'S'} · NEWEST FIRST</span>
-          </div>
-          {listState === 'loading' && <p className="proposal-empty-state">Loading the public notebook…</p>}
-          {listState === 'error' && <p className="proposal-empty-state">The public notebook could not be loaded. You can still prepare a proposal and try again.</p>}
-          {listState === 'ready' && proposals.length === 0 && <p className="proposal-empty-state">No proposals yet. The first signed submission will appear here.</p>}
-          {proposals.length > 0 && (
-            <div className="proposal-rows">
-              {proposals.map((proposal, index) => (
-                <article key={proposal.proposalId}>
-                  <div className="proposal-row-index"><span>{String(index + 1).padStart(2, '0')}</span><strong>PROPOSED</strong></div>
-                  <div className="proposal-row-main"><h3>{proposal.title}</h3><p>{proposal.target}</p></div>
-                  <div className="proposal-row-proof">
-                    <span>{formatProposalDate(proposal.submittedAt || proposal.createdAt)}</span>
-                    <a href={proposal.source} target="_blank" rel="noreferrer">STARTING SOURCE <ArrowIcon /></a>
-                    <a href={`https://etherscan.io/address/${proposal.authorAddress}`} target="_blank" rel="noreferrer">{shortAddress(proposal.authorAddress)} <ArrowIcon /></a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
       </main>
       <SiteFooter />
     </div>
@@ -889,47 +716,16 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
             <p className="kicker"><span /> Active digital archaeology hunt</p>
             <h1>The Lost Pixels of Satoshi</h1>
             <p>Twenty-two exact files trace Satoshi’s first two Bitcoin icon systems. Each canonical payload has room for one first Ethscription—one ownable, byte-perfect artifact made from Satoshi’s original pixels.</p>
+            <div className="expedition-hero-brief">
+              <p><strong>{resolvedStats.secured} / {resolvedStats.known}</strong><span>KNOWN FILES SECURED</span></p>
+              <p><strong>ONE LOST ORIGINAL</strong><span>Satoshi’s attested 20 × 20 transparent PNG remains the expedition’s open archaeological mystery.</span></p>
+            </div>
             <a className="primary-action" href="#timeline">Open the field record <ArrowIcon /></a>
           </div>
           <ExpeditionCorpusGrid resolvedArtifacts={resolvedArtifacts} onOpenArtifact={openArtifactFromGrid} />
         </section>
 
-        <section className="ticker" aria-label="Expedition principles">
-          <div>{resolvedStats.secured} ETHSCRIBED</div><span>✦</span><div>{resolvedStats.open} KNOWN-BYTE GAPS</div><span>✦</span><div>FIRST COME · FIRST SCRIBE</div><span>✦</span><div>1 LOST-BYTE HUNT</div>
-        </section>
-
-        <section className="hunt-section">
-          <div className="section-heading">
-            <div><p className="kicker"><span /> Expedition brief</p><h2>Find the files. Complete the record.</h2></div>
-            <div className="hunt-status"><span>EXPEDITION 001</span><strong>CATALOGUE LIVE</strong></div>
-          </div>
-
-          <div className="hunt-overview">
-            <article className="source-card lost-source-card">
-              <p className="card-index">PRIMARY SOURCE / 08 FEB 2010</p>
-              <blockquote>“I’m attaching bitcoin20x20.png, the 20x20 version with full transparency.”</blockquote>
-              <p>Satoshi described and attached a hand-tuned PNG of the original BC coin. The post survives. The attachment does not. A recreation, ICO extraction, or visual match cannot fill this slot—the hunt is for the original bytes and their custody trail.</p>
-              <a className="source-link" href="https://bitcointalk.org/index.php?topic=45.msg475#msg475" target="_blank" rel="noreferrer">Read Satoshi’s post <ArrowIcon /></a>
-            </article>
-
-            <article className="progress-card">
-              <p className="card-index">CANONICAL CORPUS / THROUGH v0.3.0</p>
-              <div className="progress-fraction"><strong>{resolvedStats.secured}</strong><span>/ {resolvedStats.known}</span></div>
-              <p className="progress-label">known byte-perfect files secured in this collection</p>
-              <div className="progress-track" aria-label={`${resolvedStats.secured} of ${resolvedStats.known} artifacts secured`}><span style={{ width: `${(resolvedStats.secured / resolvedStats.known) * 100}%` }} /></div>
-              <p className="progress-sync-note">LIVE VERIFIED FINDINGS · EXACT TARGET MATCH · ONCHAIN CUSTODY</p>
-              <dl className="progress-breakdown">
-                <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured}</dd></div><div><dt>NEEDS ETHSCRIBING</dt><dd>{resolvedStats.open}</dd></div>
-                <div><dt>BYTES UNKNOWN</dt><dd>{resolvedStats.lost}</dd></div><div><dt>MAPPED COMPONENTS</dt><dd>{resolvedStats.components}</dd></div>
-              </dl>
-            </article>
-          </div>
-
-          <div className="hunt-lanes">
-            <article><span className="lane-index">01 / ACCESSION</span><h3>Known bytes</h3><p>Authoritative files survive in source commits and archives. The first hunter to place a target’s exact canonical payload onchain secures its singular Ethscription for the record.</p><strong>First come. First scribe.</strong></article>
-            <article className="unknown-lane"><span className="lane-index">02 / RECOVERY</span><h3>Unknown bytes</h3><p>For `bitcoin20x20.png`, no target hash exists because no verified original payload has survived. The task is to recover a candidate and establish its chain of custody.</p><strong>The open archaeological mystery</strong></article>
-          </div>
-
+        <section className="hunt-section expedition-record-section">
           <section className="timeline-section" id="timeline" aria-labelledby="timeline-title">
             <div className="timeline-heading">
               <div><p className="card-index">EXPEDITION TIMELINE / 2008–2010</p><h3 id="timeline-title">Every target, in context.</h3></div>
@@ -1051,23 +847,25 @@ function App() {
   };
   const [modal, setModal] = useState(null);
   const isExpedition = pathname === EXPEDITION_PATH;
-  const isExpeditions = pathname === '/expeditions';
-  const isProposal = pathname === '/expeditions/propose';
+  const isLegacyProposalPath = pathname === '/expeditions/propose';
+  const isExpeditions = pathname === '/expeditions' || isLegacyProposalPath;
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
+
+  useEffect(() => {
+    if (isLegacyProposalPath) window.history.replaceState({}, '', '/expeditions');
+  }, [isLegacyProposalPath]);
 
   useEffect(() => {
     if (isDocs) return;
     document.title = isWallet
       ? 'Wallet — Ethscribe'
-      : isProposal
-        ? 'Propose an Expedition — Ethscribe'
       : isExpeditions
         ? 'Expeditions — Ethscribe'
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition, isExpeditions, isProposal, isWallet]);
+  }, [isDocs, isExpedition, isExpeditions, isWallet]);
 
   const switchToMainnet = async () => {
     try {
@@ -1109,9 +907,7 @@ function App() {
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />
-          : isProposal
-              ? <ProposeExpeditionPage {...pageProps} />
-            : isExpeditions
+          : isExpeditions
               ? <ExpeditionsPage {...pageProps} />
             : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}
       {modal && (

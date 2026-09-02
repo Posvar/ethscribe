@@ -125,19 +125,33 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.getByRole('heading', { name: 'The ₿ coin is revealed' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'The end of an era' })).toBeInTheDocument();
   expect(screen.getByText(/Bitboy introduces the orange, tilted mark\. Icons of that later community era belong in a separate expedition\./i)).toBeInTheDocument();
+  expect(screen.getByText(/known files secured/i)).toBeInTheDocument();
+  expect(screen.getByText(/Satoshi’s attested 20 × 20 transparent PNG remains/i)).toBeInTheDocument();
+  expect(screen.queryByText(/expedition brief/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/primary source \/ 08 feb 2010/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/canonical corpus \/ through v0\.3\.0/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^known bytes$/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^unknown bytes$/i)).not.toBeInTheDocument();
+  expect(screen.queryByLabelText(/expedition principles/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getAllByRole('button', { name: /icobitcoin\.ico/i })[0]);
   expect(screen.getByRole('heading', { name: /file information/i })).toBeInTheDocument();
   expect(await screen.findByText('NOT LISTED')).toBeInTheDocument();
   expect(screen.queryByRole('tab')).not.toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /byte identity/i })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /byte identity/i })).not.toBeInTheDocument();
+  expect(screen.getByText(/decoded raw file sha-256/i)).toBeInTheDocument();
+  expect(screen.getByText('22,486 bytes')).toBeInTheDocument();
   expect(screen.getByText('8571889ac8a29b5c2e537f3fb11973295fcffc8f9b348623aa87b3598e869033')).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /ethscription transaction/i })).toBeInTheDocument();
   expect(screen.getByText(/22 jun 2023 · 19:48:35 utc/i)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: '0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef' })).toHaveAttribute('href', 'https://etherscan.io/tx/0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef');
   expect(screen.queryByRole('heading', { name: /ownership/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/creator \/ ethscribing wallet/i)).not.toBeInTheDocument();
+  expect(screen.getByText(/^ethscribing wallet$/i)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37' })).toHaveAttribute('href', 'https://etherscan.io/address/0x1f01d99a90ad0c752e7765de29c386a169bd9e37');
   expect(screen.queryByText(/current owner/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/protocol content sha-256/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/verified source/i)).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/raw file keccak-256/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/ethereum block/i)).not.toBeInTheDocument();
@@ -257,14 +271,14 @@ test('promotes an exact verified Finding into the live expedition grid and count
   render(<App />);
 
   expect(await screen.findByRole('button', { name: /open field note for bitcoin20\.xpm, ethscribed/i })).toBeInTheDocument();
-  expect(screen.getByLabelText('8 of 22 artifacts secured')).toBeInTheDocument();
+  expect(screen.getByText('8 / 22')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /open field note for bitcoin20\.xpm, ethscribed/i }));
   expect(await screen.findByText('ACTIVE LISTING')).toBeInTheDocument();
   expect(screen.getByText('1 ETH')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /connect wallet to buy/i })).toBeInTheDocument();
 });
 
-test('renders a compact newest-first Expeditions archive with a dedicated proposal entry point', () => {
+test('renders a compact Expeditions archive focused on the live hunt', () => {
   window.history.pushState({}, '', '/expeditions');
   render(<App />);
 
@@ -272,56 +286,22 @@ test('renders a compact newest-first Expeditions archive with a dedicated propos
   expect(screen.getByText(/live now \/ expedition 001/i)).toBeInTheDocument();
   expect(screen.queryByText(/active and completed field records/i)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: /lost pixels of satoshi/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
-  expect(screen.getByRole('link', { name: /propose a future expedition/i })).toHaveAttribute('href', '/expeditions/propose');
   expect(screen.getByRole('link', { name: /enter the live expedition/i })).toHaveAttribute('href', '#live-expeditions');
+  expect(screen.queryByRole('link', { name: /propose/i })).not.toBeInTheDocument();
+  expect(screen.queryByText(/proposal notebook/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/what should the field investigate next/i)).not.toBeInTheDocument();
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).getByRole('link', { name: 'Expeditions' })).toHaveAttribute('aria-current', 'page');
 });
 
-test('publishes a wallet-signed expedition proposal inline and clears the form', async () => {
-  const account = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
-  const provider = {
-    request: jest.fn(async ({ method }) => {
-      if (method === 'personal_sign') return `0x${'12'.repeat(65)}`;
-      throw new Error(`Unexpected wallet method: ${method}`);
-    }),
-  };
-  useEthscribeWallet.mockReturnValue({
-    account,
-    chainId: '0x1',
-    walletState: 'idle',
-    walletName: 'MetaMask',
-    provider,
-    connectWallet,
-    switchToMainnet,
-    openAccountModal,
-  });
-  global.fetch = jest.fn(async (url, options = {}) => {
-    if (url === '/api/proposals' && options.method === 'POST') {
-      const { proposal } = JSON.parse(options.body);
-      return { ok: true, json: async () => ({ result: { ...proposal, proposalId: 'proposal-test', status: 'proposed', submittedAt: proposal.createdAt } }) };
-    }
-    if (url === '/api/proposals') return { ok: true, json: async () => ({ result: [] }) };
-    throw new Error('Unexpected request');
-  });
+test('keeps the proposal notebook hidden when its former URL is opened directly', async () => {
   window.history.pushState({}, '', '/expeditions/propose');
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: /propose the next expedition/i })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /digital history is bigger than the web/i })).toBeInTheDocument();
-  expect(screen.getByText('The Desktop Before the Web')).toBeInTheDocument();
-  await waitFor(() => expect(screen.getByText(/no proposals yet/i)).toBeInTheDocument());
-
-  fireEvent.change(screen.getByLabelText(/expedition title/i), { target: { value: 'Browser Archaeology' } });
-  fireEvent.change(screen.getByLabelText(/what should researchers find/i), { target: { value: 'Recover the exact browser icons.' } });
-  fireEvent.change(screen.getByLabelText(/why does it matter/i), { target: { value: 'They shaped visual web culture.' } });
-  fireEvent.change(screen.getByLabelText(/starting source/i), { target: { value: 'https://example.com/archive' } });
-  fireEvent.click(await screen.findByRole('button', { name: /sign \+ publish proposal/i }));
-
-  expect(await screen.findByRole('heading', { name: 'Browser Archaeology' })).toBeInTheDocument();
-  expect(screen.getByText(/proposal published to the public expedition notebook/i)).toBeInTheDocument();
-  expect(screen.getByLabelText(/expedition title/i)).toHaveValue('');
+  expect(screen.getByRole('heading', { name: /^expeditions$/i })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /propose the next expedition/i })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText(/expedition title/i)).not.toBeInTheDocument();
+  await waitFor(() => expect(window.location.pathname).toBe('/expeditions'));
 });
 
 test('opens the RainbowKit wallet chooser when connection is requested', () => {

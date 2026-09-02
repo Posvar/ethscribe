@@ -22,9 +22,9 @@ The brief must be useful before a wallet is connected. Research is the product; 
 
 ## Proposing an expedition
 
-Any connected wallet can publish a structured proposal from `/expeditions/propose`. The proposal names the expedition, defines what researchers should find, explains its historical significance, and cites a credible starting source.
+Public proposal intake is part of the intended participation model but is not open during the current release. The reserved `/expeditions/propose` route returns visitors to the expedition directory, and no proposal call to action is shown on the public site.
 
-Publication uses a gas-free wallet signature rather than an Ethereum transaction. The server verifies that signature, stores the signed proposal as an immutable record, and exposes it in the public proposal notebook newest-first. Publishing proves authorship; it does not activate an expedition, promise a reward, or make the historical claim true.
+When enabled, publication will use a gas-free wallet signature rather than an Ethereum transaction. The proposal will name the expedition, define what researchers should find, explain its historical significance, and cite a credible starting source. Publishing will prove authorship; it will not activate an expedition, promise a reward, or make the historical claim true.
 
 The curator still decides which proposals are developed into frozen briefs. Permissionless proposal is therefore separate from permissionless accession.
 

@@ -3,6 +3,9 @@ const { listProposals, ProposalError, verifyAndStoreProposal } = require('../lib
 
 exports.handler = async (event) => {
   try {
+    if (process.env.PUBLIC_PROPOSALS_ENABLED !== 'true') {
+      return jsonResponse(404, { error: 'proposal_intake_closed', message: 'Public expedition proposals are not open.' });
+    }
     if (event.httpMethod === 'GET') {
       return jsonResponse(200, { result: await listProposals() }, 'public, max-age=0, s-maxage=30, stale-while-revalidate=30');
     }

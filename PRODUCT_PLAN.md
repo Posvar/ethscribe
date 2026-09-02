@@ -166,15 +166,14 @@ The site launches with these top-level destinations:
 | `/expeditions/:slug` | Expedition brief, corpus timeline, artifact records, Findings, Field Notes, and later auction. |
 | `/findings/:id` | Artifact preview, byte facts, dossier, sources, revisions, challenges, and owner. |
 | `/collection` | Permanent Accessions and frozen provenance records. |
-| `/ethscribe` | Generic file inspection, existence check, creation, and vault deposit flow. |
 | `/wallet` | Connected wallet's directly owned Ethscriptions, vault positions, assignments, listings, bids, and proceeds. |
-| `/expeditions/propose` | Public, wallet-signed proposal notebook for future Hunts. |
+| `/expeditions/propose` | Reserved for a future proposal notebook; currently hidden and routed back to `/expeditions`. |
 | `/about` | Ethscriptions, byte-perfect verification, ownership limits, and curation policy. |
 | `/docs` | Git-backed project documentation and living whitepaper, using the same Markdown source as GitBook. |
 
 The public shell separates the permanent mission at `/`, the reverse-chronological expedition archive at `/expeditions`, and Expedition 001 at `/expeditions/lost-pixels-of-satoshi`. The archive begins with active work and retains concluded expeditions below it so their records and assets remain discoverable.
 
-Global navigation remains stable across routes: `Mission | Expeditions | Ethscribe | Docs`, followed by the wallet control. Method remains a homepage section rather than a global destination. Proposals begin within the Expeditions archive rather than occupying permanent navigation. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
+Global navigation remains stable across routes: `Mission | Expeditions | Wallet`, followed by the wallet control. Method remains a homepage section rather than a global destination, and Docs remains available from the homepage and footer. Public expedition proposals are withheld until the participation model is ready. On an expedition route, a secondary context row identifies the active child (`Expedition 001: The Lost Pixels of Satoshi`). This becomes the expedition selector/dropdown when multiple expeditions exist; timeline-specific tools do not enter the global navigation.
 
 ### Documentation and whitepaper
 
@@ -478,7 +477,7 @@ The detailed state model, invariants, attack analysis, and delivery sequence liv
 - Implement Finding pages and signed Field Notes
 - Add basic moderation and rate limiting
 
-**Current status:** the first production slice supports direct-to-vault personal creation, inline target submissions, existing-ID deposits, and a public wallet-signed expedition proposal notebook. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled custody. Expedition proposals use gas-free signatures and immutable Azure-backed records; curation remains separate from publication. Public Finding pages, Dossier revisions, Field Notes, proposal moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
+**Current status:** the first production slice supports direct-to-vault creation within an expedition, inline target submissions, and existing-ID deposits. A submitted Finding is stored only after server-side verification of its wallet signature, official indexed content URI, decoded raw hash, frozen target wrapper, and reconciled custody. The proposal infrastructure remains implemented but is withheld from the public site until the participation model is ready. Public Finding pages, Dossier revisions, Field Notes, proposal moderation, rate limiting, and protocol-wide raw-byte indexing remain incomplete.
 
 ### Phase 3 — live Genesis Hunts
 

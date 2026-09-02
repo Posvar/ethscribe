@@ -74,11 +74,11 @@ The Git-backed public site, mission, method, wallet connection, Expedition 001 r
 
 ## How can I participate?
 
-Explore the current expedition, inspect an unresolved target, preserve the candidate without modification, and use its embedded **Ethscribe + Submit** flow. To preserve an unrelated file first, use the global **Ethscribe** page; after creation it offers a compatible expedition handoff without moving the file unless you choose to continue.
+Explore the current expedition, inspect an unresolved target, preserve the candidate without modification, and use its embedded **Submit a Finding** flow. Ethscribing is intentionally available only in the context of a defined expedition target.
 
 ## Can anyone propose an expedition?
 
-That is the intended participation model. Proposals are permissionless to submit but curated before they enter the prepared queue. A proposal needs a bounded question, historical importance, sources, and a workable acceptance rubric.
+That is the intended participation model, but public proposal intake is not open yet. When enabled, proposals will be permissionless to submit and curated before they enter the prepared queue. A proposal will need a bounded question, historical importance, sources, and a workable acceptance rubric.
 
 ## Why the name ethscri.be?
 
