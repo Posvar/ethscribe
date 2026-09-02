@@ -886,10 +886,6 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
             </div>
           </section>
 
-          <div className="hunt-callout">
-            <div><span className="callout-number">1</span><p>attested artifact has no verified surviving bytes</p></div>
-            <a className="primary-action dark" href={`${EXPEDITION_PATH}?artifact=${lostArtifact.id}#record-${lostArtifact.id}`}>Open the recovery target <ArrowIcon /></a>
-          </div>
         </section>
       </main>
       <SiteFooter expedition />
@@ -910,6 +906,7 @@ function App() {
   const walletSession = useEthscribeWallet();
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const [verifiedFindings, setVerifiedFindings] = useState([]);
+  const [findingIndexState, setFindingIndexState] = useState('idle');
   const {
     account,
     chainId,
@@ -930,14 +927,19 @@ function App() {
   );
 
   useEffect(() => {
-    if (!['/', '/expeditions', EXPEDITION_PATH].includes(pathname)) return undefined;
+    if (!['/', '/expeditions', '/wallet', EXPEDITION_PATH].includes(pathname)) return undefined;
     let active = true;
+    setFindingIndexState('loading');
     fetchVerifiedFindings()
       .then((records) => {
-        if (active) setVerifiedFindings(records);
+        if (active) {
+          setVerifiedFindings(records);
+          setFindingIndexState('ready');
+        }
       })
       .catch(() => {
         // The immutable manifest remains usable when the public Finding index is unavailable.
+        if (active) setFindingIndexState('error');
       });
     return () => { active = false; };
   }, [pathname]);
@@ -945,6 +947,7 @@ function App() {
   const recordPublishedFinding = (finding) => {
     if (!finding?.findingId) return;
     setVerifiedFindings((current) => [finding, ...current.filter((item) => item.findingId !== finding.findingId)]);
+    setFindingIndexState('ready');
   };
   const [modal, setModal] = useState(null);
   const isExpedition = pathname === EXPEDITION_PATH;
@@ -1003,6 +1006,8 @@ function App() {
               provider={provider}
               walletName={walletName}
               ensName={ensName}
+              resolvedFindings={verifiedFindings}
+              findingIndexState={findingIndexState}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />

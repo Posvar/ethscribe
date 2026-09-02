@@ -1449,38 +1449,6 @@ footer img {
   max-width: 680px;
 }
 
-.hunt-callout {
-  align-items: center;
-  background: var(--signal);
-  border: 1px solid var(--ink);
-  border-top: 0;
-  display: flex;
-  justify-content: space-between;
-  min-height: 130px;
-  padding: 20px clamp(25px, 4.4vw, 72px);
-}
-
-.hunt-callout > div {
-  align-items: center;
-  display: flex;
-  gap: 24px;
-}
-
-.callout-number {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 70px;
-  line-height: 1;
-}
-
-.hunt-callout p {
-  font-family: "Courier New", monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  max-width: 190px;
-  text-transform: uppercase;
-}
-
 .method-section {
   background: #ded9cc;
 }
@@ -3212,13 +3180,6 @@ footer > span {
     font-size: 9px;
   }
 
-  .hunt-callout {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 25px;
-    padding: 28px 25px;
-  }
-
   .process-grid,
   .proposal-grid {
     grid-template-columns: 1fr;
@@ -3784,7 +3745,7 @@ footer > span {
 .wallet-hero {
   background: var(--ink);
   color: var(--paper);
-  padding: 110px max(50px, calc((100vw - 1440px) / 2)) 80px;
+  padding: 54px max(50px, calc((100vw - 1440px) / 2)) 46px;
 }
 
 .wallet-hero > div:first-child {
@@ -3797,16 +3758,16 @@ footer > span {
 
 .wallet-hero h1 {
   font-family: Georgia, serif;
-  font-size: clamp(64px, 7vw, 112px);
+  font-size: clamp(54px, 5.5vw, 78px);
   font-weight: normal;
   letter-spacing: -0.055em;
   line-height: 0.88;
-  margin: 25px 0 34px;
+  margin: 15px 0 20px;
 }
 
 .wallet-hero > div:first-child > p:last-child {
   color: #c9c6bd;
-  font-size: 18px;
+  font-size: 15px;
   line-height: 1.55;
   margin: 0;
   max-width: 700px;
@@ -3815,7 +3776,7 @@ footer > span {
 .wallet-identity {
   margin: 0 auto;
   max-width: 1440px;
-  padding: 80px 50px;
+  padding: 34px 50px 90px;
 }
 
 .wallet-section-heading {
@@ -3823,7 +3784,7 @@ footer > span {
   display: flex;
   gap: 40px;
   justify-content: space-between;
-  margin-bottom: 38px;
+  margin-bottom: 22px;
 }
 
 .wallet-section-heading h2,
@@ -3862,10 +3823,6 @@ footer > span {
   padding: 24px;
 }
 
-.wallet-identity {
-  padding-bottom: 120px;
-}
-
 .wallet-empty-action {
   border: 1px solid var(--ink);
   padding: clamp(35px, 6vw, 80px);
@@ -3879,7 +3836,12 @@ footer > span {
 
 .wallet-account-heading {
   border-bottom: 1px solid var(--ink);
-  padding-bottom: 38px;
+  padding-bottom: 22px;
+}
+
+.wallet-account-heading h2 {
+  font-size: clamp(30px, 3vw, 44px);
+  margin-top: 9px;
 }
 
 .wallet-account-heading a {
@@ -3895,7 +3857,7 @@ footer > span {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 9px;
 }
 
 .wallet-account-heading .wallet-address-line a,
@@ -3917,20 +3879,24 @@ footer > span {
 }
 
 .wallet-inventory-section {
-  padding-top: 70px;
+  padding-top: 28px;
 }
 
 .wallet-inventory-title {
   align-items: flex-end;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  margin-bottom: 18px;
 }
 
 .wallet-inventory-title > div {
   align-items: baseline;
   display: flex;
   gap: 20px;
+}
+
+.wallet-inventory-title h2 {
+  font-size: clamp(34px, 3vw, 46px);
 }
 
 .wallet-inventory-title span,
@@ -3956,8 +3922,8 @@ footer > span {
   color: var(--paper);
   display: flex;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding: 18px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
 }
 
 .wallet-proceeds > div {
@@ -4027,7 +3993,7 @@ footer > span {
   border: 1px solid var(--ink);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .wallet-inventory-tabs button {
@@ -4149,44 +4115,28 @@ footer > span {
 }
 
 .wallet-card-heading {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  display: block;
 }
 
-.wallet-card-heading p,
-.wallet-card-heading span {
+.wallet-card-heading p {
   font-family: "Courier New", monospace;
   font-size: 9px;
   letter-spacing: 0.06em;
   margin: 0;
 }
 
-.wallet-card-heading span {
-  border: 1px solid var(--ink);
-  font-size: 8px;
-  padding: 6px 8px;
-}
-
-.wallet-card-heading .custody-verified {
-  background: var(--signal);
-}
-
-.wallet-card-heading .custody-unverified {
-  background: white;
-}
-
 .wallet-inventory-card h3 {
   font-family: Georgia, serif;
   font-size: clamp(20px, 1.7vw, 25px);
   font-weight: normal;
-  margin: 22px 0 16px;
+  margin: 14px 0 12px;
   overflow-wrap: anywhere;
 }
 
 .wallet-inventory-card dl {
   border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
 
@@ -4196,6 +4146,61 @@ footer > span {
   gap: 4px;
   grid-template-columns: 1fr;
   padding: 9px 0;
+}
+
+.wallet-inventory-card dl > div + div {
+  border-left: 1px solid #a6a298;
+  padding-left: 10px;
+}
+
+.wallet-expedition-assignment {
+  border-top: 1px solid var(--ink);
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 13px;
+}
+
+.wallet-expedition-assignment > span,
+.wallet-expedition-assignment strong,
+.wallet-expedition-assignment small {
+  font-family: "Courier New", monospace;
+}
+
+.wallet-expedition-assignment > span {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.wallet-expedition-assignment a {
+  display: grid;
+  gap: 5px;
+  text-decoration-color: #918f87;
+  text-underline-offset: 3px;
+}
+
+.wallet-expedition-assignment strong {
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.wallet-expedition-assignment small {
+  color: #5c5952;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.wallet-expedition-assignment.assignment-linked strong::before {
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  content: "";
+  display: inline-block;
+  height: 6px;
+  margin-right: 7px;
+  width: 6px;
 }
 
 .wallet-inventory-card dt,
@@ -4496,25 +4501,6 @@ footer > span {
   overflow-wrap: anywhere;
 }
 
-.wallet-risk-confirmation {
-  align-items: flex-start;
-  border: 1px solid var(--ink);
-  cursor: pointer;
-  display: flex;
-  font-size: 12px;
-  gap: 12px;
-  line-height: 1.5;
-  margin: 0 0 24px;
-  padding: 15px;
-}
-
-.wallet-risk-confirmation input {
-  accent-color: var(--signal);
-  height: 17px;
-  margin: 1px 0 0;
-  width: 17px;
-}
-
 .wallet-confirmation .primary-action:disabled {
   background: #d1cec6;
   color: #77746c;
@@ -4577,7 +4563,7 @@ footer > span {
 @media (max-width: 760px) {
   .wallet-hero {
     gap: 40px;
-    padding: 75px 25px 50px;
+    padding: 52px 25px 40px;
   }
 
   .wallet-hero h1 {
@@ -4585,7 +4571,7 @@ footer > span {
   }
 
   .wallet-identity {
-    padding: 55px 25px;
+    padding: 38px 25px 70px;
   }
 
   .wallet-section-heading {
@@ -4599,16 +4585,6 @@ footer > span {
 
   .wallet-inventory-title h2 {
     font-size: 35px;
-  }
-
-  .wallet-inventory-card dl > div {
-    grid-template-columns: 1fr;
-    gap: 5px;
-  }
-
-  .wallet-card-heading {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .wallet-transaction-status {

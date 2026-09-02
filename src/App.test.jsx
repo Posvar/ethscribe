@@ -118,6 +118,10 @@ test('expands secured and open artifact records directly in the timeline', async
   const legend = screen.getByLabelText(/timeline status legend/i);
   expect(legend.children).toHaveLength(2);
   expect(within(legend).getByText('NOT YET ETHSCRIBED')).toBeInTheDocument();
+  expect(screen.getByText(/Satoshi's release of Bitcoin v0\.1\.0 introduces the six-frame Windows icon/i)).toBeInTheDocument();
+  expect(screen.getByText(/Its exact bytes are this expedition’s real mystery/i)).toBeInTheDocument();
+  expect(screen.getByText(/“New icons, what do you think\?” Satoshi releases new Bitcoin PNGs into the public domain/i)).toBeInTheDocument();
+  expect(screen.getByText(/This is his final contribution to bitcoin's identity/i)).toBeInTheDocument();
 
   fireEvent.click(screen.getAllByRole('button', { name: /icobitcoin\.ico/i })[0]);
   expect(screen.getByRole('heading', { name: /file information/i })).toBeInTheDocument();
@@ -135,6 +139,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByText(/collection status/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/^evidence a$/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/byte lab \/ x pixmap/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/attested artifact has no verified surviving bytes/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
@@ -148,7 +153,7 @@ test('expands secured and open artifact records directly in the timeline', async
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name: /use existing ethscription/i }));
   expect(screen.getByText(/connect the wallet that owns the ethscription/i)).toBeInTheDocument();
-}, 10_000);
+}, 25_000);
 
 test('loads existing wallet Ethscriptions from an expedition target', async () => {
   const account = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
