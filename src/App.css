@@ -2460,54 +2460,16 @@ footer > span {
   white-space: nowrap;
 }
 
-.artifact-record-sections {
-  border: 0;
-}
-
 .artifact-record-shell {
   border-top: 1px solid var(--line);
 }
 
-.artifact-record-tabs {
-  border-bottom: 1px solid var(--ink);
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.artifact-target-information {
+  border: 1px solid var(--ink);
+  margin-top: 30px;
 }
 
-.artifact-record-tabs button {
-  align-items: center;
-  background: #ece7dc;
-  border: 0;
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  font-family: "Courier New", monospace;
-  font-size: 10px;
-  font-weight: 700;
-  gap: 11px;
-  letter-spacing: 0.07em;
-  min-height: 56px;
-  padding: 0 20px;
-  text-align: left;
-}
-
-.artifact-record-tabs button + button {
-  border-left: 1px solid var(--ink);
-}
-
-.artifact-record-tabs button.active {
-  background: var(--signal);
-}
-
-.artifact-record-tabs button span {
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.artifact-record-tabs button.active span {
-  color: var(--ink);
-}
-
+.artifact-target-information > h4,
 .artifact-record-section > h4 {
   align-items: center;
   background: #ece7dc;
@@ -2520,8 +2482,27 @@ footer > span {
   padding: 14px 16px;
 }
 
+.artifact-target-information > h4 span,
+.artifact-record-section > h4 span {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.artifact-proof-grid {
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.artifact-proof-grid > .artifact-record-section + .artifact-record-section {
+  border-left: 1px solid var(--ink);
+}
+
 .artifact-detail-below {
-  padding: 0 clamp(30px, 4vw, 58px) clamp(30px, 4vw, 58px);
+  padding: 30px clamp(30px, 4vw, 58px) clamp(30px, 4vw, 58px);
 }
 
 .artifact-market-card {
@@ -2817,28 +2798,6 @@ footer > span {
   font-style: italic;
 }
 
-.ownership-source {
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-family: "Courier New", monospace;
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  margin: 0;
-  padding: 11px 16px;
-}
-
-.ownership-live::before {
-  background: var(--signal);
-  border: 1px solid var(--ink);
-  border-radius: 50%;
-  content: "";
-  display: inline-block;
-  height: 6px;
-  margin-right: 8px;
-  width: 6px;
-}
-
 .artifact-prefix {
   background: #e7e2d7;
   border: 1px solid var(--ink);
@@ -2860,40 +2819,6 @@ footer > span {
 .artifact-prefix code {
   font-size: 10px;
   overflow-wrap: anywhere;
-}
-
-.artifact-links {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 28px;
-}
-
-.artifact-links a,
-.artifact-links button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--ink);
-  cursor: pointer;
-  display: inline-flex;
-  font-family: "Courier New", monospace;
-  font-size: 9px;
-  font-weight: 700;
-  gap: 8px;
-  letter-spacing: 0.08em;
-  padding: 8px 0;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.artifact-links svg {
-  fill: none;
-  height: 14px;
-  stroke: currentColor;
-  stroke-width: 1.4;
-  width: 14px;
 }
 
 .collection-catalog {
@@ -3340,15 +3265,12 @@ footer > span {
     padding: 35px;
   }
 
-  .artifact-record-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .artifact-proof-grid {
+    grid-template-columns: 1fr;
   }
 
-  .artifact-record-tabs button:nth-child(3) {
+  .artifact-proof-grid > .artifact-record-section + .artifact-record-section {
     border-left: 0;
-  }
-
-  .artifact-record-tabs button:nth-child(n + 3) {
     border-top: 1px solid var(--ink);
   }
 
@@ -3382,12 +3304,6 @@ footer > span {
 
   .record-fact-wide {
     grid-column: auto;
-  }
-
-  .artifact-links {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
   }
 
   .collection-catalog {
@@ -3508,7 +3424,7 @@ footer > span {
 .artifact-chip:focus-visible,
 .wallet-button:focus-visible,
 .primary-action:focus-visible,
-.artifact-links button:focus-visible {
+.finding-launcher:focus-visible {
   outline: 3px solid var(--signal);
   outline-offset: 3px;
 }
@@ -5583,17 +5499,51 @@ footer > span {
   margin: 0;
 }
 
+.finding-launcher {
+  align-items: center;
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 68px;
+  padding: 0 20px;
+  text-align: left;
+  width: 100%;
+}
+
+.finding-launcher span,
+.finding-launcher strong {
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+}
+
+.finding-launcher strong {
+  color: #3d3b35;
+  font-weight: 400;
+}
+
+.finding-launcher svg {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  width: 18px;
+}
+
 .target-submission {
   border: 1px solid var(--ink);
-  margin-top: 36px;
+  margin-top: 0;
 }
 
 .target-submission-heading {
-  align-items: end;
+  align-items: center;
   display: grid;
-  gap: 28px;
-  grid-template-columns: minmax(240px, 0.9fr) minmax(280px, 1.1fr);
-  padding: 24px;
+  gap: 22px;
+  grid-template-columns: minmax(210px, 0.75fr) minmax(280px, 1.25fr) auto;
+  padding: 18px 20px;
 }
 
 .target-submission-heading span,
@@ -5607,10 +5557,20 @@ footer > span {
 
 .target-submission-heading h3 {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(28px, 3vw, 42px);
+  font-size: clamp(25px, 2.4vw, 34px);
   font-weight: 400;
   letter-spacing: -0.04em;
   margin: 9px 0 0;
+}
+
+.target-submission-close {
+  background: transparent;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  min-height: 38px;
+  padding: 0 13px;
 }
 
 .target-submission-heading p,
@@ -6332,6 +6292,22 @@ footer > span {
 
   .target-submission-source {
     grid-template-columns: 1fr;
+  }
+
+  .finding-launcher {
+    gap: 8px 14px;
+    grid-template-columns: 1fr auto;
+    padding: 14px 16px;
+  }
+
+  .finding-launcher strong {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .finding-launcher svg {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .target-submission-source button + button {

@@ -223,7 +223,7 @@ function RecordFact({ label, value, unknown = 'Unknown until the original bytes 
   );
 }
 
-function TargetSubmission({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished }) {
+function TargetSubmission({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished, onClose }) {
   const [source, setSource] = useState('upload');
   const [selectedEthscriptionId, setSelectedEthscriptionId] = useState('');
   const [ownedRecords, setOwnedRecords] = useState([]);
@@ -265,8 +265,9 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
   return (
     <section className="target-submission" aria-labelledby={`submission-title-${artifact.id}`}>
       <div className="target-submission-heading">
-        <div><span>SUBMIT A FINDING</span><h3 id={`submission-title-${artifact.id}`}>Choose how to test your candidate.</h3></div>
-        <p>Upload the exact historical file, or test an Ethscription your wallet already controls. Both paths check the same sealed expedition target before any transaction is prepared.</p>
+        <div><span>FINDING WORKFLOW</span><h3 id={`submission-title-${artifact.id}`}>Test your candidate.</h3></div>
+        <p>Upload the historical file or select an Ethscription you already control. Nothing is submitted until its bytes pass this target’s check.</p>
+        <button className="target-submission-close" type="button" onClick={onClose}>CLOSE</button>
       </div>
       <div className="target-submission-source" role="group" aria-label="Choose a Finding source">
         <button type="button" className={source === 'upload' ? 'active' : ''} onClick={() => chooseSource('upload')}>UPLOAD EXACT FILE</button>
@@ -439,44 +440,13 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
 }
 
 function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished }) {
-  const [chainRecord, setChainRecord] = useState(null);
-  const [recordState, setRecordState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
-  const [activeTab, setActiveTab] = useState('file');
+  const [submissionOpen, setSubmissionOpen] = useState(false);
+  const hasFinding = Boolean(artifact.ethscriptionId);
   const statusCopy = {
     secured: 'ETHSCRIBED · VERIFIED MATCH',
     open: 'OPEN HUNT · NEEDS ETHSCRIBING',
     lost: 'ORIGINAL BYTES UNKNOWN',
   };
-  const creator = chainRecord?.creator || artifact.creator;
-  const currentOwner = chainRecord?.current_owner || artifact.currentOwner;
-
-  useEffect(() => {
-    let active = true;
-
-    if (!artifact.ethscriptionId || typeof fetch !== 'function') {
-      setChainRecord(null);
-      setRecordState(artifact.ethscriptionId ? 'fallback' : 'idle');
-      return () => { active = false; };
-    }
-
-    setChainRecord(null);
-    setRecordState('loading');
-    fetch(`/api/ethscriptions/${artifact.ethscriptionId}`)
-      .then((response) => {
-        if (!response.ok) throw new Error(`Ethscriptions API returned ${response.status}`);
-        return response.json();
-      })
-      .then((payload) => {
-        if (!active) return;
-        setChainRecord(payload.result || payload);
-        setRecordState('live');
-      })
-      .catch(() => {
-        if (active) setRecordState('fallback');
-      });
-
-    return () => { active = false; };
-  }, [artifact.ethscriptionId]);
 
   return (
     <article className={`artifact-detail detail-${artifact.status}`} aria-live="polite">
@@ -504,66 +474,56 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
           </div>
         )}
 
-        <ArtifactMarketPanel
-          artifact={artifact}
-          account={account}
-          chainId={chainId}
-          connectWallet={connectWallet}
-          switchToMainnet={switchToMainnet}
-          provider={provider}
-        />
+        {hasFinding ? (
+          <ArtifactMarketPanel
+            artifact={artifact}
+            account={account}
+            chainId={chainId}
+            connectWallet={connectWallet}
+            switchToMainnet={switchToMainnet}
+            provider={provider}
+          />
+        ) : (
+          <section className="artifact-target-information">
+            <h4><span>01</span> File information</h4>
+            <dl className="artifact-record-grid compact-record-grid">
+              <RecordFact label="FORMAT" value={artifact.format} />
+              <RecordFact label="NATIVE DIMENSIONS" value={artifact.dimensions} />
+              <RecordFact label="EXPECTED FILE SIZE" value={artifact.bytes ? formatBytes(artifact.bytes) : null} />
+              <RecordFact label="SOURCE CLUE" value={artifact.sourceLabel} className="record-fact-wide" />
+            </dl>
+            {artifact.validationMode === 'exact' && (
+              <div className="sealed-target-note">
+                <strong>EXPECTED SHA-256 SEALED WHILE THE HUNT IS OPEN</strong>
+                <p>A candidate is hashed locally and checked against the private target commitment. The expected hash is published only after the first accepted Finding.</p>
+              </div>
+            )}
+          </section>
+        )}
         </div>
       </div>
 
-      <div className="artifact-record-shell">
-        <div className="artifact-record-tabs" role="tablist" aria-label="Artifact record sections">
-          {[
-            ['file', '01', 'FILE INFO'],
-            ['hashing', '02', 'HASHING'],
-            ['transaction', '03', 'ETH TX'],
-            ['ownership', '04', 'OWNERSHIP'],
-          ].map(([id, number, label]) => (
-            <button type="button" role="tab" id={`record-tab-${artifact.id}-${id}`} aria-controls={`record-panel-${artifact.id}-${id}`} aria-selected={activeTab === id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)} key={id}><span>{number}</span>{label}</button>
-          ))}
-        </div>
-        <div className="artifact-record-sections">
-          {activeTab === 'file' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-file`} aria-labelledby={`record-tab-${artifact.id}-file`}>
+      {hasFinding && (
+        <div className="artifact-record-shell artifact-found-record">
+          <section className="artifact-record-section artifact-file-section">
             <h4><span>01</span> File information</h4>
             <dl className="artifact-record-grid compact-record-grid">
               <RecordFact label="FORMAT" value={artifact.format} />
               <RecordFact label="NATIVE DIMENSIONS" value={artifact.dimensions} />
               <RecordFact label="RAW FILE SIZE" value={formatBytes(artifact.bytes)} />
-              <RecordFact label={artifact.status === 'secured' ? 'VERIFIED SOURCE' : 'SOURCE CLUE'} value={artifact.sourceLabel} className="record-fact-wide" />
+              <RecordFact label="VERIFIED SOURCE" value={artifact.sourceLabel} className="record-fact-wide" />
             </dl>
-          </section>}
-
-          {activeTab === 'hashing' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-hashing`} aria-labelledby={`record-tab-${artifact.id}-hashing`}>
-            <h4><span>02</span> Hashing</h4>
-            {artifact.status === 'secured' ? (
-              <>
-                <dl className="artifact-record-grid">
-                  <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
-                </dl>
-                <p className="record-section-note">This is the canonical Ethscribe artifact identity. It compares the decoded file bytes independently of MIME type or Data URI wrapper.</p>
-              </>
-            ) : artifact.validationMode === 'exact' ? (
-              <div className="sealed-target-note">
-                <strong>EXPECTED SHA-256 SEALED WHILE THE HUNT IS OPEN</strong>
-                <p>Your upload is hashed locally, then checked against the private target commitment by the server. Only match or mismatch returns to the browser. The expected hash and primary source are published with the accepted Accession.</p>
-              </div>
-            ) : (
-              <>
-                <dl className="artifact-record-grid">
-                  <RecordFact label="DECODED RAW FILE SHA-256" value={null} className="record-fact-wide" />
-                </dl>
-                <p className="record-section-note">No verified original payload survives, so this target requires a reproducible provenance case rather than an automatic exact-hash match.</p>
-              </>
-            )}
-          </section>}
-
-          {activeTab === 'transaction' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-transaction`} aria-labelledby={`record-tab-${artifact.id}-transaction`}>
-            <h4><span>03</span> Ethscription transaction</h4>
-            {artifact.ethscriptionId ? (
+          </section>
+          <div className="artifact-proof-grid">
+            <section className="artifact-record-section">
+              <h4><span>02</span> Byte identity</h4>
+              <dl className="artifact-record-grid">
+                <RecordFact label="DECODED RAW FILE SHA-256" value={artifact.sha256} className="record-fact-wide" />
+              </dl>
+              <p className="record-section-note">Matches the decoded historical file independently of its Data URI wrapper.</p>
+            </section>
+            <section className="artifact-record-section">
+              <h4><span>03</span> Ethscription transaction</h4>
               <dl className="artifact-record-grid">
                 <div className="record-fact record-fact-wide">
                   <dt>ETHSCRIPTION ID / CREATION TRANSACTION</dt>
@@ -571,60 +531,35 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
                     <a href={`https://etherscan.io/tx/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">{artifact.ethscriptionId}</a>
                     <span><a href={`https://ethscriptions.com/ethscriptions/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">View Ethscription <ArrowIcon /></a></span>
                   </dd>
-                </div>
+                  </div>
                 <RecordFact label="ETHSCRIBED" value={artifact.ethscribedAt} />
                 <RecordFact label="PROTOCOL CONTENT SHA-256 (FULL DATA URI)" value={artifact.contentSha} className="record-fact-wide" />
               </dl>
-            ) : (
-              <p className="empty-record">No accepted Ethscription is attached to this artifact target yet.</p>
-            )}
-            {artifact.contentSha && <p className="record-section-note">The protocol content hash identifies the complete UTF-8 Data URI. It is distinct from the decoded-file hash above.</p>}
-          </section>}
-
-          {activeTab === 'ownership' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-ownership`} aria-labelledby={`record-tab-${artifact.id}-ownership`}>
-            <h4><span>04</span> Ownership</h4>
-            {artifact.ethscriptionId ? (
-              <>
-                <dl className="artifact-record-grid ownership-grid">
-                  <div className="record-fact">
-                    <dt>CREATOR / ETHSCRIBING WALLET</dt>
-                    <dd>{creator ? <a href={`https://etherscan.io/address/${creator}`} target="_blank" rel="noreferrer">{creator}</a> : 'Checking official indexer…'}</dd>
-                  </div>
-                  <div className="record-fact">
-                    <dt>CURRENT OWNER</dt>
-                    <dd>{currentOwner ? <a href={`https://etherscan.io/address/${currentOwner}`} target="_blank" rel="noreferrer">{currentOwner}</a> : 'Checking official indexer…'}</dd>
-                  </div>
-                </dl>
-                <p className={`ownership-source ownership-${recordState}`}>
-                  {recordState === 'live' ? 'LIVE OWNERSHIP · OFFICIAL ETHSCRIPTIONS INDEXER' : recordState === 'loading' ? 'CHECKING CURRENT OWNERSHIP…' : 'RECORDED OWNERSHIP · LIVE CHECK TEMPORARILY UNAVAILABLE'}
-                </p>
-              </>
-            ) : (
-              <p className="empty-record">Ownership begins when a matching file is Ethscribed and accepted into the expedition record.</p>
-            )}
-          </section>}
-        </div>
-      </div>
-
-      <div className="artifact-detail-below">
-        {(artifact.status === 'open' || artifact.status === 'lost') && (
-          <TargetSubmission
-            artifact={artifact}
-            account={account}
-            chainId={chainId}
-            connectWallet={connectWallet}
-            switchToMainnet={switchToMainnet}
-            provider={provider}
-            onFindingPublished={onFindingPublished}
-          />
-        )}
-
-        {artifact.sourceUrl && (
-          <div className="artifact-links">
-            <a href={artifact.sourceUrl} target="_blank" rel="noreferrer">{artifact.status === 'lost' ? 'Inspect surviving evidence' : 'Inspect primary source'} <ArrowIcon /></a>
+            </section>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {!hasFinding && (
+        <div className="artifact-detail-below">
+          {!submissionOpen ? (
+            <button className="finding-launcher" type="button" aria-expanded="false" onClick={() => setSubmissionOpen(true)}>
+              <span>SUBMIT A FINDING</span><strong>Test a file or an Ethscription against this target.</strong><ArrowIcon />
+            </button>
+          ) : (
+            <TargetSubmission
+              artifact={artifact}
+              account={account}
+              chainId={chainId}
+              connectWallet={connectWallet}
+              switchToMainnet={switchToMainnet}
+              provider={provider}
+              onFindingPublished={onFindingPublished}
+              onClose={() => setSubmissionOpen(false)}
+            />
+          )}
+        </div>
+      )}
     </article>
   );
 }

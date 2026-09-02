@@ -129,18 +129,16 @@ test('expands secured and open artifact records directly in the timeline', async
   fireEvent.click(screen.getAllByRole('button', { name: /icobitcoin\.ico/i })[0]);
   expect(screen.getByRole('heading', { name: /file information/i })).toBeInTheDocument();
   expect(await screen.findByText('NOT LISTED')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: /hashing/i }));
-  expect(screen.getByRole('heading', { name: /hashing/i })).toBeInTheDocument();
+  expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /byte identity/i })).toBeInTheDocument();
   expect(screen.getByText('8571889ac8a29b5c2e537f3fb11973295fcffc8f9b348623aa87b3598e869033')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: /eth tx/i }));
   expect(screen.getByRole('heading', { name: /ethscription transaction/i })).toBeInTheDocument();
   expect(screen.getByText(/22 jun 2023 · 19:48:35 utc/i)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: '0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef' })).toHaveAttribute('href', 'https://etherscan.io/tx/0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef');
-  fireEvent.click(screen.getByRole('tab', { name: /ownership/i }));
-  expect(screen.getByRole('heading', { name: /ownership/i })).toBeInTheDocument();
-  expect(screen.getAllByRole('link', { name: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37' })).toHaveLength(2);
-  expect(await screen.findByText(/live ownership · official ethscriptions indexer/i)).toBeInTheDocument();
-  expect(global.fetch).toHaveBeenCalledWith('/api/ethscriptions/0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef');
+  expect(screen.queryByRole('heading', { name: /ownership/i })).not.toBeInTheDocument();
+  expect(screen.queryByText(/creator \/ ethscribing wallet/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/current owner/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/raw file keccak-256/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/ethereum block/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/collection status/i)).not.toBeInTheDocument();
@@ -149,10 +147,15 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByText(/attested artifact has no verified surviving bytes/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
-  fireEvent.click(screen.getByRole('tab', { name: /hashing/i }));
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /ethscription transaction/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /ownership/i })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText(/marketplace listing/i)).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /choose how to test your candidate/i })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /test your candidate/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /upload exact file/i })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /submit a finding/i }));
+  expect(screen.getByRole('heading', { name: /test your candidate/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /upload exact file/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /use existing ethscription/i })).toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: /test bytes against bitcoin\.xpm/i })).toBeInTheDocument();
@@ -161,6 +164,8 @@ test('expands secured and open artifact records directly in the timeline', async
   await waitFor(() => expect(screen.getByText(/market active · transaction ui enabled · indexer current/i)).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name: /use existing ethscription/i }));
   expect(screen.getByText(/connect the wallet that owns the ethscription/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /^close$/i }));
+  expect(screen.queryByRole('heading', { name: /test your candidate/i })).not.toBeInTheDocument();
 }, 25_000);
 
 test('loads existing wallet Ethscriptions from an expedition target', async () => {
@@ -202,6 +207,7 @@ test('loads existing wallet Ethscriptions from an expedition target', async () =
   render(<App />);
 
   fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
+  fireEvent.click(screen.getByRole('button', { name: /submit a finding/i }));
   fireEvent.click(screen.getByRole('button', { name: /use existing ethscription/i }));
   const picker = await screen.findByLabelText(/existing ethscription/i);
   expect(await screen.findByRole('option', { name: /ethscription #12345.*my wallet/i })).toBeInTheDocument();
