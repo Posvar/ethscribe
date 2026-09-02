@@ -394,9 +394,9 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
     if (!artifact.ethscriptionId) return null;
     if (!liveListing) return null;
     if (isSeller) return <a className="artifact-market-action" href="/wallet">MANAGE IN FIELD WALLET <ArrowIcon /></a>;
+    if (!custodyVerified || snapshot?.market?.transactionsEnabled === false) return null;
     if (!account) return <button className="artifact-market-action" type="button" onClick={connectWallet}>CONNECT WALLET TO BUY <ArrowIcon /></button>;
     if (!onMainnet) return <button className="artifact-market-action" type="button" onClick={switchToMainnet}>SWITCH TO ETHEREUM <ArrowIcon /></button>;
-    if (!custodyVerified || snapshot?.market?.transactionsEnabled === false) return null;
     if (purchase?.phase !== 'review') {
       return <button className="artifact-market-action" type="button" disabled={transactionBusy} onClick={() => setPurchase({ phase: 'review', hash: '', message: '' })}>BUY FOR {formatWeiAsEth(listing.priceWei)} ETH <ArrowIcon /></button>;
     }
@@ -421,7 +421,7 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
             <div><dt>SELLER</dt><dd><a href={`https://etherscan.io/address/${seller}`} target="_blank" rel="noreferrer">{shortAddress(seller)}</a></dd></div>
             <div><dt>CUSTODY</dt><dd>{custodyVerified ? 'VERIFIED IN MARKET' : 'VERIFYING…'}</dd></div>
           </dl>
-          {!custodyVerified && <p className="artifact-market-note">The listing is recorded, but purchase remains locked until contract custody and the official ownership index agree.</p>}
+          {!custodyVerified && <p className="artifact-market-note">{snapshot?.custody?.reason || 'Contract custody and the official ownership index are still reconciling.'} Ethscribe checks again automatically; purchase unlocks only after both records agree.</p>}
           {action}
         </>
       ) : (
