@@ -17,6 +17,7 @@ const WITHDRAW_ETHSCRIPTION_SELECTOR = '0x7e78ba70';
 const WITHDRAW_UNREGISTERED_ETHSCRIPTION_SELECTOR = '0x42ea2274';
 const CREATE_LISTING_SELECTOR = '0x822b4701';
 const CANCEL_LISTING_SELECTOR = '0x9299e552';
+const BUY_SELECTOR = '0x2dc78f67';
 const CLAIM_SELECTOR = '0x1e83409a';
 const MAX_UINT128 = (1n << 128n) - 1n;
 export const RECONCILIATION_TIMEOUT_MS = 10 * 60 * 1000;
@@ -121,6 +122,23 @@ export function buildCancelListingTransaction(account, ethscriptionId) {
     to: MARKET_ADDRESS,
     value: '0x0',
     data: `${CANCEL_LISTING_SELECTOR}${id.slice(2)}`,
+  };
+}
+
+export function buildBuyTransaction(account, seller, ethscriptionId, listingNonce, priceWei) {
+  const from = requireAddress(account, 'wallet');
+  const normalizedSeller = requireAddress(seller, 'seller');
+  const id = requireEthscriptionId(ethscriptionId);
+  const nonce = BigInt(listingNonce);
+  const price = BigInt(priceWei);
+  if (from.toLowerCase() === normalizedSeller.toLowerCase()) throw new Error('The seller cannot buy their own listing.');
+  if (nonce <= 0n || nonce > (1n << 64n) - 1n) throw new Error('Invalid listing nonce.');
+  if (price <= 0n || price > MAX_UINT128) throw new Error('Invalid listing price.');
+  return {
+    from,
+    to: MARKET_ADDRESS,
+    value: `0x${price.toString(16)}`,
+    data: `${BUY_SELECTOR}${normalizedSeller.slice(2).toLowerCase().padStart(64, '0')}${id.slice(2)}${uintWord(nonce)}${uintWord(price)}`,
   };
 }
 

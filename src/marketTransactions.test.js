@@ -1,5 +1,6 @@
 import {
   buildCancelListingTransaction,
+  buildBuyTransaction,
   buildClaimTransaction,
   buildCreateListingTransaction,
   buildDepositTransaction,
@@ -69,6 +70,16 @@ test('builds fixed-price listing, cancellation, and proceeds claim transactions'
   const claim = buildClaimTransaction(account);
   expect(claim.data.slice(0, 10)).toBe('0x1e83409a');
   expect(claim.data.slice(-40)).toBe(account.slice(2).toLowerCase());
+});
+
+test('builds a fixed-price purchase with stale-term protection', () => {
+  const seller = '0x1f01D99a90AD0C752e7765de29c386a169BD9E37';
+  const purchase = buildBuyTransaction(account, seller, id, '7', '1000000000000000000');
+  expect(purchase.value).toBe('0xde0b6b3a7640000');
+  expect(purchase.data.slice(0, 10)).toBe('0x2dc78f67');
+  expect(purchase.data).toHaveLength(2 + 8 + (64 * 4));
+  expect(purchase.data.slice(10 + 24, 10 + 64)).toBe(seller.slice(2).toLowerCase());
+  expect(() => buildBuyTransaction(seller, seller, id, '7', '1000000000000000000')).toThrow(/own listing/i);
 });
 
 test('simulates on mainnet before asking the wallet to send', async () => {

@@ -391,6 +391,76 @@ function reconcileCustody({ record, owner, deposit, currentBlock, indexer }) {
   };
 }
 
+function artifactMarketSnapshot({ record, market, deposit = null, listing = null }) {
+  const ethscription = publicEthscriptionRecord(record);
+  const inMarket = normalizeAddress(record.current_owner) === MARKET_ADDRESS_LOWER;
+  const seller = inMarket ? normalizeAddress(record.previous_owner) : '';
+
+  if (!inMarket || !seller) {
+    return {
+      ethscription,
+      seller: null,
+      listing: null,
+      custody: {
+        verified: false,
+        status: 'not_in_market',
+        reason: 'This Ethscription is not currently held by the Ethscribe marketplace.',
+      },
+      market,
+    };
+  }
+
+  return {
+    ethscription,
+    seller,
+    listing,
+    custody: reconcileCustody({
+      record,
+      owner: seller,
+      deposit,
+      currentBlock: market.blockNumber,
+      indexer: market.indexer,
+    }),
+    market,
+  };
+}
+
+async function getArtifactMarket(ethscriptionId) {
+  if (!isEthscriptionId(ethscriptionId)) throw new Error('Invalid Ethscription ID');
+  const [payload, market] = await Promise.all([
+    fetchJson(`${indexerUrl()}/ethscriptions/${ethscriptionId.toLowerCase()}`),
+    getMarketStatus(),
+  ]);
+  const record = payload?.result || payload;
+  if (!record?.transaction_hash) throw new Error('Ethscription record is unavailable');
+
+  const inMarket = normalizeAddress(record.current_owner) === MARKET_ADDRESS_LOWER;
+  const seller = inMarket ? normalizeAddress(record.previous_owner) : '';
+  if (!seller) return artifactMarketSnapshot({ record, market });
+
+  const [depositResponse, listingResponse] = await rpcBatch([
+    {
+      method: 'eth_call',
+      params: [{ to: MARKET_ADDRESS, data: encodePotentialDepositCall(seller, ethscriptionId) }, 'latest'],
+    },
+    {
+      method: 'eth_call',
+      params: [{ to: MARKET_ADDRESS, data: encodeListingCall(seller, ethscriptionId) }, 'latest'],
+    },
+  ]);
+
+  let deposit = null;
+  let listing = null;
+  if (depositResponse && !depositResponse.error && typeof depositResponse.result === 'string') {
+    try { deposit = decodePotentialDeposit(depositResponse.result); } catch { deposit = null; }
+  }
+  if (listingResponse && !listingResponse.error && typeof listingResponse.result === 'string') {
+    try { listing = decodeListing(listingResponse.result); } catch { listing = null; }
+  }
+
+  return artifactMarketSnapshot({ record, market, deposit, listing });
+}
+
 async function getWalletInventory(owner, options = {}) {
   if (!isAddress(owner)) throw new Error('Invalid owner address');
   const normalizedOwner = owner.toLowerCase();
@@ -517,12 +587,14 @@ module.exports = {
   MARKET_ADDRESS,
   SELECTORS,
   TRANSFER_COOLDOWN_BLOCKS,
+  artifactMarketSnapshot,
   decodePotentialDeposit,
   decodeListing,
   encodeClaimableCall,
   encodeListingCall,
   encodePotentialDepositCall,
   getMarketStatus,
+  getArtifactMarket,
   getWalletInventory,
   isAddress,
   isEthscriptionId,

@@ -148,13 +148,9 @@ test('labels verified expedition Findings and direct contract deposits separatel
   expect(screen.queryByText(/verified in market custody/i)).not.toBeInTheDocument();
 });
 
-test('uses a validated ENS name as the primary identity and keeps the address copyable', async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-
+test('keeps connected-wallet identity in the global header instead of repeating it in inventory', async () => {
   render(<WalletPage
     account={owner}
-    ensName="jeremy.eth"
     chainId="0x1"
     connectWallet={jest.fn()}
     switchToMainnet={jest.fn()}
@@ -162,11 +158,48 @@ test('uses a validated ENS name as the primary identity and keeps the address co
     footer={<div>FOOTER</div>}
   />);
 
-  expect(await screen.findByRole('heading', { name: 'jeremy.eth' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: /0x4B2E.*4Bba/i })).toHaveAttribute('href', `https://etherscan.io/address/${owner}`);
-  fireEvent.click(screen.getByRole('button', { name: 'COPY ADDRESS' }));
-  await waitFor(() => expect(writeText).toHaveBeenCalledWith(owner));
-  expect(screen.getByRole('button', { name: 'COPIED' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Your Ethscriptions' })).toBeInTheDocument();
+  expect(screen.queryByText('jeremy.eth')).not.toBeInTheDocument();
+  expect(screen.queryByText(/connected with/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /copy address/i })).not.toBeInTheDocument();
+});
+
+test('explains the one-time market registration required after direct-to-vault creation', async () => {
+  global.fetch = jest.fn(() => Promise.resolve({
+    ok: true,
+    json: async () => ({
+      result: {
+        owner: owner.toLowerCase(),
+        market: { ...market, paused: false, transactionsEnabled: true, intakeEnabled: true, exitsEnabled: true },
+        claimableWei: '0',
+        directlyOwned: [],
+        escrow: [{
+          transactionHash: ethscriptionId,
+          ethscriptionNumber: 16251030,
+          blockTimestamp: 1788250000,
+          mimetype: 'image/x-xpixmap',
+          custody: { verified: true, status: 'verified', custodyKind: 'direct_creation' },
+          listing: null,
+        }],
+        pagination: { directlyOwnedHasMore: false, escrowHasMore: false, maximumResultsPerSection: 50 },
+      },
+    }),
+  }));
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    header={<div>HEADER</div>}
+    footer={<div>FOOTER</div>}
+  />);
+
+  expect(await screen.findByText('REGISTRATION REQUIRED')).toBeInTheDocument();
+  expect(screen.getByText(/Ethscription ID.*did not exist until creation was mined/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /register for sale/i }));
+  expect(screen.getByRole('heading', { name: /register this Ethscription for sale/i })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /enable trading/i })).not.toBeInTheDocument();
 });
 
 test('withdraws verified custody back to the connected wallet while intake is paused', async () => {
@@ -400,8 +433,9 @@ test('presents temporary indexer lag as syncing rather than uncertain custody', 
     footer={<div>FOOTER</div>}
   />);
 
-  expect(await screen.findByText('INDEXER SYNCING')).toBeInTheDocument();
-  expect(screen.getByText(/ownership is unchanged\. withdrawal unlocks automatically/i)).toBeInTheDocument();
+  expect(await screen.findByText('SYNCING OWNERSHIP')).toBeInTheDocument();
+  expect(screen.getByText(/Ethscribe checks the official ownership index again automatically/i)).toBeInTheDocument();
+  expect(screen.getByText('FINALIZING MARKET UPDATE')).toBeInTheDocument();
 });
 
 test('stops reconciliation if the connected account changes after confirmation', async () => {

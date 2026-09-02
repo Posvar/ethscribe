@@ -19,6 +19,11 @@ export function fetchMarketStatus() {
   return request('/api/market/status');
 }
 
+export function fetchArtifactMarket(ethscriptionId) {
+  const query = new URLSearchParams({ id: ethscriptionId });
+  return request(`/api/market/artifact?${query.toString()}`);
+}
+
 export function fetchWalletInventory(owner, pageKeys = {}) {
   const query = new URLSearchParams({ owner });
   if (pageKeys.directPageKey) query.set('direct_page_key', pageKeys.directPageKey);

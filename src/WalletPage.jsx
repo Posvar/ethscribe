@@ -46,17 +46,17 @@ function formatWeiAsEth(value, maximumDecimals = 4) {
   }
 }
 
-function TransactionStatus({ transaction, onDismiss }) {
+function TransactionStatus({ transaction, onDismiss, countdown = 0 }) {
   if (!transaction) return null;
   const action = {
-    register: 'Trading registration',
+    register: 'Market registration',
     listing: 'Listing',
     'cancel-listing': 'Listing cancellation',
     withdraw: 'Withdrawal',
     claim: 'Marketplace balance claim',
   }[transaction.type] || 'Transaction';
   const completeMessage = {
-    register: 'Trading enabled. Contract registration and verified custody now agree.',
+    register: 'Market registration confirmed. This Ethscription can now be priced for sale.',
     listing: 'Listing confirmed at the selected ETH price.',
     'cancel-listing': 'Listing cancelled. The artifact remains in marketplace custody.',
     withdraw: 'Withdrawal verified. The official indexer reports the artifact back in this wallet.',
@@ -74,6 +74,7 @@ function TransactionStatus({ transaction, onDismiss }) {
     <div className={`wallet-transaction-status transaction-${transaction.phase}`} role="status">
       <div><span>{action.toUpperCase()} · {transaction.phase.toUpperCase()}</span><strong>{copy[transaction.phase]}</strong></div>
       {transaction.hash && <a href={`https://etherscan.io/tx/${transaction.hash}`} target="_blank" rel="noreferrer">View transaction</a>}
+      {transaction.phase === 'reconciling' && <small>NEXT AUTOMATIC CHECK IN {String(countdown || 0).padStart(2, '0')}S</small>}
       {(transaction.phase === 'complete' || transaction.phase === 'error') && <button type="button" onClick={onDismiss}>DISMISS</button>}
     </div>
   );
@@ -154,8 +155,8 @@ function MarketplaceControls({ record, registerAction, listingAction, cancelActi
   if (!registered) {
     return (
       <div className="wallet-market-actions">
-        <div><span>MARKETPLACE</span><strong>NOT ENABLED FOR TRADING</strong></div>
-        <p>This direct-to-vault artifact is safely held, but needs one registration transaction before it can be listed.</p>
+        <div><span>MARKETPLACE</span><strong>REGISTRATION REQUIRED</strong></div>
+        <p>This Ethscription was created directly in the vault. Its transaction hash—and therefore its Ethscription ID—did not exist until creation was mined. One registration transaction links that new ID to your market record before it can be priced.</p>
         <button type="button" disabled={registerAction.disabled} onClick={registerAction.onClick}>{registerAction.label} <ArrowIcon /></button>
         <small>{registerAction.hint}</small>
       </div>
@@ -226,8 +227,6 @@ export default function WalletPage({
   connectWallet,
   switchToMainnet,
   provider,
-  walletName,
-  ensName,
   resolvedFindings = [],
   findingIndexState = 'ready',
   header,
@@ -242,9 +241,10 @@ export default function WalletPage({
   const [inventoryView, setInventoryView] = useState('escrow');
   const [pageKeys, setPageKeys] = useState({ directPageKey: '', escrowPageKey: '' });
   const [pageHistory, setPageHistory] = useState({ direct: [], escrow: [] });
-  const [addressCopied, setAddressCopied] = useState(false);
+  const [autoRefreshIn, setAutoRefreshIn] = useState(0);
+  const [reconcileRefreshIn, setReconcileRefreshIn] = useState(0);
   const previousAccount = useRef(account);
-  const copyResetTimer = useRef(null);
+  const hasPendingCustody = Boolean(inventory?.escrow?.some((record) => !record.custody?.verified));
 
   const refresh = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) {
@@ -280,20 +280,36 @@ export default function WalletPage({
     setPageKeys({ directPageKey: '', escrowPageKey: '' });
     setPageHistory({ direct: [], escrow: [] });
     setInventoryView('escrow');
-    setAddressCopied(false);
   }, [account]);
-
-  useEffect(() => () => clearTimeout(copyResetTimer.current), []);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   useEffect(() => {
-    if (!account || loading || status?.indexer?.healthy !== false || transaction?.phase === 'reconciling') return undefined;
-    const timer = setTimeout(() => refresh({ quiet: true }), 12_000);
-    return () => clearTimeout(timer);
-  }, [account, inventory?.checkedAt, loading, refresh, status?.checkedAt, status?.indexer?.healthy, transaction?.phase]);
+    if (!account || transaction?.phase === 'reconciling') {
+      setAutoRefreshIn(0);
+      return undefined;
+    }
+    const intervalSeconds = hasPendingCustody ? 8 : 20;
+    setAutoRefreshIn(intervalSeconds);
+    const countdownTimer = setInterval(() => setAutoRefreshIn((current) => current <= 1 ? intervalSeconds : current - 1), 1_000);
+    const refreshTimer = setInterval(() => refresh({ quiet: true }), intervalSeconds * 1_000);
+    return () => {
+      clearInterval(countdownTimer);
+      clearInterval(refreshTimer);
+    };
+  }, [account, hasPendingCustody, refresh, transaction?.phase]);
+
+  useEffect(() => {
+    if (transaction?.phase !== 'reconciling') {
+      setReconcileRefreshIn(0);
+      return undefined;
+    }
+    setReconcileRefreshIn(12);
+    const timer = setInterval(() => setReconcileRefreshIn((current) => current <= 1 ? 12 : current - 1), 1_000);
+    return () => clearInterval(timer);
+  }, [transaction?.message, transaction?.phase]);
 
   useEffect(() => {
     if (!account || transaction?.phase !== 'reconciling') return undefined;
@@ -395,26 +411,6 @@ export default function WalletPage({
     (finding) => finding.ethscriptionId?.toLowerCase() === record.transactionHash?.toLowerCase(),
   ) || null;
 
-  const copyAddress = async () => {
-    if (!account) return;
-    try {
-      await navigator.clipboard.writeText(account);
-    } catch {
-      const copyField = document.createElement('textarea');
-      copyField.value = account;
-      copyField.setAttribute('readonly', '');
-      copyField.style.position = 'fixed';
-      copyField.style.opacity = '0';
-      document.body.appendChild(copyField);
-      copyField.select();
-      document.execCommand('copy');
-      copyField.remove();
-    }
-    setAddressCopied(true);
-    clearTimeout(copyResetTimer.current);
-    copyResetTimer.current = setTimeout(() => setAddressCopied(false), 2_000);
-  };
-
   const showNextInventoryPage = () => {
     if (!visibleHasMore || !visibleNextPageKey) return;
     const pageKeyName = inventoryView === 'escrow' ? 'escrowPageKey' : 'directPageKey';
@@ -486,12 +482,15 @@ export default function WalletPage({
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
     if (!record.custody?.verified) {
       const indexerSyncing = ['indexer_lagging', 'indexer_unavailable'].includes(record.custody?.status);
+      const cooldownRemaining = Number(record.custody?.cooldownRemaining || 0);
       return {
         disabled: true,
-        label: indexerSyncing ? 'INDEXER SYNCING' : 'WAITING FOR VERIFICATION',
-        hint: indexerSyncing
-          ? 'Ownership is unchanged. Withdrawal unlocks automatically when the official index catches up.'
-          : record.custody?.reason || 'Contract and indexer custody must agree first.',
+        label: cooldownRemaining > 0 ? `FINALIZING · ${cooldownRemaining} BLOCK${cooldownRemaining === 1 ? '' : 'S'}` : indexerSyncing ? 'SYNCING OWNERSHIP' : 'VERIFYING CUSTODY',
+        hint: cooldownRemaining > 0
+          ? `Ethereum requires ${cooldownRemaining} more confirmation block${cooldownRemaining === 1 ? '' : 's'}. Ethscribe checks again automatically.`
+          : indexerSyncing
+            ? 'Ownership is unchanged. Ethscribe checks the official ownership index again automatically.'
+            : record.custody?.reason || 'Contract and indexer custody must agree first.',
       };
     }
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Withdrawals use Ethereum mainnet.' };
@@ -508,8 +507,8 @@ export default function WalletPage({
     if (hasDepositSelectorCollision(record.transactionHash)) return { disabled: true, label: 'TRADING UNAVAILABLE', hint: 'This Ethscription ID conflicts with a reserved market action.' };
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Trading registration uses Ethereum mainnet.' };
-    if (!market?.intakeEnabled) return { disabled: true, label: 'ENABLE TRADING UNAVAILABLE', hint: 'Market intake or official ownership data is temporarily unavailable.' };
-    return { disabled: false, label: 'ENABLE TRADING', hint: 'Registers this vault-held Ethscription with the market. It does not list the artifact yet.', onClick: () => openConfirmation('register', record) };
+    if (!market?.intakeEnabled) return { disabled: true, label: 'REGISTRATION UNAVAILABLE', hint: 'Market intake or official ownership data is temporarily unavailable.' };
+    return { disabled: false, label: 'REGISTER FOR SALE', hint: 'One-time step. After confirmation, Ethscribe waits for five Ethereum blocks and verifies official ownership automatically.', onClick: () => openConfirmation('register', record) };
   };
 
   const listingAction = (record) => {
@@ -576,19 +575,12 @@ export default function WalletPage({
             <div className="wallet-empty-action"><p className="kicker"><span /> Wallet not connected</p><h2>Connect to inspect your artifacts.</h2><p>This read-only view requests no signature and sends no transaction.</p><button className="primary-action" type="button" onClick={connectWallet}>Connect wallet <ArrowIcon /></button></div>
           ) : (
             <>
-              <div className="wallet-section-heading wallet-account-heading">
-                <div>
-                  <p className="kicker"><span /> Connected with {walletName || 'Ethereum wallet'}</p>
-                  <h2>{ensName || shortAddress(account)}</h2>
-                  <div className="wallet-address-line">
-                    <a href={`https://etherscan.io/address/${account}`} target="_blank" rel="noreferrer">{shortAddress(account)}</a>
-                    <button type="button" onClick={copyAddress}>{addressCopied ? 'COPIED' : 'COPY ADDRESS'}</button>
-                  </div>
-                </div>
-                {!onMainnet && <button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button>}
-              </div>
+              {!onMainnet && <div className="wallet-network-notice"><p>Marketplace actions use Ethereum mainnet.</p><button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button></div>}
 
-              <TransactionStatus transaction={transaction} onDismiss={() => setTransaction(null)} />
+              <TransactionStatus transaction={transaction} countdown={reconcileRefreshIn} onDismiss={() => setTransaction(null)} />
+              {hasPendingCustody && transaction?.phase !== 'reconciling' && (
+                <div className="wallet-processing-notice" role="status"><div><span>FINALIZING MARKET UPDATE</span><strong>Ethereum or the official ownership index is still catching up.</strong></div><p>Ethscribe checks again automatically in {autoRefreshIn || 0}s. No action is required.</p></div>
+              )}
 
               <div className="wallet-inventory-section">
                 <div className="wallet-inventory-title">
@@ -648,14 +640,14 @@ export default function WalletPage({
             <button className="modal-close" type="button" onClick={() => setConfirmation(null)} aria-label="Close">×</button>
             <p className="kicker"><span /> Marketplace action</p>
             <h2 id="wallet-confirmation-title">{{
-              register: 'Enable trading for this Ethscription?',
+              register: 'Register this Ethscription for sale?',
               listing: confirmation.record?.listing?.active ? 'Update this listing?' : 'List this Ethscription?',
               'cancel-listing': 'Cancel this listing?',
               withdraw: 'Withdraw this Ethscription?',
               claim: 'Claim your marketplace credit?',
             }[confirmation.type]}</h2>
             <p>{{
-              register: 'Registers this direct-to-vault Ethscription for trading while it remains in marketplace custody. You will set a price separately.',
+              register: 'This one-time transaction links the now-known Ethscription ID to your marketplace deposit. The artifact remains in custody; after verification, you can set its price separately.',
               listing: `Creates a public fixed-price listing for ${confirmation.price} ETH. A completed sale credits 95% to you and 5% to the Ethscribe treasury.`,
               'cancel-listing': 'Removes the fixed-price listing. The Ethscription remains safely in marketplace custody.',
               withdraw: confirmation.record?.listing?.active

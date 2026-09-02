@@ -122,15 +122,22 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.getByText(/Its exact bytes are this expedition’s real mystery/i)).toBeInTheDocument();
   expect(screen.getByText(/“New icons, what do you think\?” Satoshi releases new Bitcoin PNGs into the public domain/i)).toBeInTheDocument();
   expect(screen.getByText(/This is his final contribution to bitcoin's identity/i)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'The ₿ coin is revealed' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'The end of an era' })).toBeInTheDocument();
+  expect(screen.getByText(/Bitboy introduces the orange, tilted mark\. Icons of that later community era belong in a separate expedition\./i)).toBeInTheDocument();
 
   fireEvent.click(screen.getAllByRole('button', { name: /icobitcoin\.ico/i })[0]);
   expect(screen.getByRole('heading', { name: /file information/i })).toBeInTheDocument();
+  expect(await screen.findByText('NOT LISTED')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: /hashing/i }));
   expect(screen.getByRole('heading', { name: /hashing/i })).toBeInTheDocument();
+  expect(screen.getByText('8571889ac8a29b5c2e537f3fb11973295fcffc8f9b348623aa87b3598e869033')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: /eth tx/i }));
   expect(screen.getByRole('heading', { name: /ethscription transaction/i })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /ownership/i })).toBeInTheDocument();
-  expect(screen.getByText('0x1a27e03916705c933876019cbe617384d7201c979ba244479528eb0cb8544e72')).toBeInTheDocument();
   expect(screen.getByText(/22 jun 2023 · 19:48:35 utc/i)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: '0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef' })).toHaveAttribute('href', 'https://etherscan.io/tx/0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef');
+  fireEvent.click(screen.getByRole('tab', { name: /ownership/i }));
+  expect(screen.getByRole('heading', { name: /ownership/i })).toBeInTheDocument();
   expect(screen.getAllByRole('link', { name: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37' })).toHaveLength(2);
   expect(await screen.findByText(/live ownership · official ethscriptions indexer/i)).toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledWith('/api/ethscriptions/0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef');
@@ -142,6 +149,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.queryByText(/attested artifact has no verified surviving bytes/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /^xpmbitcoin\.xpm$/i }));
+  fireEvent.click(screen.getByRole('tab', { name: /hashing/i }));
   expect(screen.getByText(/expected sha-256 sealed while the hunt is open/i)).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /inspect primary source/i })).not.toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /choose how to test your candidate/i })).toBeInTheDocument();
@@ -229,6 +237,14 @@ test('promotes an exact verified Finding into the live expedition grid and count
         verifiedAt: '2026-09-01T12:00:00.000Z',
       }] }) };
     }
+    if (String(url).startsWith('/api/market/artifact?')) {
+      return { ok: true, json: async () => ({ result: {
+        seller: `0x${'33'.repeat(20)}`,
+        listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
+        custody: { verified: true, status: 'verified' },
+        market: { transactionsEnabled: true },
+      } }) };
+    }
     return { ok: true, json: async () => ({ result: {} }) };
   });
   window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi');
@@ -236,6 +252,10 @@ test('promotes an exact verified Finding into the live expedition grid and count
 
   expect(await screen.findByRole('button', { name: /open field note for bitcoin20\.xpm, ethscribed/i })).toBeInTheDocument();
   expect(screen.getByLabelText('8 of 22 artifacts secured')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /open field note for bitcoin20\.xpm, ethscribed/i }));
+  expect(await screen.findByText('ACTIVE LISTING')).toBeInTheDocument();
+  expect(screen.getByText('1 ETH')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /connect wallet to buy/i })).toBeInTheDocument();
 });
 
 test('renders a compact newest-first Expeditions archive with a dedicated proposal entry point', () => {

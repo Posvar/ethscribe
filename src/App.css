@@ -486,7 +486,7 @@
     padding: 40px;
   }
 
-  .timeline-expanded .artifact-detail {
+  .timeline-expanded .artifact-detail-overview {
     grid-template-columns: 1fr;
   }
 }
@@ -2243,14 +2243,20 @@ footer > span {
 .artifact-detail {
   background: #f9f6ee;
   border: 1px solid var(--ink);
-  display: grid;
-  grid-template-columns: minmax(260px, 0.68fr) 1.32fr;
   margin-top: 62px;
-  min-height: 530px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.artifact-detail-overview {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr);
 }
 
 .artifact-detail-visual {
   align-items: center;
+  align-self: start;
+  aspect-ratio: 1;
   background-color: #171715;
   background-image: linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
   background-size: 22px 22px;
@@ -2258,9 +2264,10 @@ footer > span {
   flex-direction: column;
   gap: 24px;
   justify-content: center;
-  min-height: 430px;
-  padding: 50px;
+  min-height: 0;
+  padding: 34px;
   position: relative;
+  width: 100%;
 }
 
 .file-preview,
@@ -2371,8 +2378,8 @@ footer > span {
   margin-top: 7px;
 }
 
-.artifact-detail-copy {
-  padding: clamp(30px, 4vw, 62px);
+.artifact-detail-summary {
+  padding: clamp(30px, 4vw, 58px);
 }
 
 .detail-heading {
@@ -2454,11 +2461,51 @@ footer > span {
 }
 
 .artifact-record-sections {
-  border: 1px solid var(--line);
+  border: 0;
 }
 
-.artifact-record-section + .artifact-record-section {
+.artifact-record-shell {
   border-top: 1px solid var(--line);
+}
+
+.artifact-record-tabs {
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.artifact-record-tabs button {
+  align-items: center;
+  background: #ece7dc;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 11px;
+  letter-spacing: 0.07em;
+  min-height: 56px;
+  padding: 0 20px;
+  text-align: left;
+}
+
+.artifact-record-tabs button + button {
+  border-left: 1px solid var(--ink);
+}
+
+.artifact-record-tabs button.active {
+  background: var(--signal);
+}
+
+.artifact-record-tabs button span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.artifact-record-tabs button.active span {
+  color: var(--ink);
 }
 
 .artifact-record-section > h4 {
@@ -2471,6 +2518,179 @@ footer > span {
   gap: 12px;
   margin: 0;
   padding: 14px 16px;
+}
+
+.artifact-detail-below {
+  padding: 0 clamp(30px, 4vw, 58px) clamp(30px, 4vw, 58px);
+}
+
+.artifact-market-card {
+  border: 1px solid var(--ink);
+  margin-top: 30px;
+}
+
+.artifact-market-card.has-listing {
+  box-shadow: inset 6px 0 0 var(--signal);
+}
+
+.artifact-market-heading {
+  align-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.artifact-market-heading span,
+.artifact-market-heading strong,
+.artifact-market-price span,
+.artifact-market-card dt,
+.artifact-market-card dd,
+.artifact-market-action,
+.artifact-market-note,
+.artifact-purchase-status,
+.artifact-market-review {
+  font-family: "Courier New", monospace;
+}
+
+.artifact-market-heading span,
+.artifact-market-heading strong {
+  font-size: 8px;
+  letter-spacing: 0.09em;
+}
+
+.artifact-market-heading strong {
+  color: var(--signal);
+}
+
+.artifact-market-price {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  padding: 19px 16px 15px;
+}
+
+.artifact-market-price strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(31px, 3vw, 44px);
+  font-weight: 400;
+}
+
+.artifact-market-price span {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.artifact-market-card dl {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+}
+
+.artifact-market-card dl > div {
+  display: grid;
+  gap: 6px;
+  padding: 12px 16px;
+}
+
+.artifact-market-card dl > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.artifact-market-card dt {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.artifact-market-card dd {
+  font-size: 9px;
+  margin: 0;
+}
+
+.artifact-market-note {
+  color: #5c5952;
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 16px;
+}
+
+.artifact-market-action {
+  align-items: center;
+  background: var(--signal);
+  border: 0;
+  border-top: 1px solid var(--ink);
+  box-sizing: border-box;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 9px;
+  font-weight: 700;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 16px;
+  text-decoration: none;
+  width: 100%;
+}
+
+.artifact-market-action svg {
+  fill: none;
+  height: 15px;
+  stroke: currentColor;
+  width: 15px;
+}
+
+.artifact-market-review {
+  border-top: 1px solid var(--ink);
+  font-size: 10px;
+  padding: 15px 16px;
+}
+
+.artifact-market-review p {
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.artifact-market-review > div {
+  display: flex;
+  gap: 8px;
+}
+
+.artifact-market-review button {
+  background: var(--signal);
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.artifact-market-review button + button {
+  background: transparent;
+}
+
+.artifact-purchase-status {
+  border-top: 1px solid var(--ink);
+  font-size: 9px;
+  line-height: 1.5;
+  padding: 14px 16px;
+}
+
+.artifact-purchase-status strong {
+  color: #466300;
+}
+
+.artifact-purchase-status p {
+  margin: 6px 0;
 }
 
 .artifact-record-section > h4 span {
@@ -2902,7 +3122,7 @@ footer > span {
   }
 
   .hunt-overview,
-  .artifact-detail {
+  .artifact-detail-overview {
     grid-template-columns: 1fr;
   }
 
@@ -3108,13 +3328,37 @@ footer > span {
   }
 
   .artifact-detail {
-    grid-template-columns: 1fr;
     margin-top: 45px;
+  }
+
+  .artifact-detail-overview {
+    grid-template-columns: 1fr;
   }
 
   .artifact-detail-visual {
     min-height: 350px;
     padding: 35px;
+  }
+
+  .artifact-record-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artifact-record-tabs button:nth-child(3) {
+    border-left: 0;
+  }
+
+  .artifact-record-tabs button:nth-child(n + 3) {
+    border-top: 1px solid var(--ink);
+  }
+
+  .artifact-market-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .artifact-market-card dl > div + div {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
   .detail-heading {
@@ -3745,7 +3989,7 @@ footer > span {
 .wallet-hero {
   background: var(--ink);
   color: var(--paper);
-  padding: 54px max(50px, calc((100vw - 1440px) / 2)) 46px;
+  padding: 38px max(50px, calc((100vw - 1440px) / 2)) 34px;
 }
 
 .wallet-hero > div:first-child {
@@ -3758,7 +4002,7 @@ footer > span {
 
 .wallet-hero h1 {
   font-family: Georgia, serif;
-  font-size: clamp(54px, 5.5vw, 78px);
+  font-size: clamp(50px, 5vw, 68px);
   font-weight: normal;
   letter-spacing: -0.055em;
   line-height: 0.88;
@@ -3776,7 +4020,7 @@ footer > span {
 .wallet-identity {
   margin: 0 auto;
   max-width: 1440px;
-  padding: 34px 50px 90px;
+  padding: 24px 50px 90px;
 }
 
 .wallet-section-heading {
@@ -3834,52 +4078,63 @@ footer > span {
   margin: 25px 0;
 }
 
-.wallet-account-heading {
-  border-bottom: 1px solid var(--ink);
-  padding-bottom: 22px;
+.wallet-inventory-section {
+  padding-top: 0;
 }
 
-.wallet-account-heading h2 {
-  font-size: clamp(30px, 3vw, 44px);
-  margin-top: 9px;
+.wallet-network-notice,
+.wallet-processing-notice {
+  align-items: center;
+  border: 1px solid var(--ink);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding: 14px 16px;
 }
 
-.wallet-account-heading a {
-  color: inherit;
-  display: inline-block;
+.wallet-network-notice p {
   font-family: "Courier New", monospace;
   font-size: 10px;
-  margin-top: 18px;
-}
-
-.wallet-address-line {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 9px;
-}
-
-.wallet-account-heading .wallet-address-line a,
-.wallet-address-line button {
-  font-family: "Courier New", monospace;
-  font-size: 11px;
-  letter-spacing: 0.06em;
   margin: 0;
 }
 
-.wallet-address-line button {
-  background: transparent;
-  border: 0;
-  color: var(--ink);
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.wallet-network-notice .primary-action {
+  min-height: 40px;
 }
 
-.wallet-inventory-section {
-  padding-top: 28px;
+.wallet-processing-notice {
+  background: #ece7dc;
+}
+
+.wallet-processing-notice > div {
+  display: grid;
+  gap: 6px;
+}
+
+.wallet-processing-notice span,
+.wallet-processing-notice strong,
+.wallet-processing-notice p {
+  font-family: "Courier New", monospace;
+}
+
+.wallet-processing-notice span {
+  color: #466300;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.wallet-processing-notice strong {
+  font-size: 11px;
+}
+
+.wallet-processing-notice p {
+  font-size: 9px;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 360px;
+  text-align: right;
 }
 
 .wallet-inventory-title {
@@ -4392,8 +4647,8 @@ footer > span {
   color: var(--paper);
   display: grid;
   gap: 20px;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  margin-top: 35px;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  margin-bottom: 18px;
   padding: 22px;
 }
 
@@ -4412,10 +4667,16 @@ footer > span {
 
 .wallet-transaction-status span,
 .wallet-transaction-status a,
-.wallet-transaction-status button {
+.wallet-transaction-status button,
+.wallet-transaction-status small {
   font-family: "Courier New", monospace;
   font-size: 9px;
   letter-spacing: 0.07em;
+}
+
+.wallet-transaction-status small {
+  color: #c9c6bd;
+  white-space: nowrap;
 }
 
 .wallet-transaction-status strong {
@@ -4572,6 +4833,17 @@ footer > span {
 
   .wallet-identity {
     padding: 38px 25px 70px;
+  }
+
+  .wallet-network-notice,
+  .wallet-processing-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wallet-processing-notice p {
+    max-width: none;
+    text-align: left;
   }
 
   .wallet-section-heading {

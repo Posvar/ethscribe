@@ -337,7 +337,7 @@ export const timelineEvents = [
   {
     id: 'new-logo',
     date: '24 FEB–02 MAR 2010',
-    title: 'The B coin is revealed',
+    title: 'The ₿ coin is revealed',
     copy: '“New icons, what do you think?” Satoshi releases new Bitcoin PNGs into the public domain via the bitcointalk.org forum.',
     artifactIds: ['new-png-16', 'new-png-20', 'new-png-32', 'new-png-48', 'full-size-png'],
   },
@@ -351,8 +351,8 @@ export const timelineEvents = [
   {
     id: 'bitboy-boundary',
     date: 'NOV 2010',
-    title: 'A new author takes over',
-    copy: 'Bitboy introduces the orange, tilted mark. That later community era belongs in a separate expedition.',
+    title: 'The end of an era',
+    copy: 'Bitboy introduces the orange, tilted mark. Icons of that later community era belong in a separate expedition.',
     artifactIds: [],
     state: 'boundary',
   },

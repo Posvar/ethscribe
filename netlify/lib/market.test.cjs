@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   MARKET_ADDRESS,
+  artifactMarketSnapshot,
   decodeListing,
   decodePotentialDeposit,
   encodeClaimableCall,
@@ -106,6 +107,36 @@ test('verifies a direct-to-market creation without inventing a deposit record', 
   });
   assert.equal(wrongCreator.verified, false);
   assert.equal(wrongCreator.status, 'contract_inactive');
+});
+
+test('publishes a verified public listing snapshot for an artifact in market custody', () => {
+  const record = {
+    transaction_hash: ID,
+    ethscription_number: 16251030,
+    block_number: '100',
+    block_timestamp: '1700000000',
+    creator: OWNER,
+    initial_owner: MARKET_ADDRESS,
+    current_owner: MARKET_ADDRESS,
+    previous_owner: OWNER,
+    mimetype: 'image/x-xpixmap',
+  };
+  const market = {
+    blockNumber: 110,
+    indexer: { available: true, healthy: true, blocksBehind: 0 },
+  };
+  const listing = { active: true, priceWei: '1000000000000000000', listingNonce: '1' };
+  const snapshot = artifactMarketSnapshot({
+    record,
+    market,
+    deposit: { receivedBlock: 101, nonce: '1', active: true },
+    listing,
+  });
+
+  assert.equal(snapshot.seller, OWNER.toLowerCase());
+  assert.equal(snapshot.listing, listing);
+  assert.equal(snapshot.custody.verified, true);
+  assert.equal(snapshot.ethscription.transactionHash, ID);
 });
 
 test('fails closed for indexer lag, ownership mismatch, and cooldown', () => {

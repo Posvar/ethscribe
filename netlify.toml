@@ -21,6 +21,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/market/artifact"
+  to = "/.netlify/functions/market-artifact"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/market/wallet"
   to = "/.netlify/functions/market-wallet"
   status = 200

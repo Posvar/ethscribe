@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 import DocsPage from './DocsPage';
 import EthscribeWorkbench from './EthscribeWorkbench';
@@ -6,7 +6,14 @@ import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
 import { fetchVerifiedFindings, mergeVerifiedFindings, statsForArtifacts } from './findingApi';
-import { fetchWalletInventory } from './marketApi';
+import { fetchArtifactMarket, fetchWalletInventory } from './marketApi';
+import { MAINNET_CHAIN_ID } from './marketConfig';
+import {
+  buildBuyTransaction,
+  friendlyTransactionError,
+  simulateAndSendTransaction,
+  waitForTransactionReceipt,
+} from './marketTransactions';
 import {
   buildExpeditionProposal,
   fetchExpeditionProposals,
@@ -41,6 +48,17 @@ function WalletIcon() {
 
 function shortAddress(address) {
   return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '';
+}
+
+function formatWeiAsEth(value, maximumDecimals = 4) {
+  try {
+    const wei = BigInt(value || 0);
+    const whole = wei / 10n ** 18n;
+    const fraction = (wei % 10n ** 18n).toString().padStart(18, '0').slice(0, maximumDecimals).replace(/0+$/, '');
+    return fraction ? `${whole}.${fraction}` : whole.toString();
+  } catch {
+    return '—';
+  }
 }
 
 function formatBytes(bytes) {
@@ -299,9 +317,131 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
   );
 }
 
+function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switchToMainnet, provider }) {
+  const [snapshot, setSnapshot] = useState(null);
+  const [marketState, setMarketState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
+  const [purchase, setPurchase] = useState(null);
+
+  const loadMarket = useCallback(async ({ quiet = false } = {}) => {
+    if (!artifact.ethscriptionId) return null;
+    if (!quiet) setMarketState('loading');
+    try {
+      const nextSnapshot = await fetchArtifactMarket(artifact.ethscriptionId);
+      setSnapshot(nextSnapshot);
+      setMarketState('ready');
+      return nextSnapshot;
+    } catch {
+      if (!quiet) setMarketState('error');
+      return null;
+    }
+  }, [artifact.ethscriptionId]);
+
+  useEffect(() => {
+    let active = true;
+    let timer;
+
+    if (!artifact.ethscriptionId) {
+      setSnapshot(null);
+      setMarketState('idle');
+      return () => {};
+    }
+
+    loadMarket().then(() => {
+      if (active) timer = setInterval(() => loadMarket({ quiet: true }), 15_000);
+    });
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [artifact.ethscriptionId, loadMarket]);
+
+  const listing = snapshot?.listing;
+  const liveListing = Boolean(listing?.active && !listing?.expired);
+  const custodyVerified = Boolean(snapshot?.custody?.verified);
+  const seller = snapshot?.seller;
+  const isSeller = Boolean(account && seller && account.toLowerCase() === seller.toLowerCase());
+  const onMainnet = chainId?.toLowerCase() === MAINNET_CHAIN_ID;
+  const transactionBusy = purchase && ['simulating', 'mining', 'settling'].includes(purchase.phase);
+
+  const buyListing = async () => {
+    if (!account || !seller || !liveListing || !custodyVerified) return;
+    setPurchase({ phase: 'simulating', hash: '', message: '' });
+    try {
+      const request = buildBuyTransaction(
+        account,
+        seller,
+        artifact.ethscriptionId,
+        listing.listingNonce,
+        listing.priceWei,
+      );
+      const hash = await simulateAndSendTransaction(provider, request);
+      setPurchase({ phase: 'mining', hash, message: '' });
+      await waitForTransactionReceipt(provider, hash);
+      setPurchase({ phase: 'settling', hash, message: 'Purchase confirmed. Updating the public ownership record.' });
+      await loadMarket({ quiet: true });
+      setPurchase({ phase: 'complete', hash, message: 'Purchase confirmed on Ethereum.' });
+    } catch (purchaseError) {
+      setPurchase((current) => ({
+        phase: 'error',
+        hash: current?.hash || '',
+        message: friendlyTransactionError(purchaseError),
+      }));
+    }
+  };
+
+  const action = (() => {
+    if (!artifact.ethscriptionId) return null;
+    if (!liveListing) return null;
+    if (isSeller) return <a className="artifact-market-action" href="/wallet">MANAGE IN FIELD WALLET <ArrowIcon /></a>;
+    if (!account) return <button className="artifact-market-action" type="button" onClick={connectWallet}>CONNECT WALLET TO BUY <ArrowIcon /></button>;
+    if (!onMainnet) return <button className="artifact-market-action" type="button" onClick={switchToMainnet}>SWITCH TO ETHEREUM <ArrowIcon /></button>;
+    if (!custodyVerified || snapshot?.market?.transactionsEnabled === false) return null;
+    if (purchase?.phase !== 'review') {
+      return <button className="artifact-market-action" type="button" disabled={transactionBusy} onClick={() => setPurchase({ phase: 'review', hash: '', message: '' })}>BUY FOR {formatWeiAsEth(listing.priceWei)} ETH <ArrowIcon /></button>;
+    }
+    return (
+      <div className="artifact-market-review">
+        <p>Your wallet will send exactly <strong>{formatWeiAsEth(listing.priceWei)} ETH</strong>, plus network gas.</p>
+        <div><button type="button" onClick={buyListing}>CONFIRM PURCHASE</button><button type="button" onClick={() => setPurchase(null)}>CANCEL</button></div>
+      </div>
+    );
+  })();
+
+  return (
+    <section className={`artifact-market-card${liveListing ? ' has-listing' : ''}`} aria-label="Marketplace listing">
+      <div className="artifact-market-heading">
+        <span>MARKETPLACE</span>
+        <strong>{marketState === 'loading' ? 'CHECKING LISTING…' : marketState === 'error' ? 'LISTING UNAVAILABLE' : liveListing ? 'ACTIVE LISTING' : 'NOT LISTED'}</strong>
+      </div>
+      {liveListing ? (
+        <>
+          <div className="artifact-market-price"><strong>{formatWeiAsEth(listing.priceWei)} ETH</strong><span>FIXED PRICE</span></div>
+          <dl>
+            <div><dt>SELLER</dt><dd><a href={`https://etherscan.io/address/${seller}`} target="_blank" rel="noreferrer">{shortAddress(seller)}</a></dd></div>
+            <div><dt>CUSTODY</dt><dd>{custodyVerified ? 'VERIFIED IN MARKET' : 'VERIFYING…'}</dd></div>
+          </dl>
+          {!custodyVerified && <p className="artifact-market-note">The listing is recorded, but purchase remains locked until contract custody and the official ownership index agree.</p>}
+          {action}
+        </>
+      ) : (
+        <p className="artifact-market-note">{artifact.ethscriptionId ? 'No active fixed-price listing is attached to this artifact.' : 'A marketplace listing can begin after the target is recovered, verified, and Ethscribed.'}</p>
+      )}
+      {purchase && !['review'].includes(purchase.phase) && (
+        <div className={`artifact-purchase-status purchase-${purchase.phase}`} role="status">
+          <strong>{purchase.phase === 'simulating' ? 'CHECKING PURCHASE' : purchase.phase === 'mining' ? 'WAITING FOR ETHEREUM' : purchase.phase === 'settling' ? 'UPDATING OWNERSHIP' : purchase.phase === 'complete' ? 'PURCHASE CONFIRMED' : 'PURCHASE NOT COMPLETED'}</strong>
+          <p>{purchase.message || (purchase.phase === 'simulating' ? 'Checking the live price and expected transaction before opening your wallet.' : 'The transaction is pending in your wallet and on Ethereum.')}</p>
+          {purchase.hash && <a href={`https://etherscan.io/tx/${purchase.hash}`} target="_blank" rel="noreferrer">VIEW TRANSACTION</a>}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished }) {
   const [chainRecord, setChainRecord] = useState(null);
   const [recordState, setRecordState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
+  const [activeTab, setActiveTab] = useState('file');
   const statusCopy = {
     secured: 'ETHSCRIBED · VERIFIED MATCH',
     open: 'OPEN HUNT · NEEDS ETHSCRIBING',
@@ -340,16 +480,17 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
 
   return (
     <article className={`artifact-detail detail-${artifact.status}`} aria-live="polite">
-      <div className="artifact-detail-visual">
-        <ArtifactPreview artifact={artifact} />
-        {artifact.status === 'secured' && (
-          <p className="display-scale-note">
-            {isSmallArtifact(artifact) ? 'PREVIEW ENLARGED WITH NEAREST-NEIGHBOR SCALING' : 'PREVIEW SCALED FOR INSPECTION'}<br />
-            NATIVE {artifact.dimensions}
-          </p>
-        )}
-      </div>
-      <div className="artifact-detail-copy">
+      <div className="artifact-detail-overview">
+        <div className="artifact-detail-visual">
+          <ArtifactPreview artifact={artifact} />
+          {artifact.status === 'secured' && (
+            <p className="display-scale-note">
+              {isSmallArtifact(artifact) ? 'PREVIEW ENLARGED WITH NEAREST-NEIGHBOR SCALING' : 'PREVIEW SCALED FOR INSPECTION'}<br />
+              NATIVE {artifact.dimensions}
+            </p>
+          )}
+        </div>
+        <div className="artifact-detail-summary">
         <div className="detail-heading">
           <div><p>{artifact.date} / {artifact.release}</p><h3>{artifact.filename}</h3></div>
           <span className={`artifact-state state-${artifact.status}`}>{statusCopy[artifact.status]}</span>
@@ -363,8 +504,30 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
           </div>
         )}
 
+        <ArtifactMarketPanel
+          artifact={artifact}
+          account={account}
+          chainId={chainId}
+          connectWallet={connectWallet}
+          switchToMainnet={switchToMainnet}
+          provider={provider}
+        />
+        </div>
+      </div>
+
+      <div className="artifact-record-shell">
+        <div className="artifact-record-tabs" role="tablist" aria-label="Artifact record sections">
+          {[
+            ['file', '01', 'FILE INFO'],
+            ['hashing', '02', 'HASHING'],
+            ['transaction', '03', 'ETH TX'],
+            ['ownership', '04', 'OWNERSHIP'],
+          ].map(([id, number, label]) => (
+            <button type="button" role="tab" id={`record-tab-${artifact.id}-${id}`} aria-controls={`record-panel-${artifact.id}-${id}`} aria-selected={activeTab === id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)} key={id}><span>{number}</span>{label}</button>
+          ))}
+        </div>
         <div className="artifact-record-sections">
-          <section className="artifact-record-section">
+          {activeTab === 'file' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-file`} aria-labelledby={`record-tab-${artifact.id}-file`}>
             <h4><span>01</span> File information</h4>
             <dl className="artifact-record-grid compact-record-grid">
               <RecordFact label="FORMAT" value={artifact.format} />
@@ -372,9 +535,9 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
               <RecordFact label="RAW FILE SIZE" value={formatBytes(artifact.bytes)} />
               <RecordFact label={artifact.status === 'secured' ? 'VERIFIED SOURCE' : 'SOURCE CLUE'} value={artifact.sourceLabel} className="record-fact-wide" />
             </dl>
-          </section>
+          </section>}
 
-          <section className="artifact-record-section">
+          {activeTab === 'hashing' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-hashing`} aria-labelledby={`record-tab-${artifact.id}-hashing`}>
             <h4><span>02</span> Hashing</h4>
             {artifact.status === 'secured' ? (
               <>
@@ -396,9 +559,9 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
                 <p className="record-section-note">No verified original payload survives, so this target requires a reproducible provenance case rather than an automatic exact-hash match.</p>
               </>
             )}
-          </section>
+          </section>}
 
-          <section className="artifact-record-section">
+          {activeTab === 'transaction' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-transaction`} aria-labelledby={`record-tab-${artifact.id}-transaction`}>
             <h4><span>03</span> Ethscription transaction</h4>
             {artifact.ethscriptionId ? (
               <dl className="artifact-record-grid">
@@ -416,9 +579,9 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
               <p className="empty-record">No accepted Ethscription is attached to this artifact target yet.</p>
             )}
             {artifact.contentSha && <p className="record-section-note">The protocol content hash identifies the complete UTF-8 Data URI. It is distinct from the decoded-file hash above.</p>}
-          </section>
+          </section>}
 
-          <section className="artifact-record-section">
+          {activeTab === 'ownership' && <section className="artifact-record-section" role="tabpanel" id={`record-panel-${artifact.id}-ownership`} aria-labelledby={`record-tab-${artifact.id}-ownership`}>
             <h4><span>04</span> Ownership</h4>
             {artifact.ethscriptionId ? (
               <>
@@ -439,9 +602,11 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
             ) : (
               <p className="empty-record">Ownership begins when a matching file is Ethscribed and accepted into the expedition record.</p>
             )}
-          </section>
+          </section>}
         </div>
+      </div>
 
+      <div className="artifact-detail-below">
         {(artifact.status === 'open' || artifact.status === 'lost') && (
           <TargetSubmission
             artifact={artifact}
@@ -1004,8 +1169,6 @@ function App() {
               connectWallet={connectWallet}
               switchToMainnet={switchToMainnet}
               provider={provider}
-              walletName={walletName}
-              ensName={ensName}
               resolvedFindings={verifiedFindings}
               findingIndexState={findingIndexState}
               header={<SiteHeader {...headerProps} wallet />}
