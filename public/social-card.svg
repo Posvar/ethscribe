@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Ethscribe — Ownable Digital Archaeology</title>
+  <desc id="description">Find the bytes. Establish the provenance. Own the artifact.</desc>
+  <defs>
+    <pattern id="field-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#343431" stroke-width="1" opacity="0.56"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0d0d0b"/>
+  <rect x="420" width="780" height="630" fill="url(#field-grid)"/>
+  <rect width="420" height="630" fill="#f1eee5"/>
+  <rect x="419" width="2" height="630" fill="#c5ff1a"/>
+
+  <image href="newicon.svg" x="78" y="70" width="264" height="264"/>
+  <text x="78" y="393" fill="#0d0d0b" font-family="Georgia, 'Times New Roman', serif" font-size="48" letter-spacing="1">ETHSCRI.BE</text>
+  <text x="80" y="431" fill="#4e4c46" font-family="'Courier New', monospace" font-size="14" font-weight="700" letter-spacing="2.1">OWNABLE DIGITAL ARCHAEOLOGY</text>
+  <line x1="80" y1="488" x2="340" y2="488" stroke="#0d0d0b" stroke-width="1"/>
+  <circle cx="87" cy="533" r="7" fill="#c5ff1a" stroke="#0d0d0b" stroke-width="1"/>
+  <text x="106" y="539" fill="#0d0d0b" font-family="'Courier New', monospace" font-size="15" font-weight="700" letter-spacing="1.8">PUBLIC FIELDWORK</text>
+
+  <circle cx="493" cy="82" r="7" fill="#c5ff1a"/>
+  <text x="514" y="88" fill="#c5ff1a" font-family="'Courier New', monospace" font-size="14" font-weight="700" letter-spacing="2.1">AN EXPERIMENT IN DIGITAL ARCHAEOLOGY</text>
+
+  <text x="488" y="178" fill="#f1eee5" font-family="Georgia, 'Times New Roman', serif" font-size="57" letter-spacing="-2.1">
+    <tspan x="488" dy="0">Find the bytes.</tspan>
+    <tspan x="488" dy="68">Establish the provenance.</tspan>
+    <tspan x="488" dy="68">Own the artifact.</tspan>
+  </text>
+
+  <line x1="490" y1="403" x2="1120" y2="403" stroke="#555550" stroke-width="1"/>
+  <text x="490" y="455" fill="#c5c2ba" font-family="Georgia, 'Times New Roman', serif" font-size="22">
+    <tspan x="490" dy="0">Public hunts recover historically significant files,</tspan>
+    <tspan x="490" dy="32">verify the exact bytes, and preserve singular</tspan>
+    <tspan x="490" dy="32">onchain artifacts.</tspan>
+  </text>
+
+  <text x="490" y="575" fill="#c5ff1a" font-family="'Courier New', monospace" font-size="16" font-weight="700" letter-spacing="2.2">ETHSCRI.BE</text>
+  <text x="1120" y="575" fill="#c5ff1a" text-anchor="end" font-family="'Courier New', monospace" font-size="16" font-weight="700">FIRST COME · FIRST SCRIBE</text>
+</svg>
