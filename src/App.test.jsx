@@ -56,6 +56,10 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(screen.getByText(/the ethscriptions protocol recognizes that exact payload only once/i)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /connect wallet/i })).toBeInTheDocument();
   expect(screen.getAllByText(/find the bytes\. establish the provenance\. own the artifact\./i)).toHaveLength(2);
+  const footer = screen.getByRole('contentinfo');
+  expect(within(footer).getAllByRole('link')).toHaveLength(1);
+  expect(within(footer).getByRole('link', { name: 'Docs' })).toHaveAttribute('href', '/docs');
+  expect(within(footer).getByText('© 2026 ETHSCRIBE')).toBeInTheDocument();
 });
 
 test('opens a mobile navigation menu with wallet connection first', () => {

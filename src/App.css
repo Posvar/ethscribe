@@ -1796,35 +1796,35 @@ footer {
   background: var(--ink);
   color: white;
   display: grid;
-  gap: 30px;
-  grid-template-columns: 0.6fr 1.2fr 0.8fr auto;
-  min-height: 170px;
-  padding: 35px 7vw;
+  gap: clamp(24px, 3.5vw, 58px);
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  min-height: 142px;
+  padding: 32px 7vw;
 }
 
 footer p {
   color: #9a9993;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.4;
   margin: 0;
-  max-width: 370px;
-}
-
-footer div {
-  display: flex;
-  gap: 25px;
+  max-width: none;
+  white-space: nowrap;
 }
 
 footer a,
 footer > span {
   color: #b8b7b1;
   font-family: "Courier New", monospace;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-decoration: none;
   text-transform: uppercase;
+}
+
+.footer-docs-link {
+  justify-self: end;
 }
 
 .modal-backdrop {
@@ -3152,7 +3152,7 @@ footer > span {
   }
 
   footer {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
   }
 }
 
@@ -3455,12 +3455,27 @@ footer > span {
 
   footer {
     align-items: flex-start;
-    grid-template-columns: 1fr;
-    padding: 55px 24px;
+    gap: 22px;
+    grid-template-columns: auto 1fr;
+    padding: 42px 24px;
   }
 
-  footer div {
-    flex-wrap: wrap;
+  footer p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    white-space: normal;
+  }
+
+  footer .footer-docs-link {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  footer > span {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: end;
   }
 
   .participation-modal {
@@ -6480,4 +6495,178 @@ footer > span {
   .ethscribe-page-hero h1 {
     font-size: clamp(55px, 16vw, 76px);
   }
+}
+
+/* Legibility pass: field-record metadata must remain readable without zooming. */
+.index-heading,
+.index-object span,
+.index-object code,
+.mission-index > p,
+.featured-copy dt,
+.page-breadcrumb,
+.expedition-hero-brief strong,
+.expedition-hero-brief span,
+.timeline-legend,
+.unknown-byte-note strong,
+.contract-placeholder span,
+.contract-placeholder > strong,
+.precontract-explainer,
+.bottom-label span,
+.ticker span,
+.hunt-status span,
+.card-index,
+.manifest-row em,
+.object-image span,
+.under-consideration,
+.object-copy dl div,
+.empty-accession > span,
+.participation-modal label,
+.connected-as,
+.lost-file-stamp span,
+.progress-sync-note,
+.artifact-facts dt,
+.lane-index,
+.hunt-lanes strong,
+.timeline-event time,
+.artifact-chip strong,
+.accession-card p,
+.artifact-state,
+.artifact-facts dd,
+.artifact-record-section > h4 span,
+.artifact-market-heading span,
+.artifact-market-heading strong,
+.artifact-market-price span,
+.artifact-market-card dd,
+.artifact-market-note,
+.artifact-market-review,
+.artifact-purchase-status,
+.record-fact dd,
+.linked-record-value span a,
+.sealed-target-note strong,
+.accession-preview > span,
+.accession-card code,
+.accession-card > div:last-child > strong,
+.component-note span,
+.expedition-index-visual > span,
+.expedition-index-meta,
+.expedition-index-copy dt,
+.expedition-index-copy > strong {
+  font-size: 10px;
+}
+
+.artifact-chip span,
+.artifact-chip em,
+.display-scale-note,
+.sealed-preview small,
+.artifact-market-card dt,
+.record-fact dt,
+.artifact-prefix span {
+  font-size: 9px;
+}
+
+.xpm-preview > span,
+.lost-preview small {
+  font-size: 10px;
+}
+
+.corpus-grid-heading {
+  font-size: 10px;
+}
+
+.corpus-slot-number,
+.corpus-slot-state,
+.corpus-slot-visual .xpm-preview span {
+  font-size: 8px;
+}
+
+.corpus-slot-name {
+  font-size: 9px;
+}
+
+.artifact-market-action,
+.artifact-market-review button,
+.docs-sidebar-intro span,
+.docs-sidebar-intro small,
+.docs-sidebar h2,
+.docs-breadcrumb,
+.docs-toc > span,
+.docs-pagination span,
+.docs-edit-link,
+.docs-mobile-bar,
+.docs-article th {
+  font-size: 10px;
+}
+
+.docs-toc a,
+.docs-toc p,
+.docs-state[role="status"] {
+  font-size: 11px;
+}
+
+.wallet-processing-notice span,
+.wallet-processing-notice p,
+.wallet-proceeds span,
+.wallet-proceeds small,
+.wallet-card-heading p,
+.wallet-expedition-assignment > span,
+.wallet-expedition-assignment strong,
+.wallet-expedition-assignment small,
+.wallet-inventory-card dt,
+.wallet-inventory-card dd,
+.wallet-market-actions span,
+.wallet-market-actions strong,
+.wallet-transaction-status span,
+.wallet-transaction-status a,
+.wallet-transaction-status button,
+.wallet-transaction-status small,
+.wallet-limit-note {
+  font-size: 10px;
+}
+
+.wallet-proceeds button,
+.wallet-custody-action button,
+.wallet-market-actions > button,
+.wallet-market-buttons button {
+  font-size: 11px;
+}
+
+.target-submission-heading span,
+.target-ethscription-picker > span,
+.target-submission-close,
+.ethscribe-workbench-heading span,
+.ethscribe-workbench-heading > strong,
+.ethscribe-boundary-note > strong,
+.ethscribe-inspection-form label > span,
+.preflight-result-heading > span,
+.existing-ethscription-card > span,
+.ethscribe-flow-status > span,
+.ethscribe-follow-up > div > span,
+.selected-expedition-target > span,
+.finding-assignment-form > div span,
+.finding-assignment-form > div strong,
+.finding-published-card > span,
+.ethscribe-market-state,
+.no-compatible-target,
+.ethscribe-selected-record > span,
+.ethscribe-selected-record > small,
+.ethscribe-confirmation code,
+.preflight-checklist > span,
+.preflight-technical-details summary,
+.preflight-technical-details summary > span,
+.preflight-technical-details dt,
+.preflight-technical-details dd,
+.preflight-wrapper-checks p code,
+.preflight-wrapper-checks p span,
+.preflight-wrapper-checks small,
+.compatible-targets button span,
+.ethscribe-confirmation dt {
+  font-size: 10px;
+}
+
+.target-submission-source button,
+.ethscribe-inspection-form button,
+.ethscribe-flow-actions button,
+.finding-assignment-form button,
+.compatible-targets button {
+  font-size: 11px;
 }

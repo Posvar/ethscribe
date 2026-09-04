@@ -784,16 +784,16 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
 
         </section>
       </main>
-      <SiteFooter expedition />
+      <SiteFooter />
     </div>
   );
 }
 
-function SiteFooter({ expedition = false }) {
+function SiteFooter() {
   return (
-    <footer>
+    <footer id="site-footer">
       <img src="/icon.svg" alt="Ethscribe" /><p>Find the bytes. Establish the provenance. Own the artifact.</p>
-      <div><a href="/">Mission</a><a href="/expeditions">Expeditions</a>{expedition && <a href="#timeline">Expedition 001</a>}<a href="/wallet">Field Wallet</a><a href="/docs">Docs</a><a href="https://docs.ethscriptions.com/" target="_blank" rel="noreferrer">Protocol</a></div><span>© 2026 ETHSCRIBE</span>
+      <a className="footer-docs-link" href="/docs">Docs</a><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
 }
