@@ -44,7 +44,7 @@ test('renders a broad mission homepage with the first expedition separated', () 
   expect(screen.queryByRole('link', { name: /explore the mission/i })).not.toBeInTheDocument();
   const brand = screen.getByRole('link', { name: /ethscribe home/i });
   expect(within(brand).getByText('ETHSCRI.BE')).toBeInTheDocument();
-  expect(brand.querySelector('img')).toHaveAttribute('src', '/icon.svg');
+  expect(brand.querySelector('img')).toHaveAttribute('src', '/newicon.svg');
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).queryByRole('link', { name: 'Method' })).not.toBeInTheDocument();
   expect(within(primaryNavigation).getByRole('link', { name: 'Expeditions' })).toHaveAttribute('href', '/expeditions');

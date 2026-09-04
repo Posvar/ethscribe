@@ -89,7 +89,7 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
   return (
     <div className="header-stack">
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Ethscribe home"><img src="/icon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
+        <a className="brand" href="/" aria-label="Ethscribe home"><img src="/newicon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
         <nav className="main-nav" aria-label="Primary navigation">
           <a href={awayFromHome ? '/#mission' : '#mission'}>Mission</a>
           <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" aria-current={expeditionsActive ? 'page' : undefined}>Expeditions</a>
@@ -792,7 +792,7 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
 function SiteFooter() {
   return (
     <footer id="site-footer">
-      <img src="/icon.svg" alt="Ethscribe" /><p>Find the bytes. Establish the provenance. Own the artifact.</p>
+      <img src="/newicon.svg" alt="Ethscribe" /><p>Find the bytes. Establish the provenance. Own the artifact.</p>
       <a className="footer-docs-link" href="/docs">Docs</a><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
