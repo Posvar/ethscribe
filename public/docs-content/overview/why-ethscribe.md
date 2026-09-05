@@ -8,7 +8,7 @@ Traditional archives address much of this problem, but Ethscribe explores a comp
 
 Most people will not browse a source repository looking for a 20-pixel icon. They may, however, participate when the question is framed as a hunt with a clear target, a timeline, visible gaps, and a finite outcome.
 
-An expedition gives the work structure:
+The long-term expedition model gives the work structure:
 
 1. Define a historically meaningful target.
 2. Publish the known evidence and eligibility rules.
@@ -17,7 +17,7 @@ An expedition gives the work structure:
 5. Accept a winning artifact or explicitly conclude `No Accession`.
 6. Preserve the record and advance to the next expedition.
 
-The game is not a substitute for scholarship. It is a distribution mechanism for attracting attention and effort to bounded research problems.
+The current release implements target exploration, exact-file testing, signed Findings, and fixed-price trading. Public corroborations, formal challenges, and automatic progression remain planned. The game attracts attention and effort to bounded research problems; the evidence still has to support the result.
 
 ## Exact bytes matter
 
@@ -48,7 +48,7 @@ The protocol also forces an important design insight: protocol uniqueness is bas
 
 Without boundaries, the product becomes another open inscription feed. Ethscribe instead indexes only expedition targets, credible Findings, and accepted Accessions.
 
-This constraint is the product:
+The review model should preserve these constraints as its tooling grows:
 
 - Expeditions are scoped.
 - Rubrics are published before review.

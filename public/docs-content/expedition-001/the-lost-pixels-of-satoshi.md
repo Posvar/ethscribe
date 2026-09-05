@@ -17,16 +17,16 @@ The corpus makes the Ethscribe method concrete:
 
 ## Current corpus map
 
-The site currently presents:
+The defined corpus contains:
 
 | State | Count | Meaning |
 |---|---:|---|
-| Known byte-perfect files | 22 | Files or mapped ICO components in the defined corpus |
-| Secured in the curated set | 7 | Known raw-byte identities already linked to accepted Ethscriptions |
-| Deterministic gaps | 15 | Known bytes that still need matching Ethscriptions in the collection |
+| Known byte-perfect targets | 22 | Distinct file targets in the defined corpus |
 | Attested lost target | 1 | `bitcoin20x20.png`, described in the record but not recovered |
 
-Fourteen of the mapped items are image components extracted from historical ICO containers. Counts are derived from the expedition manifest and will later reconcile against indexed vault state.
+The supporting research also maps fourteen image components within historical ICO containers. The live expedition calculates recovered and unresolved counts from the target manifest and exact Findings, so those changing totals are not duplicated here.
+
+A green target is a recognized match in the catalogue. Its current market custody and availability for purchase are checked separately; recognition does not disappear simply because the owner withdraws or sells it.
 
 These figures describe Ethscribe's curated expedition state. They are not yet a protocol-wide claim that matching decoded bytes have never appeared under another data-URI wrapper. Each target nevertheless freezes one accepted creation wrapper: `data:image/x-xpixmap;base64,` for XPM and `data:image/png;base64,` for PNG.
 
@@ -38,7 +38,7 @@ The surviving pre-release material establishes the environment before a distinct
 
 ### January 2009 — the BC coin ships
 
-Bitcoin v0.1 includes `bitcoin.ico`, a multi-resolution Windows icon that establishes the early BC coin identity.
+Satoshi's release of Bitcoin v0.1.0 introduces the six-frame Windows icon that becomes the first known Bitcoin identity artifact in this corpus.
 
 ### 5 November 2009 — Bitcoin reaches Unix
 
@@ -48,9 +48,21 @@ A 48-pixel XPM brings the icon into the Unix-oriented client. XPM preserves the 
 
 Separate 16, 20, 32, and 48-pixel XPM assets appear, documenting deliberate work at each display size.
 
-### 24 February 2010 — the gold coin family
+### 8 February 2010 — the lost attachment
+
+Satoshi describes a hand-tuned 20 × 20 BC PNG with full transparency. Its original bytes remain the expedition's unresolved recovery target.
+
+### 24 February–2 March 2010 — the ₿ coin is revealed
 
 Satoshi publishes a new icon/logo set in the “New icon/logo” forum thread and releases the work to the public domain. The post supplies important contemporaneous context for the familiar gold Bitcoin images.
+
+### 21 June 2010 — the source tree catches up
+
+The source history introduces the new ICO, favicon, revised XPMs, and an 80-pixel XPM. The timeline connects these file variants to the earlier announcement rather than treating every similar-looking icon as the same bytes.
+
+### November 2010 — the end of an era
+
+Bitboy's orange, tilted mark defines the later community era. It is outside this expedition's Satoshi-focused scope.
 
 ## The real lost-file hunt
 
@@ -65,17 +77,17 @@ The expedition record should remain `BYTES UNKNOWN` until a candidate satisfies 
 
 ## What hunters can do now
 
-- Inspect each timeline artifact and its expected byte facts.
+- Inspect each timeline artifact and its historical clues and file facts.
 - Search historical releases, mirrors, archives, source trees, and personal collections.
 - Compare decoded bytes, not screenshots.
 - Preserve original containers and neighboring files.
 - Document exactly where a candidate came from and every transformation performed.
 - Upload exact candidates directly within any unresolved target. Known files are rejected before gas when their raw hash is wrong; the lost target accepts a PNG candidate for provenance review because no authoritative hash exists yet.
-- Create to the connected wallet, optionally deposit into the deployed market, and publish a signed Finding after custody reconciliation.
+- Create directly into market custody, or deposit an existing matching Ethscription through the target flow, then publish a signed Finding after custody reconciliation.
 
 ## Acceptance standard
 
-For a known target, a Finding must match the expected decoded bytes and pass protocol and chronology checks. For the lost target, the candidate must meet the expedition's published provenance standard and survive curator review of all challenges.
+For a known target, a Finding must match the expected decoded bytes and required wrapper and pass protocol and custody checks. Those checks do not prove earliest raw-byte appearance across every alternate wrapper. For the lost target, the candidate needs evidence linking its original bytes to the attested attachment. Public challenge and signed review tooling is planned; merely submitting a PNG does not resolve it.
 
 An accepted result is an Ethscribe Accession, not a declaration of copyright or authorship.
 
@@ -89,11 +101,11 @@ The timeline is a living research interface. While an exact-byte target is open,
 
 For transparency, sealing is a gameplay boundary rather than a claim of cryptographic secrecy for this already-researched seed expedition: some target data existed in earlier public site and repository history. Future expeditions must place commitments in private server configuration before their first public commit. Acceptance integrity never depends on hiding a hash; the server re-verifies the signed Finding against the frozen commitment and the indexed onchain bytes.
 
-Each expanded record separates four kinds of information:
+Each recovered record keeps its image and available listing prominent, followed by:
 
-1. **File information** — format, native dimensions, and byte length.
-2. **Hashing** — the canonical SHA-256 of the decoded raw file.
-3. **Ethscription transaction** — creation transaction ID, timestamp, protocol content hash, and explorer links.
-4. **Ownership** — creator and current owner, refreshed from the official Ethscriptions API when the record opens.
+1. **File information** — format, byte length, and the decoded raw-file SHA-256.
+2. **Ethscription transaction** — the creation ID, time, ethscribing wallet, and explorer links.
+
+Unresolved targets show their file information and compact submission entry instead of empty transaction or listing sections.
 
 Tiny raster assets are enlarged with nearest-neighbor scaling for inspection. Their native dimensions remain labeled, and the scaled preview never substitutes for the historical file.

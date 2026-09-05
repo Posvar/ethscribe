@@ -1,3 +1,18 @@
+function localPreviewResult(result) {
+  if (!import.meta.env.DEV || import.meta.env.MODE === 'test') return result;
+  const readOnlyMarket = (market) => ({
+    ...market,
+    localPreview: true,
+    transactionsEnabled: false,
+    intakeEnabled: false,
+    exitsEnabled: false,
+    writesEnabled: false,
+  });
+  return result.market
+    ? { ...result, market: readOnlyMarket(result.market) }
+    : readOnlyMarket(result);
+}
+
 async function request(path) {
   const response = await fetch(path, { headers: { accept: 'application/json' } });
   let payload = null;
@@ -12,7 +27,7 @@ async function request(path) {
     throw new Error(payload?.error || 'market_read_unavailable');
   }
 
-  return payload.result;
+  return localPreviewResult(payload.result);
 }
 
 export function fetchMarketStatus() {

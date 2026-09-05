@@ -1,149 +1,79 @@
-# Ethscribe, vault, and assign
+# Ethscribe, deposit, and assign
 
-Artifacts can enter Ethscribe through an active expedition or arrive from anywhere else in the Ethscriptions ecosystem. Ethscribe deliberately does not expose a general-purpose creation utility: every new on-site inscription begins with a defined historical target.
+All new on-site creation starts inside an expedition target. There is no general-purpose Ethscribe page and no deposit button for arbitrary wallet assets. Existing Ethscriptions also enter through the relevant target: candidate testing for an unresolved target, or an owner-aware deposit action for an already recognized record.
 
-Three actions remain distinct:
+The [first-finding guide](first-finding.md) covers the visitor experience. This page explains what each step means.
 
-| Action | Result |
-|---|---|
-| Ethscribe | Creates protocol content and an `ethscriptionId` |
-| Vault | Places the Ethscription in marketplace custody while preserving a withdrawal path for its previous owner |
-| Assign | Connects the Ethscription to an expedition target through a signed off-chain Finding |
+## Three distinct actions
 
-The contract does not decide what an artifact represents. It holds and trades Ethscription IDs. Expeditions, provenance claims, and curatorial decisions remain public signed records outside the custody contract.
+| Action | Result | Cost |
+|---|---|---|
+| Test | Compares the candidate and checks known protocol matches | No gas |
+| Create or deposit | Puts a new or existing Ethscription into market custody | Ethereum gas |
+| Assign | Publishes a signed claim linking the Ethscription to a target | No gas |
 
-## Can Ethscribe detect an artifact created elsewhere?
+Creating or depositing does not automatically publish the assignment or create a sale listing.
 
-Yes, with an important distinction.
+## The target defines the wrapper
 
-The official API can look up an Ethscription by ID, list assets owned by a wallet, and search by `content_sha`. That hash identifies the **complete Data URI**, including its media type and parameters. If Ethscribe knows the precise wrapper as well as the file bytes, the API provides a fast existence check.
+Ethscriptions identifies the complete Data URI, including media type and encoding. Ethscribe separately compares the decoded file's SHA-256 with its target reference.
 
-The API does not currently expose Ethscribe's wrapper-independent `rawSha256` as a search key. The same decoded bytes can appear under another valid MIME label, encoding, gzip wrapper, attachment, or ESIP-6 form and receive another `content_sha`.
+The interface chooses the required wrapper. For example, Expedition 001 XPM targets use `data:image/x-xpixmap;base64,`. The server rejects a Finding using another prefix even if its decoded bytes match.
 
-Therefore:
+The existence check covers the canonical content and a disclosed selection of aliases. It does not search all historical content across arbitrary wrappers. PNG and JPEG can also have alternate valid wrappers; this issue is not specific to XPM. See [byte-perfect identity](../foundations/byte-perfect-identity.md).
 
-- a known target can be checked immediately against its canonical Data URI;
-- the site may also check a small, disclosed set of common alternate wrappers;
-- a protocol-wide “have these exact decoded bytes appeared anywhere?” answer requires Ethscribe's future decoded-byte index; and
-- an off-site Ethscription can still be assigned to an artifact if it uses the target's frozen wrapper and enters verified custody.
+## Direct creation
 
-This ambiguity is not unique to XPM. PNG and JPEG have stronger conventions, but the protocol permits other syntactically valid MIME labels and parameters. XPM makes the distinction especially visible because no single label is universal.
+The connected wallet sends the prepared file payload directly to the market contract. Under the protocol's creation rules, a valid first canonical creation records the wallet as creator, the market as initial owner, and the wallet as previous owner.
 
-Each expedition therefore freezes one accepted wrapper per target. Expedition 001 uses `data:image/x-xpixmap;base64,` for XPM and `data:image/png;base64,` for PNG. The embedded interface generates the wrapper and the Finding verifier rejects a different prefix.
+The original bytes are preserved. The contract does not decide historical eligibility and cannot read the current transaction hash to register the new ID for trading. Registration happens later, if the owner chooses to sell.
 
-For a bytes-unknown target, no expected raw hash exists. Ethscribe cannot recognize the artifact before someone presents candidate bytes. A Finding supplies those bytes and a reproducible provenance case.
+### If someone gets there first
 
-## Path 1 — create and submit against an expedition target
+An existence check cannot reserve content. Another Ethereum transaction may be ordered first before yours is mined.
 
-Every open target exposes an inline **Ethscribe + Submit** action.
+The market emits a fallback creation event for a small **Finding Receipt** containing the attempted content hash. The protocol considers valid transaction input before creation events. If the canonical input succeeds, it is the Ethscription. If it loses the uniqueness race, the receipt can become the transaction's Ethscription instead, owned initially by the hunter.
 
-1. Connect a wallet and choose the exact local file.
-2. Calculate byte length, file signature, `rawSha256`, and the canonical Data URI locally.
-3. Send only the candidate commitment to the match-only target validator. Exact target hashes remain sealed while the hunt is open.
-4. Check the official API for the canonical protocol content and any explicitly disclosed aliases.
-5. If an eligible Ethscription already exists in the connected wallet, deposit that ID into the market.
-6. Otherwise, make one direct-to-vault creation transaction.
-7. Wait for the official indexer and the five-block safety window.
-8. Sign a gas-free Finding that binds the verified Ethscription to the target.
+The receipt establishes an attempt. It is not the canonical artifact, does not fill the expedition target, and does not refund gas. It uses the protocol's duplicate opt-in rule; target artifacts do not.
 
-The normal interface reduces the background work to one ready, mismatch, or existing-content result. Exact hashes and wrapper checks remain available under **Technical checks**.
+This behavior follows the [protocol specification](https://docs.ethscriptions.com/overview/protocol-specification), [contract creation ordering](https://docs.ethscriptions.com/esips/accepted-esips/esip-3-smart-contract-ethscription-creations), and [duplicate opt-in rule](https://docs.ethscriptions.com/esips/accepted-esips/esip-6-opt-in-ethscription-non-uniqueness).
 
-## Direct-to-vault creation
+## An existing Ethscription
 
-The V2 market accepts a canonical Data URI as raw transaction input. The transaction is sent:
+For an unresolved target, choose the existing-Ethscription path. The site retrieves supported content, tests the decoded bytes and required wrapper, and checks who currently owns it.
 
-```text
-from: connected wallet
-to: EthscribeMarketV2
-value: 0 ETH
-data: exact canonical Data URI
-```
+If it is directly owned by the connected wallet, the next transaction deposits its existing ID into the market. If it is already verified in that wallet's market custody, no second deposit is needed. The next step is the signed Finding.
 
-Ethscriptions processes valid transaction input before contract creation events. When the canonical content is still available, protocol state records:
+An artifact created outside Ethscribe is eligible on the same terms. A different wrapper or another person's ownership cannot be silently treated as a valid deposit for the submitting wallet.
 
-```text
-creator: connected wallet
-initial owner: EthscribeMarketV2
-current owner: EthscribeMarketV2
-previous owner: connected wallet
-```
+## Deposit an already recognized artifact
 
-This avoids MetaMask's website-originated self-addressed-calldata restriction without changing the hunter's creator attribution. It also establishes public Ethereum ordering in the same transaction that places the artifact in custody. The contract does not list the artifact or assign it to a target automatically.
+A recovered target already has a known Ethscription ID and catalogue assignment. Its current owner can connect that wallet, open the target, and choose **Deposit into marketplace**. Eligibility for this action comes from current protocol ownership, not the original creator address.
 
-### The race-safe Finding Receipt
+The transaction deposits the existing ID into escrow; it does not recreate the file. No upload or new Finding is required for the record's existing assignment. After Ethereum confirmation, the site reconciles contract and indexed ownership before offering wallet management. Leave a confirmed deposit pending while the index catches up rather than submitting it again.
 
-A preflight cannot reserve content between simulation and mining. Another transaction can still claim the same non-ESIP-6 Data URI first.
+Listing remains a separate action in Field Wallet. The owner can also withdraw after custody verification without ever listing the artifact.
 
-For every direct attempt, V2 emits a lower-priority ESIP-3 creation containing a compact ESIP-6 Finding Receipt. Its payload commits to the attempted canonical `content_sha`.
+## Confirmation and custody
 
-- If the canonical input is valid and unique, input wins and the receipt event is ignored by the protocol.
-- If the canonical input loses the uniqueness race, the input is invalid and the receipt becomes that transaction's Ethscription.
-- The receipt is initially owned by the hunter, because the market contract is its protocol creator and names the hunter as initial owner.
+An Ethereum receipt establishes transaction inclusion. It does not establish valid Ethscriptions ownership on its own.
 
-A receipt proves an onchain attempt and its ordering. It is not the canonical artifact, does not enter market custody, and cannot be submitted as the target's accepted file.
+The application reconciles the official record and contract state, with the applicable five-block safety window. For a registered deposit, the market must be current owner, the submitting wallet must be previous owner, and the wallet's deposit record must be active. For an unregistered direct creation, the index must also identify the submitting wallet as creator and the market as initial owner.
 
-This guarantee depends on the official protocol rules that process transaction input before ESIP-3 events and accept `rule=esip6` content without the ordinary uniqueness condition.
+If reads disagree or are unavailable, the UI waits rather than presenting the asset as ready for a market action. A slow index is not a reason to repeat a confirmed transaction.
 
-## Path 2 — use an existing Ethscription
+## The signed Finding
 
-The wallet experience queries the official API by `current_owner` and shows Ethscriptions directly controlled by the connected address.
+The assignment binds the target, Ethscription ID, raw and protocol hashes, byte length, required wrapper, claim summary, primary source URL, author address, and custody contract. It uses a wallet message signature.
 
-1. Connect a wallet and open **My Wallet**.
-2. Select an owned Ethscription.
-3. Transfer its raw 32-byte ID to the market.
-4. Wait for indexer reconciliation and the five-block cooldown.
-5. Return to an open expedition target and choose **Use existing Ethscription** to test and submit it as a Finding, or manage it independently in marketplace custody.
+Before storage, the server verifies the signer, decodes indexed content, reproduces the hashes, applies target validation, and checks custody. A known-target match can update the expedition record. A lost-file candidate requires historical review and does not automatically resolve the target.
 
-An existing-ID deposit creates a depositor-scoped contract record. A direct creation does not, because an EVM contract cannot read the hash of the transaction currently executing. The first-party application distinguishes the two custody forms.
+Assignments are stored off-chain. The Ethereum creation order is independent of the site's submission timestamps. A signature proves who submitted a claim; it does not prove the file's historical author or time of discovery.
 
-## Custody verification and withdrawal
+## Withdrawals
 
-The wallet dashboard combines:
+Owners manage withdrawal in [Field Wallet](/wallet). The contract provides conditional transfers that require the caller to be the actual previous owner under the protocol.
 
-- official Ethscriptions ownership;
-- potential-deposit state from the market contract; and
-- signed target assignments from Ethscribe storage.
+Registered deposits and direct creations use separate exit methods. Both support batches of up to 100 IDs; mixed custody requires separate batches. The current wallet UI exposes individual withdrawals.
 
-For an existing-ID deposit, verified custody requires all of the following:
-
-1. `current_owner` is the market;
-2. `previous_owner` is the connected depositor;
-3. the depositor's matching contract record is active; and
-4. the five-block cooldown has elapsed.
-
-For a direct creation, verified custody requires:
-
-1. `creator` and `previous_owner` are the connected wallet;
-2. `initial_owner` and `current_owner` are the market; and
-3. the five-block safety window has elapsed.
-
-The V2 direct-creation exit emits an ESIP-2 conditional transfer naming the caller as required previous owner. The protocol ignores a false claim, so another wallet cannot use it to move the artifact. If the owner later registers that ID as an active market deposit, the ordinary registered withdrawal path must be used so listings and deposit state cannot be bypassed.
-
-Both custody forms support bounded bulk withdrawal of up to 100 IDs in one transaction: inherited `withdrawBatchEthscriptions` handles registered deposits and `withdrawBatchUnregisteredEthscriptions` handles direct creations. A mixed wallet inventory can be withdrawn in two batch transactions, one per custody form, so registered listing state is never confused with unregistered direct custody.
-
-Intake may be paused without disabling either withdrawal path. The interface still fails closed when the official indexer is unavailable or materially behind.
-
-## Current release boundary
-
-The standard browser creation path supports uncompressed Data URIs for files up to approximately 90 KB. Gzip transport, blob attachments, and larger files are deferred. The Field Wallet now supports custody, direct-creation registration, fixed-price listing and cancellation, withdrawal, and seller-proceeds claims. Public purchase pages, funded offers, public Finding pages, and a protocol-wide decoded-byte index remain deferred.
-
-Every custody transaction is simulated before the wallet opens, checked after its Ethereum receipt, and reconciled against the official indexer. The server independently verifies a Finding's signature, complete content URI, decoded bytes, frozen wrapper, target commitment, and custody before storing it.
-
-## Assignments remain off-chain by design
-
-A signed Finding binds fields such as:
-
-```text
-schemaVersion
-ethscriptionId
-rawSha256
-protocolContentSha256
-expeditionId
-targetId
-authorAddress
-custodyContract
-createdAt
-signature
-```
-
-Keeping these fields out of the market lets evidence and attribution evolve without teaching immutable custody code about changing historical taxonomies. A curated sale may later anchor an opaque `contextHash` when a permanent settlement link is useful.
+Contract withdrawal and credit-claim methods remain callable during an intake pause. First-party controls still require working read services and the UI transaction gate. Developer reference: [mainnet deployment](../reference/mainnet-deployment.md).

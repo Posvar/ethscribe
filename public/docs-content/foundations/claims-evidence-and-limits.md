@@ -24,7 +24,7 @@ A visually convincing file can still fail if its custody or source is unclear. A
 
 ## Evidence grades
 
-Each accepted claim should carry a plain-language grade:
+The fuller review model should give accepted claims a plain-language grade. These are proposed research labels, not a set of review states implemented throughout the current interface:
 
 - **Verified** — exact bytes match a frozen target supported by strong primary evidence.
 - **Strongly attested** — evidence connects the bytes to the claim, but no authoritative target hash existed in advance.
@@ -63,9 +63,9 @@ The absence of a target hash raises the evidentiary burden. Popular voting canno
 
 ## Corrections and disagreement
 
-Historical knowledge changes. Ethscribe therefore preserves signed dossier revisions and Field Notes rather than silently rewriting the record.
+Historical knowledge changes. Ethscribe currently stores signed Finding assignments. A public dossier revision and Field Note system is planned; the current site does not yet provide those tools.
 
-An Accession is a final market outcome for an expedition; it is not an eternal guarantee that every historical interpretation is correct. Later evidence can append a correction, change the displayed evidence grade, or mark an attribution disputed. The original curator decision and auction outcome remain visible.
+An Accession is a recognized catalogue artifact, whether or not it has sold. It is not a guarantee that every historical interpretation is correct. The intended review system will append corrections or disputed attributions while preserving the original decision and any sale history.
 
 ## Ownership and rights
 
@@ -84,6 +84,6 @@ Every marketplace surface should state this clearly. Expedition authors must als
 
 The strongest normal conclusion is deliberately narrow:
 
-> This is the earliest accepted Ethscription containing the exact decoded file bytes established by this expedition's evidence and curation process.
+> This recognized Ethscription contains the exact decoded file bytes established by this expedition's reference and evidence.
 
-It does not claim that Ethscribe created the work, owns its intellectual property, or is the only institution capable of authenticating it.
+It does not claim that Ethscribe created the work, owns its intellectual property, or is the only institution capable of authenticating it. An earliest-across-all-wrappers claim requires a complete raw-byte index that this release does not have.

@@ -2,8 +2,47 @@
 
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
-**Status:** Public site live; marketplace V1 deployed to mainnet, source-verified, and custody round-trip tested through the live UI
-**Updated:** September 1, 2026
+**Status:** Public experiment with Expedition 001, signed Findings, and an active immutable marketplace; reviewed audit and owner-deposit improvements approved for release
+**Updated:** September 4, 2026
+
+## Current product baseline
+
+MVP and V1 are one wallet-native release. The current experiment asks whether people enjoy recovering historically significant files, documenting provenance, and collecting the resulting Ethscriptions.
+
+The implemented public routes are Mission, Expeditions, the active Satoshi expedition, Field Wallet, and Docs. Public proposals are closed. Ethscribing and existing-asset deposits begin inside an expedition target; there is no general-purpose creation utility or arbitrary wallet deposit action.
+
+The submission sequence is candidate test → create or deposit → wait for protocol/custody verification → sign and publish the Finding. Testing and the assignment signature cost no gas. A direct creation enters market custody with the researcher as protocol creator. It can be withdrawn without listing; a later one-time registration supplies the Ethscription ID needed to list it for sale.
+
+For an already-recognized artifact, its current owning wallet can deposit the existing Ethscription directly from that expedition record. No re-upload, new Ethscription, or replacement Finding is required. The catalogue association follows the existing Ethscription ID into Field Wallet; listing remains a separate action.
+
+Field Wallet provides inventory, assignment display, individual withdrawals, registration, fixed-price listing changes, and proceeds claims. A recovered artifact displays its available listing and purchase controls in the expedition. The immutable market charges 5% at settlement; seller proceeds and fees accrue to their respective claimable balances.
+
+The active contract is `EthscribeMarketV2` at `0x65a6771a4f82bcc1fad26CC944cA673dDE2c4614`. Its version number describes a deployment, not a separate product release. Batch withdrawal and funded offers exist at contract level; the current interface does not provide complete public workflows for them. No independent security audit is documented.
+
+## Current trust and identity boundaries
+
+- Historical references and target definitions are curated. A hash match proves equality with the chosen reference, not independent authorship.
+- Protocol uniqueness is scoped to the canonical complete Data URI without duplicate opt-in. Ethereum itself does not reject repeated payloads.
+- Candidate checks cover the target and disclosed wrappers. There is no complete historical index of raw-byte matches across every encoding.
+- A signed Finding attributes a claim to a wallet. Its timestamp is not proof of first historical discovery.
+- A green target means a matching Ethscription has been recognized in the catalogue. Live escrow and sale status are separate checks.
+- Lost-file candidates do not enter exact-match completion automatically. Public review and correction tooling remain work to build.
+- The contract cannot read Ethscriptions ownership. Official-index reconciliation is part of the first-party trading boundary.
+- An Accession is a recognized catalogue artifact whether or not it has sold. It does not confer copyright or exclusive access to copies.
+
+## Next development priorities
+
+1. Make the first complete user journey legible and recoverable, including interrupted sessions and slow indexing.
+2. Exercise creation, assignment, registration, listing, purchase, withdrawal, and claim with explicit outcomes.
+3. Obtain independent review of custody, settlement, and transaction preparation.
+4. Improve signature inspection, evidence export, and a visible lost-file review/correction process.
+5. Measure independent participation and repeat interest before adding another expedition or reopening proposals.
+
+The current roadmap is maintained in [Phased development](public/docs-content/roadmap/phased-development.md). Visitor-facing behavior is documented in [Your first Finding](public/docs-content/product/first-finding.md) and [Ownership and marketplace](public/docs-content/product/ownership-and-marketplace.md).
+
+## Earlier design notes — retained for context
+
+The sections below preserve the original brainstorming and delivery assumptions. They are historical design material, not a description of implemented screens or commitments. Where they discuss auctions, tokens, dossier revisions, public proposals, automatic scheduling, contributor splits, or pre-contract milestones, the current baseline and linked roadmap above take precedence.
 
 ## Executive summary
 

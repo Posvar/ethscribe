@@ -5,15 +5,17 @@
 1. **Curated, not comprehensive.** Ethscribe indexes recognized targets and credible research, not every inscription.
 2. **Evidence before popularity.** Votes surface work; they do not create facts.
 3. **Exactness is explicit.** A visual match is not a byte-perfect match.
-4. **Transparent centralization.** Early curator authority is named, bounded by a public rubric, and expressed through signed decisions.
+4. **Transparent centralization.** Target selection and historical interpretation remain curated. Public signed review decisions are a planned improvement.
 5. **Trustless where money moves.** Contract custody and settlement should not depend on curator discretion.
 6. **Research remains correctable.** Frozen decisions remain auditable while later corrections can be appended.
-7. **No fake functionality.** Pre-contract interactions must say what is local, off-chain, or unavailable.
+7. **No fake functionality.** Interfaces distinguish file testing, message signatures, Ethereum transactions, and unavailable features.
 8. **No token before need.** Reputation and economic security follow observed behavior.
 9. **Ownership is not intellectual property.** An Accession does not transfer copyright or authorship.
 10. **Cadence follows quality.** Weekly expeditions precede daily ones.
 
 ## Vocabulary
+
+Finding, target, Accession, and wallet custody describe the current product. Seasons, Field Notes, finalists, curator decision tooling, and cartographer rewards describe the intended fuller research model.
 
 | Term | Meaning |
 |---|---|
@@ -24,7 +26,7 @@
 | Dossier | The signed claim, sources, timeline, and evidence for a Finding |
 | Field Note | A signed corroboration, correction, challenge, or additional source |
 | Finalist | A Finding advanced for formal eligibility review |
-| Accession | The accepted Finding that enters the permanent catalogue |
+| Accession | A recognized artifact linked to an Ethscription and its evidence, whether or not it has sold |
 | Hunter | A wallet that submits a Finding |
 | Curator | The wallet or Safe that signs an eligibility decision |
 | Patron | A collector who bids on an eligible Finding |

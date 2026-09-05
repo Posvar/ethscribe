@@ -432,7 +432,7 @@ async function getArtifactMarket(ethscriptionId) {
     getMarketStatus(),
   ]);
   const record = payload?.result || payload;
-  if (!record?.transaction_hash) throw new Error('Ethscription record is unavailable');
+  if (record?.transaction_hash?.toLowerCase() !== ethscriptionId.toLowerCase()) throw new Error('Ethscription record is unavailable or mismatched');
 
   const inMarket = normalizeAddress(record.current_owner) === MARKET_ADDRESS_LOWER;
   const seller = inMarket ? normalizeAddress(record.previous_owner) : '';

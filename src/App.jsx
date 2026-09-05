@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
+import './refinements.css';
 import DocsPage from './DocsPage';
 import EthscribeWorkbench from './EthscribeWorkbench';
+import RecognizedArtifactDeposit from './RecognizedArtifactDeposit';
 import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
 import { fetchVerifiedFindings, mergeVerifiedFindings, statsForArtifacts } from './findingApi';
 import { fetchArtifactMarket, fetchWalletInventory } from './marketApi';
-import { MAINNET_CHAIN_ID } from './marketConfig';
+import { MAINNET_CHAIN_ID, MARKET_ADDRESS } from './marketConfig';
 import {
   buildBuyTransaction,
   friendlyTransactionError,
@@ -23,7 +25,7 @@ const processSteps = [
   { number: '01', title: 'Define the target', body: 'A hunt begins with a culturally significant artifact and a precise definition of what counts.' },
   { number: '02', title: 'Follow the source', body: 'Researchers work from release archives, source commits, and contemporaneous records—not visual resemblance.' },
   { number: '03', title: 'Prove the bytes', body: 'Exact decoded bytes are matched by hash. A line ending, metadata rewrite, or reconstruction is a different artifact.' },
-  { number: '04', title: 'Preserve the record', body: 'Verified files, evidence, and ownership enter a permanent public catalogue anchored to Ethereum.' },
+  { number: '04', title: 'Preserve the record', body: 'The catalogue brings the file and its evidence together. Its Ethscription records creation and transfers on Ethereum.' },
 ];
 
 function ArrowIcon() {
@@ -38,11 +40,11 @@ function shortAddress(address) {
   return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '';
 }
 
-function formatWeiAsEth(value, maximumDecimals = 4) {
+function formatWeiAsEth(value) {
   try {
     const wei = BigInt(value || 0);
     const whole = wei / 10n ** 18n;
-    const fraction = (wei % 10n ** 18n).toString().padStart(18, '0').slice(0, maximumDecimals).replace(/0+$/, '');
+    const fraction = (wei % 10n ** 18n).toString().padStart(18, '0').replace(/0+$/, '');
     return fraction ? `${whole}.${fraction}` : whole.toString();
   } catch {
     return '—';
@@ -68,12 +70,16 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
   const awayFromHome = expedition || expeditions || docs || wallet;
   const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuToggle = useRef(null);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
 
     const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        menuToggle.current?.focus();
+      }
     };
 
     window.addEventListener('keydown', closeOnEscape);
@@ -88,6 +94,10 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
 
   return (
     <div className="header-stack">
+      <a className="skip-link" href="#main-content" onClick={() => {
+        const main = document.querySelector('main');
+        main?.focus();
+      }}>Skip to content</a>
       <header className="site-header">
         <a className="brand" href="/" aria-label="Ethscribe home"><img src="/newicon.svg" alt="" /><span className="brand-wordmark">ETHSCRI.BE</span></a>
         <nav className="main-nav" aria-label="Primary navigation">
@@ -108,6 +118,7 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
         )}
         <button
           className="mobile-menu-toggle"
+          ref={menuToggle}
           type="button"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
@@ -189,7 +200,8 @@ function ExpeditionCorpusGrid({ resolvedArtifacts, onOpenArtifact }) {
             type="button"
             key={artifact.id}
             onClick={() => onOpenArtifact(artifact.id)}
-            aria-label={`Open field note for ${artifact.filename}, ${artifact.status === 'secured' ? 'Ethscribed' : 'not yet Ethscribed'}`}
+            aria-label={`Open field note for ${artifact.filename}, ${artifact.status === 'secured' ? 'Ethscribed' : 'not yet Ethscribed'}, ${artifact.date}`}
+            title={`${artifact.filename} · ${artifact.date} · ${artifact.release}`}
           >
             <span className="corpus-slot-number">{String(index + 1).padStart(2, '0')}</span>
             <span className="corpus-slot-visual"><ArtifactGridPreview artifact={artifact} /></span>
@@ -258,8 +270,8 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
         <button className="target-submission-close" type="button" onClick={onClose}>CLOSE</button>
       </div>
       <div className="target-submission-source" role="group" aria-label="Choose a Finding source">
-        <button type="button" className={source === 'upload' ? 'active' : ''} onClick={() => chooseSource('upload')}>UPLOAD EXACT FILE</button>
-        <button type="button" className={source === 'existing' ? 'active' : ''} onClick={() => chooseSource('existing')}>USE EXISTING ETHSCRIPTION</button>
+        <button type="button" aria-pressed={source === 'upload'} className={source === 'upload' ? 'active' : ''} onClick={() => chooseSource('upload')}>UPLOAD EXACT FILE</button>
+        <button type="button" aria-pressed={source === 'existing'} className={source === 'existing' ? 'active' : ''} onClick={() => chooseSource('existing')}>USE EXISTING ETHSCRIPTION</button>
       </div>
 
       {source === 'existing' && !account && (
@@ -290,7 +302,7 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
 
       {(source === 'upload' || selectedEthscriptionId) && (
         <EthscribeWorkbench
-          key={`${artifact.id}-${source}-${selectedEthscriptionId}`}
+          key={`${artifact.id}-${source}-${selectedEthscriptionId}-${account}`}
           mode="target"
           artifact={artifact}
           existingEthscriptionId={source === 'existing' ? selectedEthscriptionId : ''}
@@ -306,24 +318,34 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
   );
 }
 
-function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switchToMainnet, provider }) {
+function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onRecord }) {
   const [snapshot, setSnapshot] = useState(null);
   const [marketState, setMarketState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
   const [purchase, setPurchase] = useState(null);
+  const requestVersion = useRef(0);
+  const activeAsset = useRef(artifact.ethscriptionId);
+  const activeSession = useRef('');
+  activeAsset.current = artifact.ethscriptionId;
+  activeSession.current = `${account?.toLowerCase() || ''}:${chainId?.toLowerCase() || ''}`;
 
   const loadMarket = useCallback(async ({ quiet = false } = {}) => {
     if (!artifact.ethscriptionId) return null;
+    const version = ++requestVersion.current;
     if (!quiet) setMarketState('loading');
     try {
       const nextSnapshot = await fetchArtifactMarket(artifact.ethscriptionId);
+      if (version !== requestVersion.current || activeAsset.current !== artifact.ethscriptionId) return null;
       setSnapshot(nextSnapshot);
       setMarketState('ready');
+      if (nextSnapshot.ethscription?.transactionHash?.toLowerCase() === artifact.ethscriptionId.toLowerCase()) {
+        onRecord?.(nextSnapshot.ethscription);
+      }
       return nextSnapshot;
     } catch {
-      if (!quiet) setMarketState('error');
+      if (version === requestVersion.current) setMarketState('error');
       return null;
     }
-  }, [artifact.ethscriptionId]);
+  }, [artifact.ethscriptionId, onRecord]);
 
   useEffect(() => {
     let active = true;
@@ -341,6 +363,7 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
 
     return () => {
       active = false;
+      requestVersion.current += 1;
       clearInterval(timer);
     };
   }, [artifact.ethscriptionId, loadMarket]);
@@ -350,13 +373,40 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
   const custodyVerified = Boolean(snapshot?.custody?.verified);
   const seller = snapshot?.seller;
   const isSeller = Boolean(account && seller && account.toLowerCase() === seller.toLowerCase());
+  const hasCurrentRecord = snapshot?.ethscription?.transactionHash?.toLowerCase() === artifact.ethscriptionId?.toLowerCase();
+  const inMarketplace = hasCurrentRecord && snapshot?.ethscription?.currentOwner?.toLowerCase() === MARKET_ADDRESS.toLowerCase();
   const onMainnet = chainId?.toLowerCase() === MAINNET_CHAIN_ID;
   const transactionBusy = purchase && ['simulating', 'mining', 'settling'].includes(purchase.phase);
 
+  useEffect(() => {
+    setPurchase((current) => current?.phase === 'review' ? null : current);
+  }, [account, chainId, listing?.priceWei, listing?.listingNonce]);
+
+  useEffect(() => {
+    if (purchase?.phase !== 'settling' || !purchase.buyer) return;
+    if (snapshot?.ethscription?.currentOwner?.toLowerCase() === purchase.buyer.toLowerCase()) {
+      setPurchase((current) => ({ ...current, phase: 'complete', message: 'Purchase confirmed. The official ownership record now shows your wallet.' }));
+    }
+  }, [snapshot, purchase?.phase, purchase?.buyer]);
+
   const buyListing = async () => {
-    if (!account || !seller || !liveListing || !custodyVerified) return;
+    if (!account || !seller || !liveListing || !custodyVerified || marketState !== 'ready' || transactionBusy
+      || snapshot?.market?.transactionsEnabled === false || snapshot?.market?.intakeEnabled === false || snapshot?.market?.paused) return;
+    const session = activeSession.current;
     setPurchase({ phase: 'simulating', hash: '', message: '' });
     try {
+      const fresh = await loadMarket({ quiet: true });
+      if (session !== activeSession.current) {
+        setPurchase({ phase: 'error', hash: '', message: 'The connected wallet or network changed. No purchase was sent. Review the listing again with the wallet you want to use.' });
+        return;
+      }
+      if (!fresh || !fresh.custody?.verified || fresh.market?.transactionsEnabled === false || fresh.market?.intakeEnabled === false || fresh.market?.paused
+        || !fresh.listing?.active || fresh.listing?.expired
+        || fresh.seller?.toLowerCase() !== seller.toLowerCase()
+        || fresh.listing.listingNonce !== listing.listingNonce || fresh.listing.priceWei !== listing.priceWei) {
+        setPurchase({ phase: 'error', hash: '', message: 'The listing changed or could not be verified. No purchase was sent. Review the current listing before trying again.' });
+        return;
+      }
       const request = buildBuyTransaction(
         account,
         seller,
@@ -367,9 +417,8 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
       const hash = await simulateAndSendTransaction(provider, request);
       setPurchase({ phase: 'mining', hash, message: '' });
       await waitForTransactionReceipt(provider, hash);
-      setPurchase({ phase: 'settling', hash, message: 'Purchase confirmed. Updating the public ownership record.' });
+      setPurchase({ phase: 'settling', hash, buyer: account, message: 'Purchase confirmed on Ethereum. The ownership index is catching up; we check again every 15 seconds. No further transaction is needed.' });
       await loadMarket({ quiet: true });
-      setPurchase({ phase: 'complete', hash, message: 'Purchase confirmed on Ethereum.' });
     } catch (purchaseError) {
       setPurchase((current) => ({
         phase: 'error',
@@ -380,10 +429,15 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
   };
 
   const action = (() => {
-    if (!artifact.ethscriptionId) return null;
-    if (!liveListing) return null;
+    if (!artifact.ethscriptionId || marketState !== 'ready') return null;
+    if (!liveListing) {
+      if (isSeller && inMarketplace) return <a className="artifact-market-action" href="/wallet">MANAGE IN FIELD WALLET <ArrowIcon /></a>;
+      if (!account && hasCurrentRecord) return <button className="artifact-market-action" type="button" onClick={connectWallet}>CONNECT WALLET TO MANAGE <ArrowIcon /></button>;
+      return null;
+    }
     if (isSeller) return <a className="artifact-market-action" href="/wallet">MANAGE IN FIELD WALLET <ArrowIcon /></a>;
-    if (!custodyVerified || snapshot?.market?.transactionsEnabled === false) return null;
+    if (marketState !== 'ready' || !custodyVerified || snapshot?.market?.transactionsEnabled === false
+      || snapshot?.market?.intakeEnabled === false || snapshot?.market?.paused || purchase?.phase === 'complete') return null;
     if (!account) return <button className="artifact-market-action" type="button" onClick={connectWallet}>CONNECT WALLET TO BUY <ArrowIcon /></button>;
     if (!onMainnet) return <button className="artifact-market-action" type="button" onClick={switchToMainnet}>SWITCH TO ETHEREUM <ArrowIcon /></button>;
     if (purchase?.phase !== 'review') {
@@ -403,7 +457,9 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
         <span>MARKETPLACE</span>
         <strong>{marketState === 'loading' ? 'CHECKING LISTING…' : marketState === 'error' ? 'LISTING UNAVAILABLE' : liveListing ? 'ACTIVE LISTING' : 'NOT LISTED'}</strong>
       </div>
-      {liveListing ? (
+      {marketState === 'error' ? (
+        <div className="artifact-market-note" role="status"><p>We couldn’t refresh ownership and listing details. Transactions are disabled until current records are available.</p><button className="artifact-market-retry" type="button" onClick={() => loadMarket()}>Retry listing check</button></div>
+      ) : marketState === 'loading' && !snapshot ? <p className="artifact-market-note" role="status">Reading the current price and custody record…</p> : liveListing ? (
         <>
           <div className="artifact-market-price"><strong>{formatWeiAsEth(listing.priceWei)} ETH</strong><span>FIXED PRICE</span></div>
           <dl>
@@ -412,10 +468,27 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
           </dl>
           {!custodyVerified && <p className="artifact-market-note">{snapshot?.custody?.reason || 'Contract custody and the official ownership index are still reconciling.'} Ethscribe checks again automatically; purchase unlocks only after both records agree.</p>}
           {action}
+          {snapshot?.market?.localPreview && <p className="artifact-market-note">Live listing · read-only local preview. No purchases can be sent from this preview.</p>}
+          {!snapshot?.market?.localPreview && (snapshot?.market?.paused || snapshot?.market?.intakeEnabled === false) && <p className="artifact-market-note">Purchases are temporarily unavailable. This listing will be checked again automatically.</p>}
         </>
       ) : (
-        <p className="artifact-market-note">{artifact.ethscriptionId ? 'No active fixed-price listing is attached to this artifact.' : 'A marketplace listing can begin after the target is recovered, verified, and Ethscribed.'}</p>
+        <>
+          <p className="artifact-market-note">{isSeller && inMarketplace
+            ? 'This artifact is in your marketplace custody, but not listed for sale. Set a price or withdraw it from Field Wallet.'
+            : 'This artifact is already Ethscribed, but not listed for sale.'}</p>
+          {!account && hasCurrentRecord && <p className="artifact-market-note">Own this artifact? Connect its current wallet to deposit or manage it.</p>}
+          {action}
+        </>
       )}
+      <RecognizedArtifactDeposit
+        artifact={artifact}
+        snapshot={marketState === 'ready' ? snapshot : null}
+        account={account}
+        chainId={chainId}
+        provider={provider}
+        switchToMainnet={switchToMainnet}
+        onDeposited={() => loadMarket({ quiet: true })}
+      />
       {purchase && !['review'].includes(purchase.phase) && (
         <div className={`artifact-purchase-status purchase-${purchase.phase}`} role="status">
           <strong>{purchase.phase === 'simulating' ? 'CHECKING PURCHASE' : purchase.phase === 'mining' ? 'WAITING FOR ETHEREUM' : purchase.phase === 'settling' ? 'UPDATING OWNERSHIP' : purchase.phase === 'complete' ? 'PURCHASE CONFIRMED' : 'PURCHASE NOT COMPLETED'}</strong>
@@ -429,7 +502,12 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
 
 function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onFindingPublished }) {
   const [submissionOpen, setSubmissionOpen] = useState(false);
+  const [indexedRecord, setIndexedRecord] = useState(null);
   const hasFinding = Boolean(artifact.ethscriptionId);
+  const creator = indexedRecord?.creator || artifact.creator;
+  const createdAt = indexedRecord?.blockTimestamp > 0
+    ? `${new Date(indexedRecord.blockTimestamp * 1000).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' })} UTC`
+    : artifact.ethscribedAt;
   const statusCopy = {
     secured: 'ETHSCRIBED · VERIFIED MATCH',
     open: 'OPEN HUNT · NEEDS ETHSCRIBING',
@@ -437,7 +515,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
   };
 
   return (
-    <article className={`artifact-detail detail-${artifact.status}`} aria-live="polite">
+    <article className={`artifact-detail detail-${artifact.status}`}>
       <div className="artifact-detail-overview">
         <div className="artifact-detail-visual">
           <ArtifactPreview artifact={artifact} />
@@ -458,7 +536,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
         {artifact.status === 'lost' && (
           <div className="unknown-byte-note">
             <strong>This slot has no target hash yet.</strong>
-            <p>We know the filename and description from Satoshi’s post, but not the original payload. A candidate becomes meaningful only with a reproducible custody trail.</p>
+            <p>We know the filename and description from Satoshi’s post, but not the original file. Bring an archived copy and evidence of where it came from. A matching size or appearance alone is not proof.</p>
           </div>
         )}
 
@@ -470,6 +548,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
             connectWallet={connectWallet}
             switchToMainnet={switchToMainnet}
             provider={provider}
+            onRecord={setIndexedRecord}
           />
         ) : (
           <section className="artifact-target-information">
@@ -483,7 +562,7 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
             {artifact.validationMode === 'exact' && (
               <div className="sealed-target-note">
                 <strong>EXPECTED SHA-256 SEALED WHILE THE HUNT IS OPEN</strong>
-                <p>A candidate is hashed locally and checked against the private target commitment. The expected hash is published only after the first accepted Finding.</p>
+                <p>Find your candidate in the historical source, then test it here for free. We compare its exact bytes to our reference file without revealing the answer. The reference hash becomes public after an accepted Finding.</p>
               </div>
             )}
           </section>
@@ -511,10 +590,10 @@ function ArtifactDetail({ artifact, account, chainId, connectWallet, switchToMai
                   <span><a href={`https://ethscriptions.com/ethscriptions/${artifact.ethscriptionId}`} target="_blank" rel="noreferrer">View Ethscription <ArrowIcon /></a></span>
                 </dd>
               </div>
-              <RecordFact label="ETHSCRIBED" value={artifact.ethscribedAt} />
+              <RecordFact label="ETHSCRIBED" value={createdAt} unknown="See creation transaction" />
               <div className="record-fact">
                 <dt>ETHSCRIBING WALLET</dt>
-                <dd>{artifact.creator ? <a href={`https://etherscan.io/address/${artifact.creator}`} target="_blank" rel="noreferrer">{artifact.creator}</a> : 'Unknown'}</dd>
+                <dd>{creator ? <a href={`https://etherscan.io/address/${creator}`} target="_blank" rel="noreferrer">{creator}</a> : 'See creation transaction'}</dd>
               </div>
             </dl>
           </section>
@@ -550,14 +629,14 @@ function MethodSection() {
     <section className="method-section" id="method">
       <div className="section-heading compact">
         <div><p className="kicker"><span /> The field method</p><h2>History deserves proof.</h2></div>
-        <p className="section-intro">Every expedition defines its evidence standard before the hunt begins. Exact-byte targets use sealed server-side commitments while open; unknown history stays unresolved until the source evidence is strong enough.</p>
+        <p className="section-intro">A lookalike is not the original file. We follow primary sources, compare exact bytes, and keep an open question open when the evidence is not yet there.</p>
       </div>
       <div className="process-grid">
         {processSteps.map((step) => <article key={step.number}><span>{step.number}</span><h3>{step.title}</h3><p>{step.body}</p></article>)}
       </div>
       <div className="principle-note">
         <strong>FIRST COME. FIRST SCRIBE.</strong>
-        <p>Each target fixes one canonical wrapper around the original bytes. The Ethscriptions protocol recognizes that exact payload only once; Ethscribe also hashes the decoded file so alternate wrappers cannot impersonate a second historical original.</p>
+        <p>The Ethscriptions protocol recognizes that exact payload only once—not Ethereum itself. We also compare the underlying file bytes of submitted Findings, so a different file wrapper does not earn a second place in the same target. Owning an Ethscription does not grant copyright or erase other copies of the file.</p>
       </div>
     </section>
   );
@@ -567,12 +646,13 @@ function HomePage({ account, walletState, walletName, ensName, connectWallet, op
   return (
     <div className="site-shell home-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} />
-      <main id="top">
+      <main id="main-content" tabIndex={-1}>
         <section className="hero mission-hero">
           <div className="hero-copy">
             <p className="kicker"><span /> Ownable digital archaeology</p>
             <h1>Find the bytes. Establish the provenance. Own the artifact.</h1>
-            <p className="hero-intro">Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence. For each expedition’s canonical payload, the protocol recognizes one first inscription: first come, first scribe.</p>
+            <p className="hero-intro">Some files deserve more than a forgotten folder. Recover the exact bytes behind digital history, establish where they came from, and preserve them as ownable artifacts on Ethereum.</p>
+            <p className="hero-experiment">An open experiment in collecting digital history. Our first hunt is live.</p>
             <div className="hero-actions">
               <a className="primary-action" href={EXPEDITION_PATH}>Enter Expedition 001 <ArrowIcon /></a>
               <a className="text-action" href="/docs">New here? Learn how Ethscribe works <ArrowIcon /></a>
@@ -580,12 +660,12 @@ function HomePage({ account, walletState, walletName, ensName, connectWallet, op
           </div>
 
           <div className="mission-index" aria-label="A digital artifact moving from discovery to verified record">
-            <div className="index-heading"><span>ETHSCRIBE FIELD INDEX</span><span>∞ / OPEN</span></div>
+            <div className="index-heading"><span>FROM FILE TO ARTIFACT</span><span>THE FIELD METHOD</span></div>
             <div className="index-object object-source"><span>01 / DISCOVER</span><strong>ORIGINAL SOURCE</strong><code>archive · disk · code · network</code></div>
             <div className="index-connector">↓</div>
-            <div className="index-object object-proof"><span>02 / AUTHENTICATE</span><strong>BYTE-PERFECT MATCH</strong><code>sha256: 7f3a…e921</code></div>
+            <div className="index-object object-proof"><span>02 / AUTHENTICATE</span><strong>BYTE-PERFECT MATCH</strong><code>same bytes · documented source</code></div>
             <div className="index-connector">↓</div>
-            <div className="index-object object-record"><span>03 / FIRST SCRIBE</span><strong>OWNABLE ORIGINAL</strong><code>ethereum · provenance · custody</code></div>
+            <div className="index-object object-record"><span>03 / FIRST SCRIBE</span><strong>OWNABLE ARTIFACT</strong><code>one canonical Ethscription</code></div>
             <p>THE ARTIFACT IS THE BYTES.<br />THE STORY IS THE EVIDENCE.</p>
           </div>
         </section>
@@ -600,7 +680,7 @@ function HomePage({ account, walletState, walletName, ensName, connectWallet, op
             <p className="section-intro">Ethscribe organizes focused expeditions around artifacts worth recovering. Researchers follow evidence, exact matches earn a place in the permanent catalogue, and the verified object can become ownable without confusing ownership for historical truth.</p>
           </div>
           <div className="mission-pillars">
-            <article><span>01</span><h3>Hunt together</h3><p>Time-boxed expeditions turn open questions and known collection gaps into approachable public fieldwork.</p></article>
+            <article><span>01</span><h3>Hunt together</h3><p>Explore old releases, abandoned websites, and surviving archives. Each expedition gives you a specific piece of digital history to look for.</p></article>
             <article><span>02</span><h3>Verify exactly</h3><p>Primary sources establish the story. Raw-byte hashes establish whether the recovered file is the target.</p></article>
             <article><span>03</span><h3>Preserve and own</h3><p>The first canonical inscription becomes the singular onchain artifact. Its owner may change; its byte-perfect identity and provenance remain public.</p></article>
           </div>
@@ -615,7 +695,7 @@ function HomePage({ account, walletState, walletName, ensName, connectWallet, op
           <div className="featured-copy">
             <p className="kicker"><span /> Expedition 001 · Active</p>
             <h2>The Lost Pixels of Satoshi</h2>
-            <p>The inaugural expedition maps Satoshi’s 2009–2010 icon workshop. Each slot seeks one canonical Ethscription of artwork shaped by Satoshi’s own hand—an exact onchain original that cannot be claimed twice.</p>
+            <p>Before Bitcoin had its familiar orange logo, Satoshi was drawing pixels. Recover the exact files from his first two icon systems—and help track down one original PNG that is still missing.</p>
             <dl>
               <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured}</dd></div>
               <div><dt>KNOWN GAPS</dt><dd>{resolvedStats.open}</dd></div>
@@ -635,12 +715,12 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
   return (
     <div className="site-shell expeditions-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expeditions />
-      <main id="top">
+      <main id="main-content" tabIndex={-1}>
         <section className="expeditions-index-hero">
           <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
           <div className="expeditions-index-actions">
             <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as singular onchain artifacts.</p>
-            <a className="primary-action" href="#live-expeditions">Enter the live expedition <ArrowIcon /></a>
+            <a className="primary-action" href={EXPEDITION_PATH}>Enter the live expedition <ArrowIcon /></a>
           </div>
         </section>
 
@@ -650,7 +730,7 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
             <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" /><span>EXPEDITION 001</span></div>
             <div className="expedition-index-copy">
               <div className="expedition-index-meta"><span className="expedition-active-status">ACTIVE</span><span>BITCOIN · 2008–2010</span></div>
-              <h3>The Lost Pixels of Satoshi</h3>
+              <h2>The Lost Pixels of Satoshi</h2>
               <p>Complete the exact-file record behind Satoshi’s first two Bitcoin icon systems—and recover one attested PNG whose original bytes remain lost.</p>
               <dl>
                 <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured} / {resolvedStats.known}</dd></div>
@@ -668,12 +748,25 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
   );
 }
 
-function ExpeditionPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, resolvedStats = huntStats, onFindingPublished }) {
+function ExpeditionPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, chainId, switchToMainnet, provider, resolvedArtifacts = artifacts, resolvedStats = huntStats, findingIndexState, onFindingPublished }) {
   const requestedArtifactId = new URLSearchParams(window.location.search).get('artifact');
   const artifactForId = (id) => (id === lostArtifact.id ? lostArtifact : resolvedArtifacts.find((artifact) => artifact.id === id));
   const [selectedArtifactId, setSelectedArtifactId] = useState(
-    artifactForId(requestedArtifactId) ? requestedArtifactId : lostArtifact.id,
+    artifactForId(requestedArtifactId) ? requestedArtifactId : null,
   );
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [copyState, setCopyState] = useState('');
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredEvents = timelineEvents.map((event) => ({
+    ...event,
+    artifactIds: event.artifactIds.filter((id) => {
+      const artifact = artifactForId(id);
+      return artifact && (filter === 'all' || artifact.status === filter)
+        && (!normalizedQuery || `${artifact.filename} ${artifact.format} ${artifact.date} ${artifact.release} ${event.title} ${event.copy}`.toLowerCase().includes(normalizedQuery));
+    }),
+  })).filter((event) => event.artifactIds.length || (filter === 'all' && !normalizedQuery && !timelineEvents.find((original) => original.id === event.id).artifactIds.length));
+  const visibleTargetCount = filteredEvents.reduce((total, event) => total + event.artifactIds.length, 0);
 
   useEffect(() => {
     if (!artifactForId(requestedArtifactId)) return undefined;
@@ -686,40 +779,55 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
   }, [requestedArtifactId]);
 
   const selectArtifact = (artifactId) => {
-    setSelectedArtifactId((current) => {
-      const nextArtifactId = current === artifactId ? null : artifactId;
-      const nextUrl = new URL(window.location.href);
-
-      if (nextArtifactId) nextUrl.searchParams.set('artifact', nextArtifactId);
-      else nextUrl.searchParams.delete('artifact');
-      window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-
-      return nextArtifactId;
-    });
+    const nextArtifactId = selectedArtifactId === artifactId ? null : artifactId;
+    setSelectedArtifactId(nextArtifactId);
+    setCopyState('');
+    const nextUrl = new URL(window.location.href);
+    if (nextArtifactId) nextUrl.searchParams.set('artifact', nextArtifactId);
+    else nextUrl.searchParams.delete('artifact');
+    window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}${nextArtifactId ? `#record-${nextArtifactId}` : '#timeline'}`);
   };
 
   const openArtifactFromGrid = (artifactId) => {
+    setFilter('all');
+    setQuery('');
+    setCopyState('');
     setSelectedArtifactId(artifactId);
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.set('artifact', artifactId);
     window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}#record-${artifactId}`);
-    window.setTimeout(() => document.getElementById(`record-${artifactId}`)?.scrollIntoView?.({ block: 'start' }), 0);
+    window.setTimeout(() => {
+      const record = document.getElementById(`record-${artifactId}`);
+      record?.scrollIntoView?.({ block: 'start' });
+      record?.focus({ preventScroll: true });
+    }, 0);
+  };
+
+  const copyRecordLink = async () => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('artifact', selectedArtifactId);
+      url.hash = `record-${selectedArtifactId}`;
+      await navigator.clipboard.writeText(url.toString());
+      setCopyState('Link copied');
+    } catch { setCopyState('Copy the link from your address bar'); }
   };
 
   return (
     <div className="site-shell expedition-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expedition />
-      <main id="top">
+      <main id="main-content" tabIndex={-1}>
         <section className="expedition-hero" id="expedition">
           <div className="expedition-hero-copy">
             <p className="page-breadcrumb"><a href="/">ETHSCRIBE</a><span>/</span>EXPEDITION 001</p>
             <p className="kicker"><span /> Active digital archaeology hunt</p>
             <h1>The Lost Pixels of Satoshi</h1>
-            <p>Twenty-two exact files trace Satoshi’s first two Bitcoin icon systems. Each canonical payload has room for one first Ethscription—one ownable, byte-perfect artifact made from Satoshi’s original pixels.</p>
+            <p>Before the orange logo, there were Satoshi’s hand-tuned pixels. Hunt down 22 original files from his first two Bitcoin icon systems. Each target seeks one first Ethscription of the exact historical file—not a recreation.</p>
             <div className="expedition-hero-brief">
-              <p><strong>{resolvedStats.secured} / {resolvedStats.known}</strong><span>KNOWN FILES SECURED</span></p>
-              <p><strong>ONE LOST ORIGINAL</strong><span>Satoshi’s attested 20 × 20 transparent PNG remains the expedition’s open archaeological mystery.</span></p>
+              <p><strong>{resolvedStats.secured} / {resolvedStats.known}</strong><span>KNOWN FILES ETHSCRIBED</span><progress className="expedition-progress" value={resolvedStats.secured} max={resolvedStats.known} aria-label="Known files Ethscribed" /></p>
+              <p><strong>PLUS ONE LOST ORIGINAL</strong><span>Satoshi’s attested 20 × 20 transparent PNG remains the expedition’s open archaeological mystery. <a href={`?artifact=${lostArtifact.id}#record-${lostArtifact.id}`} onClick={(event) => { event.preventDefault(); openArtifactFromGrid(lostArtifact.id); }}>Investigate the missing PNG →</a></span></p>
             </div>
+            {findingIndexState === 'error' && <p className="index-notice" role="status">Live Findings are temporarily unavailable. This is the last available catalogue, not a complete current count. We’ll check again automatically.</p>}
             <a className="primary-action" href="#timeline">Open the field record <ArrowIcon /></a>
           </div>
           <ExpeditionCorpusGrid resolvedArtifacts={resolvedArtifacts} onOpenArtifact={openArtifactFromGrid} />
@@ -728,16 +836,26 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
         <section className="hunt-section expedition-record-section">
           <section className="timeline-section" id="timeline" aria-labelledby="timeline-title">
             <div className="timeline-heading">
-              <div><p className="card-index">EXPEDITION TIMELINE / 2008–2010</p><h3 id="timeline-title">Every target, in context.</h3></div>
-              <p><strong>Green files are already Ethscribed.</strong> White files still need Ethscribing. Select any file to expand its complete evidence and byte record directly beneath that moment.</p>
+              <div><p className="card-index">EXPEDITION TIMELINE / 2008–2010</p><h2 id="timeline-title">Every target, in context.</h2></div>
+              <p><strong>Green files are already Ethscribed.</strong> White files are still open in our catalogue. Choose a target to read its story, test your discovery, or see a live listing. Green marks a verified match—not necessarily a file held by the marketplace.</p>
             </div>
 
             <div className="timeline-legend" aria-label="Timeline status legend">
               <span className="legend-secured">ETHSCRIBED</span><span className="legend-open">NOT YET ETHSCRIBED</span>
             </div>
 
+            <div className="timeline-tools">
+              <label className="timeline-search">FIND A TARGET<input type="search" placeholder="Filename, format, release, or year" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+              <div className="timeline-filters" role="group" aria-label="Filter timeline targets">
+                {[
+                  ['all', 'All targets'], ['open', 'Still hunting'], ['secured', 'Ethscribed'], ['lost', 'Lost bytes'],
+                ].map(([value, label]) => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}
+              </div>
+            </div>
+            <p className="timeline-results" role="status">{visibleTargetCount} {visibleTargetCount === 1 ? 'target' : 'targets'}{filter === 'all' && !normalizedQuery ? ' · 22 known files + 1 lost original' : visibleTargetCount === 1 ? ' matches your view' : ' match your view'}</p>
+
             <div className="artifact-timeline">
-              {timelineEvents.map((event) => {
+              {filteredEvents.map((event) => {
                 const selectedInEvent = event.artifactIds.includes(selectedArtifactId);
                 const selectedArtifact = selectedInEvent ? artifactForId(selectedArtifactId) : null;
 
@@ -746,7 +864,7 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
                     <div className="timeline-marker"><span /></div>
                     <div className="timeline-event-content">
                       <div className="timeline-event-copy">
-                        <time>{event.date}</time><h4>{event.title}</h4><p>{event.copy}</p>
+                        <time>{event.date}</time><h3>{event.title}</h3><p>{event.copy}</p>
                         {event.artifactIds.length > 0 && (
                           <div className="artifact-chips">
                             {event.artifactIds.map((artifactId) => {
@@ -762,7 +880,8 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
                         )}
                       </div>
                       {selectedArtifact && (
-                        <div className="timeline-expanded" id={`record-${selectedArtifact.id}`}>
+                        <div className="timeline-expanded" id={`record-${selectedArtifact.id}`} tabIndex={-1}>
+                          <div className="record-toolbar"><button type="button" onClick={copyRecordLink}>Copy target link</button><span role="status">{copyState}</span><button type="button" onClick={() => selectArtifact(selectedArtifact.id)}>Close record ×</button></div>
                           <ArtifactDetail
                             key={selectedArtifact.id}
                             artifact={selectedArtifact}
@@ -779,6 +898,7 @@ function ExpeditionPage({ account, walletState, walletName, ensName, connectWall
                   </article>
                 );
               })}
+              {!filteredEvents.length && <div className="timeline-empty"><p>No targets match this view. Try a filename such as bitcoin20.xpm or a format such as PNG.</p><button type="button" onClick={() => { setQuery(''); setFilter('all'); }}>Show all targets</button></div>}
             </div>
           </section>
 
@@ -796,6 +916,10 @@ function SiteFooter() {
       <a className="footer-docs-link" href="/docs">Docs</a><span>© 2026 ETHSCRIBE</span>
     </footer>
   );
+}
+
+function NotFoundPage({ header }) {
+  return <div className="site-shell">{header}<main id="main-content" tabIndex={-1} className="not-found"><p className="kicker"><span /> No record at this address</p><h1>This trail ends here.</h1><p>The page may have moved. The active expedition and field manual are good places to pick up the search.</p><a className="primary-action" href="/expeditions">Explore expeditions <ArrowIcon /></a></main><SiteFooter /></div>;
 }
 
 function App() {
@@ -825,8 +949,12 @@ function App() {
   useEffect(() => {
     if (!['/', '/expeditions', '/wallet', EXPEDITION_PATH].includes(pathname)) return undefined;
     let active = true;
+    let fetching = false;
     setFindingIndexState('loading');
-    fetchVerifiedFindings()
+    const refresh = () => {
+      if (fetching || document.visibilityState === 'hidden') return;
+      fetching = true;
+      fetchVerifiedFindings()
       .then((records) => {
         if (active) {
           setVerifiedFindings(records);
@@ -836,8 +964,12 @@ function App() {
       .catch(() => {
         // The immutable manifest remains usable when the public Finding index is unavailable.
         if (active) setFindingIndexState('error');
-      });
-    return () => { active = false; };
+      }).finally(() => { fetching = false; });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); };
   }, [pathname]);
 
   const recordPublishedFinding = (finding) => {
@@ -848,28 +980,50 @@ function App() {
   const [modal, setModal] = useState(null);
   const isExpedition = pathname === EXPEDITION_PATH;
   const isLegacyProposalPath = pathname === '/expeditions/propose';
-  const isExpeditions = pathname === '/expeditions' || isLegacyProposalPath;
+  const isLegacyCreationPath = pathname === '/ethscribe';
+  const isExpeditions = pathname === '/expeditions' || isLegacyProposalPath || isLegacyCreationPath;
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
+  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet;
 
   useEffect(() => {
-    if (isLegacyProposalPath) window.history.replaceState({}, '', '/expeditions');
-  }, [isLegacyProposalPath]);
+    if (isLegacyProposalPath || isLegacyCreationPath) window.history.replaceState({}, '', '/expeditions');
+  }, [isLegacyProposalPath, isLegacyCreationPath]);
 
   useEffect(() => {
     if (isDocs) return;
-    document.title = isWallet
+    document.title = notFound ? 'Page not found — Ethscribe' : isWallet
       ? 'Wallet — Ethscribe'
       : isExpeditions
         ? 'Expeditions — Ethscribe'
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition, isExpeditions, isWallet]);
+  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound]);
+
+  useEffect(() => {
+    if (!modal) return undefined;
+    const previousFocus = document.activeElement;
+    const dialog = document.querySelector('.participation-modal');
+    dialog?.querySelector('button')?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setModal(null);
+      if (event.key === 'Tab') {
+        const controls = [...dialog.querySelectorAll('button, a[href]')];
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); previousFocus?.focus?.(); };
+  }, [modal]);
 
   const switchToMainnet = async () => {
     try {
       await walletSession.switchToMainnet();
+      setModal(null);
     } catch (error) {
       if (error?.code !== 4001) setModal('network-error');
     }
@@ -887,13 +1041,15 @@ function App() {
     provider,
     resolvedArtifacts,
     resolvedStats,
+    findingIndexState,
     onFindingPublished: recordPublishedFinding,
   };
   const headerProps = { account, walletState, walletName, ensName, connectWallet, openAccountModal };
 
   return (
     <>
-      {isDocs
+      {import.meta.env.DEV && import.meta.env.MODE !== 'test' && <div className="local-review-notice" role="note"><strong>LOCAL REVIEW</strong> · Live public data. Byte checks work; publishing and transactions are disabled. The live site is unchanged.</div>}
+      {notFound ? <NotFoundPage header={<SiteHeader {...headerProps} expeditions />} /> : isDocs
         ? <DocsPage header={<SiteHeader {...pageProps} docs />} footer={<SiteFooter />} />
         : isWallet
           ? <WalletPage

@@ -1,6 +1,7 @@
 const { createHash } = require('node:crypto');
 const { verifyMessage } = require('ethers');
-const { getWalletInventory, isAddress, isEthscriptionId, MARKET_ADDRESS } = require('./market');
+const { fetchBoundedJson, fetchBoundedText } = require('./boundedFetch');
+const { getArtifactMarket, isAddress, isEthscriptionId, MARKET_ADDRESS } = require('./market');
 const {
   EXPEDITION_ID,
   TargetCommitmentError,
@@ -11,7 +12,31 @@ const {
 const MAX_CLOCK_AGE_MS = 60 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 const MAX_LIST_RESULTS = 50;
+const FINDING_READ_CONCURRENCY = 6;
+const MAX_FINDING_BYTES = 500_000;
+const MAX_RECORD_RESPONSE_BYTES = 1_000_000;
+const MAX_LIST_PAGE_BYTES = 8_000_000;
 const HASH_PATTERN = /^0x[a-f0-9]{64}$/;
+// A local upload name is not signed. Display names belong to the target record,
+// so renaming an upload cannot change the public identity of a verified file.
+const TARGET_FILENAMES = Object.freeze({
+  'november-single-xpm': 'bitcoin.xpm',
+  'november-16-xpm': 'bitcoin16.xpm',
+  'november-20-xpm': 'bitcoin20.xpm',
+  'november-32-xpm': 'bitcoin32.xpm',
+  'november-48-xpm': 'bitcoin48.xpm',
+  'const-16-xpm': 'bitcoin16.xpm',
+  'const-20-xpm': 'bitcoin20.xpm',
+  'const-32-xpm': 'bitcoin32.xpm',
+  'const-48-xpm': 'bitcoin48.xpm',
+  'full-size-png': 'bitcoin530.png',
+  'june-16-xpm': 'bitcoin16.xpm',
+  'june-20-xpm': 'bitcoin20.xpm',
+  'june-32-xpm': 'bitcoin32.xpm',
+  'june-48-xpm': 'bitcoin48.xpm',
+  'june-80-xpm': 'bitcoin80.xpm',
+  'lost-bc-png': 'bitcoin20x20.png',
+});
 
 class FindingError extends Error {
   constructor(statusCode, code, message) {
@@ -81,7 +106,7 @@ function validateAssignment(assignment, now = Date.now(), env = process.env) {
   if (!HASH_PATTERN.test(assignment.rawSha256) || !HASH_PATTERN.test(assignment.protocolContentSha256)) {
     throw new FindingError(400, 'invalid_hash', 'The Finding hashes are invalid.');
   }
-  if (!Number.isSafeInteger(assignment.byteLength) || assignment.byteLength <= 0 || assignment.byteLength > 500_000) {
+  if (!Number.isSafeInteger(assignment.byteLength) || assignment.byteLength <= 0 || assignment.byteLength > MAX_FINDING_BYTES) {
     throw new FindingError(400, 'invalid_size', 'The Finding byte length is invalid.');
   }
   assertString(assignment.filename, 'filename', 255);
@@ -131,6 +156,9 @@ function decodeVerifiedContentUri(contentUri, expectedPrefix) {
     throw new FindingError(409, 'indexer_mismatch', 'The indexed Ethscription does not use the frozen target wrapper.');
   }
   const encoded = contentUri.slice(expectedPrefix.length);
+  if (encoded.length > 4 * Math.ceil(MAX_FINDING_BYTES / 3)) {
+    throw new FindingError(409, 'invalid_size', 'The indexed Finding exceeds the supported byte limit.');
+  }
   if (!/^[a-zA-Z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
     throw new FindingError(409, 'indexer_mismatch', 'The indexed Ethscription payload is not canonical base64.');
   }
@@ -155,12 +183,15 @@ function indexerUrl() {
 }
 
 async function fetchEthscription(ethscriptionId, fetchImpl = fetch) {
-  const response = await fetchImpl(`${indexerUrl()}/ethscriptions/${ethscriptionId}`, {
-    headers: { accept: 'application/json' },
-  });
-  if (!response.ok) throw new FindingError(503, 'indexer_unavailable', 'The official Ethscriptions record could not be verified.');
-  const payload = await response.json();
-  return payload.result || payload;
+  try {
+    const payload = await fetchBoundedJson(`${indexerUrl()}/ethscriptions/${ethscriptionId}`, {
+      headers: { accept: 'application/json' },
+      maxBytes: MAX_RECORD_RESPONSE_BYTES,
+    }, fetchImpl);
+    return payload.result || payload;
+  } catch {
+    throw new FindingError(503, 'indexer_unavailable', 'The official Ethscriptions record could not be verified.');
+  }
 }
 
 function storageConfig(env = process.env) {
@@ -202,16 +233,17 @@ async function storeFinding(path, record, fetchImpl = fetch, env = process.env) 
 
 function decodeXml(value) {
   return value
-    .replaceAll('&amp;', '&')
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
     .replaceAll('&quot;', '"')
-    .replaceAll('&apos;', "'");
+    .replaceAll('&apos;', "'")
+    .replaceAll('&amp;', '&');
 }
 
 function publicFinding(record) {
   const assignment = record?.assignment;
   if (record?.documentType !== 'verified-finding' || assignment?.expeditionId !== EXPEDITION_ID) return null;
+  if (!Object.hasOwn(TARGET_FILENAMES, assignment.targetId)) return null;
   try {
     const spec = targetSpec(assignment.targetId);
     return {
@@ -222,9 +254,12 @@ function publicFinding(record) {
       ethscriptionId: assignment.ethscriptionId,
       rawSha256: assignment.rawSha256,
       protocolContentSha256: assignment.protocolContentSha256,
-      filename: assignment.filename,
+      filename: TARGET_FILENAMES[assignment.targetId],
       byteLength: assignment.byteLength,
       authorAddress: assignment.authorAddress,
+      ethscriptionCreator: record.verification?.ethscriptionCreator || null,
+      ethscriptionTimestamp: record.verification?.ethscriptionTimestamp || null,
+      ethscriptionNumber: record.verification?.ethscriptionNumber ?? null,
       sourceUrl: assignment.sourceReferences?.[0] || '',
       claimSummary: assignment.claimSummary,
       contentUri: record.verification?.indexedContentUri || '',
@@ -237,28 +272,80 @@ function publicFinding(record) {
 
 async function listFindings(fetchImpl = fetch, env = process.env, limit = MAX_LIST_RESULTS) {
   const config = storageConfig(env);
-  const boundedLimit = Math.min(Math.max(Number(limit) || MAX_LIST_RESULTS, 1), MAX_LIST_RESULTS);
+  const boundedLimit = Math.min(Math.max(Math.floor(Number(limit)) || MAX_LIST_RESULTS, 1), MAX_LIST_RESULTS);
   const prefix = `hunts/${EXPEDITION_ID}/findings/`;
-  const listUrl = `${blobBaseUrl(config)}?restype=container&comp=list&prefix=${encodeURIComponent(prefix)}&maxresults=5000&${config.sas}`;
-  const listResponse = await fetchImpl(listUrl, { headers: { 'x-ms-version': '2023-11-03' } });
-  if (!listResponse.ok) {
-    throw new FindingError(503, 'storage_unavailable', 'The verified Finding index could not be read.');
+  const exactEntries = new Map();
+  let candidateEntries = [];
+  let marker = '';
+  const seenMarkers = new Set();
+
+  // Azure returns blob names in lexical order, not submission order. Walk every
+  // metadata page before limiting candidates; otherwise an active recovery hunt
+  // can displace permanent exact matches, including those on later pages.
+  do {
+    const continuation = marker ? `&marker=${encodeURIComponent(marker)}` : '';
+    const listUrl = `${blobBaseUrl(config)}?restype=container&comp=list&prefix=${encodeURIComponent(prefix)}&maxresults=5000${continuation}&${config.sas}`;
+    let xml;
+    try {
+      xml = await fetchBoundedText(listUrl, {
+        headers: { 'x-ms-version': '2023-11-03' },
+        maxBytes: MAX_LIST_PAGE_BYTES,
+      }, fetchImpl);
+    } catch {
+      throw new FindingError(503, 'storage_unavailable', 'The verified Finding index could not be read.');
+    }
+    for (const [, blob] of xml.matchAll(/<Blob>([\s\S]*?)<\/Blob>/g)) {
+      const name = decodeXml(blob.match(/<Name>([\s\S]*?)<\/Name>/)?.[1] || '');
+      const match = name.match(/^hunts\/lost-pixels-of-satoshi\/findings\/([a-z0-9-]+)--([a-f0-9]{64})\/finding\.json$/);
+      if (!match || !Object.hasOwn(TARGET_FILENAMES, match[1])) continue;
+      const spec = targetSpec(match[1]);
+      const modifiedAt = Date.parse(decodeXml(blob.match(/<Last-Modified>([\s\S]*?)<\/Last-Modified>/)?.[1] || ''));
+      const entry = { name, targetId: match[1], ethscriptionId: `0x${match[2]}`, validationMode: spec.validationMode, modifiedAt: Number.isFinite(modifiedAt) ? modifiedAt : 0 };
+      if (spec.validationMode === 'exact') exactEntries.set(name, entry);
+      else candidateEntries.push(entry);
+    }
+    candidateEntries = [...new Map(candidateEntries.map((entry) => [entry.name, entry])).values()]
+      .sort((left, right) => right.modifiedAt - left.modifiedAt || right.name.localeCompare(left.name))
+      .slice(0, boundedLimit);
+
+    marker = decodeXml(xml.match(/<NextMarker>([\s\S]*?)<\/NextMarker>/)?.[1] || '');
+    if (marker && seenMarkers.has(marker)) {
+      throw new FindingError(503, 'storage_unavailable', 'The Finding index returned a repeated continuation marker.');
+    }
+    if (marker) seenMarkers.add(marker);
+  } while (marker);
+
+  const entries = [...exactEntries.values(), ...candidateEntries];
+  const records = [];
+  for (let offset = 0; offset < entries.length; offset += FINDING_READ_CONCURRENCY) {
+    const page = await Promise.all(entries.slice(offset, offset + FINDING_READ_CONCURRENCY).map(async (entry) => {
+      let record = null;
+      try {
+        const stored = await fetchBoundedJson(`${blobBaseUrl(config)}/${encodeBlobPath(entry.name)}?${config.sas}`, {
+          headers: { accept: 'application/json', 'x-ms-version': '2023-11-03' },
+          maxBytes: MAX_RECORD_RESPONSE_BYTES,
+        }, fetchImpl);
+        record = publicFinding(stored);
+      } catch {
+        // Recovery candidates may be skipped; accepted records fail the index
+        // below so incomplete upstream responses cannot erase an accession.
+      }
+      const valid = record?.targetId === entry.targetId && record?.ethscriptionId === entry.ethscriptionId
+        && Number.isFinite(Date.parse(record?.verifiedAt));
+      if (!valid && entry.validationMode === 'exact') {
+        // An incomplete read must not masquerade as a target becoming unfound.
+        throw new FindingError(503, 'storage_unavailable', 'An accepted Finding could not be read. Please retry the index.');
+      }
+      if (!valid) return null;
+      // Recovery candidates are an assignment feed, not accepted previews. Keep
+      // their full bytes in stored evidence and the media-by-ID endpoint; 50
+      // embedded base64 payloads could otherwise exceed the response budget.
+      return entry.validationMode === 'exact' ? record : { ...record, contentUri: '' };
+    }));
+    records.push(...page.filter(Boolean));
   }
 
-  const xml = await listResponse.text();
-  const names = Array.from(xml.matchAll(/<Name>([\s\S]*?)<\/Name>/g), (match) => decodeXml(match[1]))
-    .filter((name) => /^hunts\/lost-pixels-of-satoshi\/findings\/[a-z0-9-]+--[a-f0-9]{64}\/finding\.json$/.test(name))
-    .slice(-boundedLimit);
-
-  const records = await Promise.all(names.map(async (name) => {
-    const response = await fetchImpl(`${blobBaseUrl(config)}/${encodeBlobPath(name)}?${config.sas}`, {
-      headers: { accept: 'application/json', 'x-ms-version': '2023-11-03' },
-    });
-    if (!response.ok) return null;
-    return publicFinding(await response.json().catch(() => null));
-  }));
-
-  return records.filter(Boolean).sort((left, right) => right.verifiedAt.localeCompare(left.verifiedAt));
+  return records.sort((left, right) => right.verifiedAt.localeCompare(left.verifiedAt));
 }
 
 async function verifyAndStoreFinding(payload, dependencies = {}) {
@@ -284,7 +371,7 @@ async function verifyAndStoreFinding(payload, dependencies = {}) {
   }
 
   const fetchImpl = dependencies.fetchImpl || fetch;
-  const getInventory = dependencies.getWalletInventory || getWalletInventory;
+  const getMarketRecord = dependencies.getArtifactMarket || getArtifactMarket;
   const record = await fetchEthscription(assignment.ethscriptionId, fetchImpl);
   if (record.transaction_hash?.toLowerCase() !== assignment.ethscriptionId
     || record.content_sha?.toLowerCase() !== assignment.protocolContentSha256
@@ -306,10 +393,11 @@ async function verifyAndStoreFinding(payload, dependencies = {}) {
     throw new FindingError(409, 'raw_hash_mismatch', 'The decoded onchain bytes do not match the signed Finding.');
   }
 
-  const inventory = await getInventory(assignment.authorAddress);
-  const escrow = inventory.escrow?.find((item) => item.transactionHash?.toLowerCase() === assignment.ethscriptionId);
-  if (!escrow?.custody?.verified) {
-    const detail = escrow?.custody?.reason;
+  const marketRecord = await getMarketRecord(assignment.ethscriptionId);
+  if (marketRecord?.ethscription?.transactionHash?.toLowerCase() !== assignment.ethscriptionId
+    || marketRecord.seller?.toLowerCase() !== assignment.authorAddress
+    || !marketRecord.custody?.verified) {
+    const detail = marketRecord?.custody?.reason;
     throw new FindingError(
       409,
       'custody_unverified',
@@ -336,6 +424,9 @@ async function verifyAndStoreFinding(payload, dependencies = {}) {
       decodedRawSha256: assignment.rawSha256,
       marketCustody: 'verified',
       indexedContentUri: record.content_uri,
+      ethscriptionCreator: record.creator || null,
+      ethscriptionTimestamp: record.block_timestamp || null,
+      ethscriptionNumber: record.ethscription_number ?? null,
     },
   };
   const putFinding = dependencies.storeFinding || storeFinding;

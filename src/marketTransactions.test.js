@@ -108,6 +108,11 @@ test('waits for a successful receipt and explains common wallet failures', async
   expect(friendlyTransactionError(new Error('execution reverted: EnforcedPause'))).toMatch(/paused/i);
 });
 
+test('distinguishes a mined revert from a transaction that is still awaiting verification', async () => {
+  const provider = { request: jest.fn().mockResolvedValue({ status: '0x0' }) };
+  await expect(waitForTransactionReceipt(provider, `0x${'34'.repeat(32)}`)).rejects.toMatchObject({ code: 'TRANSACTION_REVERTED' });
+});
+
 test('bounds post-confirmation reconciliation without timing out an unknown start', () => {
   expect(reconciliationTimedOut(1_000, 600_999)).toBe(false);
   expect(reconciliationTimedOut(1_000, 601_000)).toBe(true);

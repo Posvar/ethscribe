@@ -37,6 +37,10 @@ test('promotes only exact verified targets into the secured manifest', () => {
   ]);
 
   expect(resolved[0]).toMatchObject({ status: 'secured', findingId: 'exact-finding', bytes: 42 });
+  expect(resolved[0].creator).toBe('');
+  expect(resolved[0].ethscribedAt).toBeNull();
+  expect(resolved[0].findingAuthor).toBe(`0x${'44'.repeat(20)}`);
+  expect(resolved[0].findingVerifiedAt).toBe('2026-09-01T12:00:00.000Z');
   expect(resolved[1].status).toBe('open');
   expect(statsForArtifacts(resolved, { lost: 1 })).toMatchObject({ known: 2, secured: 1, open: 1, lost: 1 });
 });

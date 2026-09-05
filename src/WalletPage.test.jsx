@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import WalletPage from './WalletPage';
+import { artifactById } from './huntData';
 
 const originalFetch = global.fetch;
 const owner = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
@@ -146,6 +147,48 @@ test('labels verified expedition Findings and direct contract deposits separatel
   expect(assignment).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi?artifact=november-20-xpm#record-november-20-xpm');
   expect(screen.getByText('UNASSIGNED CONTRACT DEPOSIT')).toBeInTheDocument();
   expect(screen.queryByText(/verified in market custody/i)).not.toBeInTheDocument();
+});
+
+test.each([
+  ['loading', 'CHECKING ASSIGNMENT'],
+  ['error', 'ASSIGNMENT INDEX UNAVAILABLE'],
+  ['ready', 'UNASSIGNED CONTRACT DEPOSIT'],
+])('recognized catalogue deposits remain linked while the Finding index is %s', async (findingIndexState, unresolvedLabel) => {
+  const known = artifactById('original-bc-ico');
+  const mixedCaseId = `0x${known.ethscriptionId.slice(2).toUpperCase()}`;
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ result: {
+    owner: owner.toLowerCase(), market, directlyOwned: [], claimableWei: '0', pagination: {},
+    escrow: [
+      { transactionHash: mixedCaseId, ethscriptionNumber: 175266, mimetype: 'image/x-icon', custody: { verified: false } },
+      { transactionHash: ethscriptionId, ethscriptionNumber: 999, mimetype: 'image/png', custody: { verified: false } },
+    ],
+  } }) }));
+
+  render(<WalletPage account={owner} chainId="0x1" connectWallet={jest.fn()} switchToMainnet={jest.fn()} findingIndexState={findingIndexState} />);
+
+  const assignment = await screen.findByRole('link', { name: /expedition 001.*bitcoin\.ico/i });
+  expect(assignment).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi?artifact=original-bc-ico#record-original-bc-ico');
+  expect(screen.getAllByText(unresolvedLabel)).toHaveLength(1);
+});
+
+test('a published Finding mapping takes priority over the static catalogue fallback', async () => {
+  const known = artifactById('original-bc-ico');
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ result: {
+    owner: owner.toLowerCase(), market, directlyOwned: [], claimableWei: '0', pagination: {},
+    escrow: [{ transactionHash: known.ethscriptionId, ethscriptionNumber: 175266, mimetype: 'image/x-icon', custody: { verified: false } }],
+  } }) }));
+
+  render(<WalletPage
+    account={owner}
+    chainId="0x1"
+    connectWallet={jest.fn()}
+    switchToMainnet={jest.fn()}
+    resolvedFindings={[{ ethscriptionId: known.ethscriptionId.toUpperCase(), expeditionId: 'lost-pixels-of-satoshi', targetId: 'november-20-xpm' }]}
+  />);
+
+  const assignment = await screen.findByRole('link', { name: /expedition 001.*bitcoin20\.xpm/i });
+  expect(assignment).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi?artifact=november-20-xpm#record-november-20-xpm');
+  expect(screen.queryByText('UNASSIGNED CONTRACT DEPOSIT')).not.toBeInTheDocument();
 });
 
 test('keeps connected-wallet identity in the global header instead of repeating it in inventory', async () => {
@@ -553,4 +596,46 @@ test('pages through marketplace custody 50 records at a time', async () => {
     { headers: { accept: 'application/json' } },
   );
   expect(screen.getByText(/page 2 · up to 50 items/i)).toBeInTheDocument();
+});
+
+test('ignores a late inventory response from a previously connected wallet', async () => {
+  const secondOwner = `0x${'9'.repeat(40)}`;
+  let finishFirstRead;
+  const responseFor = (address, number) => ({
+    ok: true,
+    json: async () => ({ result: {
+      owner: address.toLowerCase(), market, claimableWei: number === 1 ? '1000000000000000000' : '0',
+      directlyOwned: [],
+      escrow: [{ transactionHash: `0x${String(number).repeat(64)}`, ethscriptionNumber: number, mimetype: 'image/png', custody: { verified: false } }],
+      pagination: {},
+    } }),
+  });
+  global.fetch = jest.fn((url) => url.includes(owner)
+    ? new Promise((resolve) => { finishFirstRead = resolve; })
+    : Promise.resolve(responseFor(secondOwner, 2)));
+  const props = { chainId: '0x1', connectWallet: jest.fn(), switchToMainnet: jest.fn() };
+  const { rerender } = render(<WalletPage account={owner} {...props} />);
+  rerender(<WalletPage account={secondOwner} {...props} />);
+  expect(await screen.findByText('Ethscription #2')).toBeInTheDocument();
+  await act(async () => { finishFirstRead(responseFor(owner, 1)); });
+  expect(screen.queryByText('Ethscription #1')).not.toBeInTheDocument();
+  expect(screen.getByText('Ethscription #2')).toBeInTheDocument();
+  expect(screen.getByLabelText(/claimable marketplace credit/i)).toHaveTextContent('0 ETH');
+});
+
+test('closes an unsigned transaction confirmation when the wallet changes', async () => {
+  const activeMarket = { ...market, transactionsEnabled: true, exitsEnabled: true };
+  global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: async () => ({ result: {
+    owner: owner.toLowerCase(), market: activeMarket, claimableWei: '0', directlyOwned: [],
+    escrow: [{ transactionHash: ethscriptionId, ethscriptionNumber: 174464, mimetype: 'image/png', custody: { verified: true } }],
+    pagination: {},
+  } }) }));
+  const provider = { request: jest.fn() };
+  const props = { chainId: '0x1', provider, connectWallet: jest.fn(), switchToMainnet: jest.fn() };
+  const { rerender } = render(<WalletPage account={owner} {...props} />);
+  fireEvent.click(await screen.findByRole('button', { name: /withdraw to this wallet/i }));
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  rerender(<WalletPage account={`0x${'9'.repeat(40)}`} {...props} />);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(provider.request).not.toHaveBeenCalled();
 });

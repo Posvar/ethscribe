@@ -1,99 +1,57 @@
 # Byte-perfect identity
 
-“Byte perfect” means that two files contain exactly the same ordered bytes. A matching appearance, filename, pixel grid, or decoded text is not enough.
+“Byte perfect” means two files contain the same ordered bytes. Matching appearance, dimensions, filename, or decoded text is not enough.
 
-Ethscribe calculates a decoded-file digest for every candidate:
+Ethscribe compares SHA-256 digests of the decoded artifact bytes. This digest identifies the file within the catalogue.
 
-```text
-rawSha256 = SHA-256(decoded artifact bytes)
-```
+## File identity and protocol identity
 
-That digest is the artifact's identity inside the Ethscribe catalogue.
+| Identity | What is hashed | What it distinguishes |
+|---|---|---|
+| File identity | The decoded original file | An exact byte match against the target |
+| Protocol content identity | The complete UTF-8 Data URI interpreted by the protocol | One content representation, including its wrapper |
 
-## Why the data-URI hash is not enough
-
-Consider two valid wrappers for the same bytes:
+Two wrappers can describe the same XPM bytes:
 
 ```text
 data:image/x-xpixmap;base64,<payload>
 data:image/x-xpm;base64,<same payload>
 ```
 
-Their complete strings differ, so their Ethscriptions protocol hashes differ. Once decoded, however, the payload bytes can have the same `rawSha256`. Ethscribe groups them beneath one artifact record while preserving both protocol records.
+Those complete strings differ, even though their decoded file hashes match. MIME parameters and alternative encodings can create similar distinctions for PNG or JPEG too.
 
-Other wrapper differences can produce the same result:
+Gzip transport alone is not necessarily a new protocol identity: the protocol interprets the decompressed Data URI. Extensions such as attachments also need their own decoding rules before making comparisons. Ethscribe's current target flow uses its explicit canonical wrapper.
 
-- MIME-type aliases;
-- base64 versus permitted non-base64 forms;
-- capitalization or parameters where the protocol accepts them;
-- gzip transport that expands to the same content; and
-- attachment structures defined by later ESIPs.
+## What the site verifies today
 
-## The verification pipeline
+For supported candidates, the browser calculates byte length and raw-file SHA-256. A known target is tested against its server-side reference commitment. Before a Finding is recorded, the server independently retrieves the indexed content, checks the required wrapper, decodes it, and reproduces its hashes.
 
-For each submitted candidate, Ethscribe should:
+The existence check searches the canonical content and disclosed common aliases. This is a bounded check, not a complete scan of every historical Ethscription.
 
-1. Locate the creation in Ethereum and validate it under the applicable protocol rules.
-2. Recover the complete content representation.
-3. Decode transport and data-URI encoding without altering the payload.
-4. Record byte length, signature, dimensions where applicable, and `rawSha256`.
-5. Compare the digest against the hunt's target and the historical raw-byte index.
-6. Preserve the wrapper, transaction location, decoding method, and software version used.
+The current site does not have a protocol-wide index grouping all files by decoded-byte identity. It must not translate “no match found in these checks” into “these bytes have never been Ethscribed.”
 
-Every transformation must be deterministic and reproducible.
+## What first means
 
-## Historical order
+For the target's canonical payload, without duplicate opt-in, the Ethscriptions protocol recognizes the first valid creation in Ethereum transaction order.
 
-“Not found in this collection” is a local statement. “Earliest known raw-byte match” is a protocol-wide historical statement and requires more work.
+A stronger claim—earliest appearance of these raw bytes across every valid wrapper—would require a historical backfill covering all relevant creation paths and decoding rules, plus an explicit reorganization policy. That index is planned.
 
-Before making the stronger claim, the index must backfill all eligible creation paths and sort them by canonical Ethereum order:
+The protocol rules, including duplicate opt-in, are documented in the [official specification](https://docs.ethscriptions.com/overview/protocol-specification).
 
-```text
-block number
-  -> transaction index
-     -> event log index, when applicable
-```
+## Known and unknown targets
 
-The backfill must cover direct calldata creations and relevant accepted ESIPs. It must then remain current as new blocks arrive and survive chain reorganizations according to an explicit confirmation policy.
+A known-file target has an expected digest from a selected historical source. Matching it establishes equality with that reference, not independent proof that the reference's attribution is correct.
 
-Until that work is complete, Ethscribe should say:
+A lost-file target has no established digest. It instead publishes identifying clues and needs evidence connecting recovered bytes to the historical artifact.
 
-> No matching decoded bytes are currently indexed by Ethscribe.
+Open known targets withhold their reference hashes for the hunt. This is a gameplay boundary; after an exact Finding is recognized, its digest can be inspected publicly.
 
-It should not say:
+## Changes that matter
 
-> These bytes have never been Ethscribed.
+Resaving a PNG, changing an ICO's contents, editing XPM whitespace, or converting line endings can change the raw-file hash without visibly changing the image. A reconstruction from matching pixels is not an exact copy of the source file.
 
-## Target manifests
+Renaming a file without changing its contents does **not** change its byte identity. Historical filenames and paths are provenance facts about that file.
 
-A deterministic hunt can publish an expected artifact manifest containing:
+## Previews are separate
 
-```text
-artifactId
-canonicalFilename
-expectedRawSha256
-expectedByteLength
-expectedMediaSignature
-sourceReferences
-evidenceGrade
-```
-
-A lost-file hunt cannot publish an expected hash because the bytes are unknown. It instead publishes a bounded historical description: filename, date range, context, attesting sources, and the evidence required to show that recovered bytes are the referenced file.
-
-## Rendering is secondary
-
-Browsers do not natively display every historical format. XPM is a useful example: it is source code containing a pixel map, not a commonly supported web image type. Ethscribe may parse XPM client-side and render a PNG or canvas preview, but the preview is derivative. The original XPM bytes remain the artifact.
-
-The interface must label generated previews and never substitute their hash for `rawSha256`.
-
-## File equivalence is intentionally strict
-
-The following are different artifacts unless a hunt explicitly defines another relationship:
-
-- a PNG re-saved with different metadata;
-- an ICO with reordered image entries;
-- an XPM with changed whitespace;
-- an image reconstructed from matching pixels; and
-- a byte-identical file stored under another filename.
-
-The last pair has one byte identity but may have multiple historical names. Ethscribe stores names as claims about the artifact, not as part of its byte identity.
+An enlarged image or generated XPM preview helps visitors inspect the work. Its pixels are not substituted for the original bytes. The artifact remains the original file, hashed before any display transformation.

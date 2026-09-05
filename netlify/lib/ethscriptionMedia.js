@@ -1,4 +1,8 @@
+const { fetchBoundedJson } = require('./boundedFetch');
+
 const MAX_PREVIEW_BYTES = 2_000_000;
+const MAX_RECORD_BYTES = 8_000_000;
+const MAX_DATA_URI_LENGTH = MAX_PREVIEW_BYTES * 3 + 512;
 const DEFAULT_API_URL = 'https://api.ethscriptions.com/v2';
 
 function isEthscriptionId(value) {
@@ -9,8 +13,9 @@ function parseDataUri(contentUri) {
   if (typeof contentUri !== 'string' || !contentUri.startsWith('data:')) {
     throw new Error('invalid_content_uri');
   }
+  if (contentUri.length > MAX_DATA_URI_LENGTH) throw new Error('unsupported_preview_size');
   const comma = contentUri.indexOf(',');
-  if (comma < 0) throw new Error('invalid_content_uri');
+  if (comma < 0 || comma > 512) throw new Error('invalid_content_uri');
   const metadata = contentUri.slice(5, comma);
   const parts = metadata.split(';');
   const contentType = (parts.shift() || '').toLowerCase();
@@ -21,14 +26,20 @@ function parseDataUri(contentUri) {
   const payload = contentUri.slice(comma + 1);
   let body;
   if (parts.some((part) => part.toLowerCase() === 'base64')) {
+    const padding = payload.endsWith('==') ? 2 : payload.endsWith('=') ? 1 : 0;
+    const decodedLength = (payload.length / 4) * 3 - padding;
+    if (decodedLength > MAX_PREVIEW_BYTES) throw new Error('unsupported_preview_size');
     if (!/^[a-z0-9+/]*={0,2}$/i.test(payload) || payload.length % 4 !== 0) throw new Error('invalid_base64');
     body = Buffer.from(payload, 'base64');
   } else {
+    let decoded;
     try {
-      body = Buffer.from(decodeURIComponent(payload), 'utf8');
+      decoded = decodeURIComponent(payload);
     } catch {
       throw new Error('invalid_percent_encoding');
     }
+    if (Buffer.byteLength(decoded, 'utf8') > MAX_PREVIEW_BYTES) throw new Error('unsupported_preview_size');
+    body = Buffer.from(decoded, 'utf8');
   }
   if (body.length === 0 || body.length > MAX_PREVIEW_BYTES) throw new Error('unsupported_preview_size');
   return { body, contentType };
@@ -43,11 +54,17 @@ function previewContentSecurityPolicy(contentType) {
 async function loadEthscriptionMedia(ethscriptionId, fetchImpl = fetch) {
   if (!isEthscriptionId(ethscriptionId)) throw new Error('invalid_ethscription_id');
   const baseUrl = (process.env.ETHSCRIPTIONS_API_URL || DEFAULT_API_URL).replace(/\/$/, '');
-  const response = await fetchImpl(`${baseUrl}/ethscriptions/${ethscriptionId}`, {
-    headers: { accept: 'application/json' },
-  });
-  if (!response.ok) throw new Error(response.status === 404 ? 'ethscription_not_found' : 'indexer_unavailable');
-  const payload = await response.json();
+  let payload;
+  try {
+    payload = await fetchBoundedJson(`${baseUrl}/ethscriptions/${ethscriptionId}`, {
+      headers: { accept: 'application/json' },
+      timeoutMs: 8_000,
+      maxBytes: MAX_RECORD_BYTES,
+    }, fetchImpl);
+  } catch (error) {
+    if (error.status === 404) throw new Error('ethscription_not_found');
+    throw error;
+  }
   const record = payload.result || payload;
   if (record.transaction_hash?.toLowerCase() !== ethscriptionId.toLowerCase()) throw new Error('record_mismatch');
   return parseDataUri(record.content_uri);

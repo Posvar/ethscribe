@@ -1,122 +1,85 @@
 # Phased development
 
-Ethscribe grows in response to demonstrated behavior. The roadmap adds complexity only when a working product reveals the need for it.
+MVP and V1 are one release: a working experiment in recovering, submitting, and collecting historical files, with wallet connection from the beginning.
 
-## Phase 0 — foundation
+This is a direction of travel, not a schedule or a promise of financial rewards. Product phases are separate from contract version numbers.
 
-**Outcome:** a reproducible, Git-backed production deployment.
+## MVP / V1 — the current experiment
 
-- Establish the React application and visual identity.
-- Connect the repository to the existing Netlify project and `ethscri.be`.
-- Preserve server-side Azure configuration without exposing secrets.
-- Document the product, trust model, and delivery gates.
+The implemented experience includes:
 
-**Status:** complete.
+- A permanent mission homepage and expedition directory.
+- Expedition 001 with a corpus grid, historical timeline, and artifact records.
+- Candidate testing from an upload or a supported existing Ethscription.
+- Target-specific creation directly into market custody and deposit of existing matches.
+- Signed Finding assignments, validated and stored by the server.
+- Field Wallet inventory, assignment display, individual withdrawals, and claimable proceeds.
+- Registration for sale, fixed-price listing and cancellation, and purchase from an artifact record.
+- An immutable marketplace with public source and deployment records.
+- Integrated documentation built from the same Markdown used for optional GitBook publication.
 
-## Phase 1 — public museum and field guide
+These capabilities are implemented. Transaction availability still depends on contract state, UI configuration, and live ownership services.
 
-**Outcome:** anyone can understand the mission and explore the first expedition.
+Known-file matches are automated against the chosen target references. Lost-file authentication remains a research decision. Public proposals, community voting, research revisions, and auction screens are not part of this release.
 
-- Separate the permanent mission from expedition-specific storytelling.
-- Publish the Satoshi artifact timeline with expandable evidence records.
-- Add real wallet connection without fake transactional state.
-- Publish a GitBook-compatible whitepaper and integrated docs.
-- Clearly label known gaps, secured artifacts, and bytes-unknown targets.
+## Next — make the complete loop dependable
 
-**Status:** complete. The museum shell, first expedition, wallet connection, evidence records, and integrated documentation are live.
+Prioritize observed failure points before expanding the game:
 
-## Phase 2 — persistent participation
+- Exercise creation, assignment, registration, listing, purchase, withdrawal, and proceeds claim end to end.
+- Improve recovery from interrupted sessions and index delays.
+- Obtain independent contract and transaction-flow review.
+- Make signed records easy to inspect, export, and preserve.
+- Provide a clear review and correction process for lost-file candidates.
+- Measure first successful submission, return visits, and collector interest.
 
-**Outcome:** wallets can create durable research records without marketplace custody.
+The evidence of success is that independent participants can complete the loop and understand its outcomes without private assistance. A successful build or source verification is not a substitute for that evidence.
 
-- Add Netlify Functions and Azure-backed storage.
-- Implement canonical wallet-signed Finding assignments; use EIP-712 for the fuller versioned Dossier schema when its review UI lands.
-- Verify Ethscriptions and calculate decoded-byte hashes.
-- Publish Finding pages, Dossier revisions, Field Notes, and proposals.
-- Add abuse controls and curator review tooling.
-- Begin the protocol-wide raw-byte index.
+## V2 — stronger research records
 
-**Release gate:** independent users can submit and verify signed records without privileged database edits.
+Add only what actual fieldwork needs:
 
-**Current status:** the first narrow slice is implemented. The target UI verifies exact bytes, frozen wrappers, official protocol content, a personal wallet signature, and market custody before a server function writes an immutable Finding JSON record. Public Finding pages, Dossier revisions, Field Notes, moderation, rate limiting, and the protocol-wide raw-byte index remain open Phase 2 work.
+- Multiple sources and archived evidence.
+- Signed dossier revisions and public signature inspection.
+- Corroborations, corrections, and specific challenges.
+- Named reviewer decisions with reasons.
+- Better moderation and request controls.
+- Additional curated expeditions.
 
-## Phase 3 — live genesis expeditions
+No wallet-vote majority can override contradictory evidence. A candidate may remain unresolved.
 
-**Outcome:** prove that the research loop creates repeat participation.
+## V3 — repeat participation and sustainable economics
 
-- Freeze and publish expedition rubrics.
-- Expand the live Finding intake into a complete public review workflow.
-- Run three to five multi-day or weekly expeditions.
-- Curate Finalists with signed decisions.
-- Measure cross-expedition retention, collaborative research, and credible collector intent.
-- Refine schemas and rules from observed edge cases.
+If several expeditions attract independent contributors and collectors:
 
-**Release gate:** at least ten independent hunters contribute credible work, users improve others' Findings, the proposal queue has usable depth, and curator reasoning remains consistent.
+- Reopen structured public proposals.
+- Maintain a queue of researched, launch-ready expeditions.
+- Introduce documented contributor rewards, if sustainable.
+- Add funded-offer screens or other sale formats when needed.
+- Publish operating costs and useful participation measures.
 
-## Phase 4 — immutable marketplace
+The current contract fee is 5%. Researcher and proposal-author allocations are not currently implemented or promised.
 
-**Outcome:** trusted eligibility connects to trustless custody and settlement.
+## V4 — distribute the work
 
-- Freeze `EthscribeMarketV1` settlement invariants and `EthscribeMarketV2` direct-creation, batch-exit, offer, and withdrawal behavior.
-- Build comprehensive contract and integration tests.
-- Rehearse deployment locally; use Sepolia when its public-chain exercise is worth the extra step, or record a deliberate skip in favor of a paused mainnet deployment.
-- Integrate official-indexer reconciliation into every first-party market action.
-- Obtain independent contract review.
-- Deploy the exact reviewed commit paused, with explicitly reviewed owner and fee-recipient wallets.
-- Enable deposits, binding offers, refunds, settlement, and fee routing.
-- Complete the first primary Accession auction.
+If review capacity becomes a bottleneck:
 
-**Current status:** both immutable contracts, the unit/fuzz/invariant suite, threat model, and deployment records are public. V1 was source-verified and completed the first disposable Deposit → Verify → Withdraw production pilot on August 31, 2026. V2 was deployed from frozen source commit `b2339be`, exact-match source-verified, and adds direct-to-vault creation plus bounded bulk withdrawal for both registered deposits and unregistered direct creations. The wallet integrates fail-closed official-indexer reconciliation. Independent review, a low-value V2 direct-creation exercise, settlement controls, and the low-value settlement procedure remain incomplete; neither contract is approved for valuable custody.
+- Introduce specialist reviewers and accountable handoff.
+- Preserve corrections alongside original decisions.
+- Publish records through redundant readers and storage.
+- Build a decoded-byte index with measured historical coverage.
+- Automate scheduling from a prepared queue.
 
-**Release gate:** every asset and fund path is tested, failure recovery does not require curator goodwill, and the live UI is reconciled to contract and official-indexer state.
+A wider raw-byte index enables stronger chronology claims only when its coverage and ordering rules are documented.
 
-## V2 — optimistic curation
+## Vn — an enduring archive
 
-Introduced only if review volume becomes a measured bottleneck:
+The long-term aim is recurring fieldwork that does not depend on the founder preparing every brief or reviewing every contribution. This requires a supply of worthwhile targets, credible reviewers, returning participants, and enough income to support maintenance.
 
-- unchallenged Findings can advance under strict conditions;
-- any concrete challenge triggers review;
-- a curator Safe replaces one key;
-- contribution history helps surface expertise; and
-- community proposals more directly populate the prepared queue.
+Daily hunts, a token, staking, juries, and broad governance are optional tools. None is a required destination.
 
-## V3 — distributed expertise
+## Contract evolution
 
-Introduced only after repeat contributors establish useful domain knowledge:
+The active market is immutable. A new product page, research process, or fee distributor does not automatically require a new custody contract. A change to settlement or custody semantics does.
 
-- rotating domain-specific panels;
-- nontransferable contribution reputation;
-- transparent appeals to a wider council;
-- reviewer and challenger rewards;
-- concurrent expeditions; and
-- secondary Accession trading.
-
-## V4 — cryptoeconomic security
-
-Introduced only when value at risk attracts serious coordinated attacks:
-
-- submission and challenge bonds;
-- slashable typed attestations;
-- randomized adjudicator panels;
-- expanding appeals or external arbitration;
-- security budgets proportional to value; and
-- watchtower rewards.
-
-## Vn — autonomous institution
-
-The mature system can open one new multi-day expedition each day while Seasons create larger exhibitions. Settlement events advance a community-sourced queue, fees sustain contributors and operations, storage has redundant readers, and ordinary operation no longer requires the founder.
-
-Autonomy is achieved when stopping founder proposals and routine reviews does not stop cadence, quality, safety, or revenue.
-
-## Explicitly deferred
-
-- a native token;
-- proof-of-stake historical validation;
-- fully permissionless expedition topics;
-- daily cadence at launch;
-- AI adjudication of historical truth;
-- unbounded royalties;
-- cross-chain scope; and
-- broad DAO governance.
-
-These are possible tools, not milestones the project must eventually adopt.
+Future migrations should identify the new deployment explicitly and preserve exits from earlier versions. See [ownership and marketplace](../product/ownership-and-marketplace.md).

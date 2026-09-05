@@ -1,8 +1,8 @@
 export async function fetchVerifiedFindings(fetchImpl = fetch) {
   const response = await fetchImpl('/api/findings', { headers: { accept: 'application/json' } });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.message || 'The verified Finding index is temporarily unavailable.');
-  return Array.isArray(payload.result) ? payload.result : [];
+  if (!response.ok || !Array.isArray(payload.result)) throw new Error(payload.message || 'The verified Finding index is temporarily unavailable.');
+  return payload.result;
 }
 
 function findingTimestamp(value) {
@@ -31,13 +31,16 @@ export function mergeVerifiedFindings(manifestArtifacts, findings) {
       sha256: finding.rawSha256,
       contentSha: finding.protocolContentSha256,
       bytes: finding.byteLength,
-      creator: finding.authorAddress,
+      creator: finding.ethscriptionCreator || '',
+      findingAuthor: finding.authorAddress,
+      findingVerifiedAt: finding.verifiedAt || null,
+      ethscriptionNumber: finding.ethscriptionNumber ?? null,
       sourceLabel: 'Verified expedition Finding',
       sourceUrl: finding.sourceUrl,
       previewUrl: finding.contentUri,
-      ethscribedAt: finding.verifiedAt
-        ? `FINDING VERIFIED ${new Date(finding.verifiedAt).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }).toUpperCase()} UTC`
-        : 'VERIFIED ONCHAIN',
+      ethscribedAt: Number(finding.ethscriptionTimestamp) > 0
+        ? `${new Date(Number(finding.ethscriptionTimestamp) * 1000).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }).toUpperCase()} UTC`
+        : null,
     };
   });
 }

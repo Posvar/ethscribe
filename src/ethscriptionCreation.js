@@ -146,8 +146,15 @@ export async function checkProtocolExistence(checks, fetchImpl = fetch) {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) throw new Error('The official Ethscriptions duplicate check is unavailable. No transaction was prepared.');
-    const payload = await response.json();
-    return { ...check, exists: Boolean(payload.result?.exists), ethscription: payload.result?.ethscription || null };
+    const payload = await response.json().catch(() => null);
+    const result = payload?.result;
+    if (typeof result?.exists !== 'boolean'
+      || (result.exists && (!/^0x[a-fA-F0-9]{64}$/.test(result.ethscription?.transaction_hash || '')
+        || normalizeSha(result.ethscription?.content_sha) !== normalizeSha(check.protocolContentSha256)))
+      || (!result.exists && result.ethscription)) {
+      throw new Error('The duplicate check returned an incomplete or inconsistent record. Try the byte check again; no transaction was prepared.');
+    }
+    return { ...check, exists: result.exists, ethscription: result.ethscription || null };
   }));
 }
 
@@ -194,6 +201,9 @@ export async function waitForEthscriptionRecord(ethscriptionId, expected, option
     if (response.ok) {
       const payload = await response.json();
       const record = payload.result || payload;
+      if (record.transaction_hash?.toLowerCase() !== ethscriptionId.toLowerCase()) {
+        throw new Error('The official index returned a different transaction. Verification cannot continue.');
+      }
       const indexedContentSha = normalizeSha(record.content_sha);
       if (indexedContentSha === normalizeSha(expected.protocolContentSha256)) {
         if (record.creator?.toLowerCase() !== expected.owner.toLowerCase()
@@ -236,12 +246,18 @@ export async function waitForVerifiedCustody(owner, ethscriptionId, options = {}
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
-    const response = await fetchImpl(`/api/market/wallet?owner=${owner}`, { headers: { accept: 'application/json' } });
+    // Reconcile the exact artifact, regardless of its position in the wallet's
+    // paginated inventory. A wallet may hold more than the first 50 results.
+    const response = await fetchImpl(`/api/market/artifact?id=${ethscriptionId}`, { headers: { accept: 'application/json' } });
     if (!response.ok) throw new Error('Custody reconciliation is temporarily unavailable. The confirmed transaction must not be resubmitted.');
     const payload = await response.json();
-    const inventory = payload.result;
-    const escrow = inventory?.escrow?.find((record) => record.transactionHash?.toLowerCase() === ethscriptionId.toLowerCase());
-    if (escrow?.custody?.verified) return escrow;
+    const snapshot = payload.result;
+    if (snapshot?.ethscription?.transactionHash?.toLowerCase() !== ethscriptionId.toLowerCase()) {
+      throw new Error('The custody check returned a different Ethscription. Verification cannot continue.');
+    }
+    if (snapshot.seller?.toLowerCase() === owner.toLowerCase() && snapshot.custody?.verified) {
+      return { ...snapshot.ethscription, custody: snapshot.custody, listing: snapshot.listing };
+    }
     await wait(pollMs);
   }
 

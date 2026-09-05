@@ -22,6 +22,21 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 3000,
+      host: '127.0.0.1',
+      proxy: {
+        '/api': {
+          target: 'https://ethscri.be',
+          changeOrigin: true,
+          // Local review uses public data, never production mutations.
+          bypass(req, res) {
+            const path = req.url.split('?')[0];
+            if (['GET', 'HEAD'].includes(req.method) || (req.method === 'POST' && path === '/api/targets/check')) return;
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Local review is read-only. Publishing is disabled; byte checks remain available.' }));
+            return false;
+          },
+        },
+      },
     },
     test: {
       environment: 'jsdom',

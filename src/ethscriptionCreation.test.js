@@ -12,6 +12,7 @@ import {
   matchesMediaSignature,
   publishFinding,
   waitForEthscriptionRecord,
+  waitForVerifiedCustody,
   XPM_MEDIA_TYPE_CANDIDATES,
 } from './ethscriptionCreation';
 import { MARKET_ADDRESS } from './marketConfig';
@@ -63,11 +64,40 @@ test('checks the canonical XPM wrapper and explicit known alternates', async () 
 
   const fetchImpl = jest.fn(async (url) => ({
     ok: true,
-    json: async () => ({ result: { exists: url.includes(checks[1].protocolContentSha256), ethscription: null } }),
+    json: async () => ({ result: {
+      exists: url.includes(checks[1].protocolContentSha256),
+      ethscription: url.includes(checks[1].protocolContentSha256)
+        ? { transaction_hash: `0x${'aa'.repeat(32)}`, content_sha: checks[1].protocolContentSha256 }
+        : null,
+    } }),
   }));
   const results = await checkProtocolExistence(checks, fetchImpl);
   expect(results[1].exists).toBe(true);
   expect(fetchImpl).toHaveBeenCalledWith(expect.stringMatching('/api/ethscriptions/exists/0x'), expect.any(Object));
+});
+
+test.each([
+  {},
+  { result: {} },
+  { result: { exists: 'false' } },
+  { result: { exists: true, ethscription: null } },
+  { result: { exists: true, ethscription: { transaction_hash: `0x${'aa'.repeat(32)}`, content_sha: `0x${'bb'.repeat(32)}` } } },
+])('does not report malformed duplicate responses as safe to create: %j', async (payload) => {
+  const checks = [{ protocolContentSha256: `0x${'cc'.repeat(32)}` }];
+  const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => payload }));
+  await expect(checkProtocolExistence(checks, fetchImpl)).rejects.toThrow(/incomplete or inconsistent/);
+});
+
+test('checks custody by exact asset instead of the first wallet inventory page', async () => {
+  const id = `0x${'dd'.repeat(32)}`;
+  const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => ({ result: {
+    seller: account.toLowerCase(),
+    ethscription: { transactionHash: id },
+    custody: { verified: true, custodyKind: 'registered_deposit' },
+    listing: { active: false },
+  } }) }));
+  await expect(waitForVerifiedCustody(account, id, { fetchImpl })).resolves.toMatchObject({ transactionHash: id, custody: { verified: true } });
+  expect(fetchImpl).toHaveBeenCalledWith(`/api/market/artifact?id=${id}`, expect.any(Object));
 });
 
 test('checks a candidate against a sealed expedition target without requesting its expected hash', async () => {

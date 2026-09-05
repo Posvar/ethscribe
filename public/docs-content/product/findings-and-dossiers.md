@@ -1,90 +1,55 @@
 # Findings and dossiers
 
-A Finding is a candidate Ethscription submitted to an Expedition. Its Dossier is the versioned, wallet-signed argument that connects the exact bytes to the historical claim.
+A **Finding** connects an Ethscription to a particular expedition target. Its historical claim and source evidence explain why those bytes belong in the record.
 
-The two are linked but distinct: an on-chain artifact cannot explain itself, and an eloquent dossier cannot repair the wrong bytes.
+The current release implements a compact signed assignment. A fuller research dossier with revisions, multiple contributors, and challenges is planned.
 
-## Finding record
-
-A Finding should expose:
+## What a current Finding records
 
 | Field | Purpose |
 |---|---|
-| Ethscription ID | Locates the protocol creation |
-| Creator and current owner | Establishes protocol custody |
-| Complete content hash | Identifies the protocol content |
-| `rawSha256` | Identifies the decoded artifact bytes |
-| Byte length and signature | Supports reproducible inspection |
-| Creation location and time | Establishes Ethereum chronology |
-| Expedition target | States the claim being entered |
-| Dossier revision | Links the current signed research record |
-| Review status | Shows challenges and curator decision |
-| Market state | Shows deposit, bid, or settlement state when enabled |
+| Expedition and target | Identifies the historical claim being submitted |
+| Ethscription ID | Identifies the onchain creation |
+| Decoded raw-file SHA-256 | Binds the exact file bytes |
+| Protocol content SHA-256 and wrapper | Binds the complete submitted Data URI |
+| Byte length and filename | Supports inspection |
+| Claim summary | Explains the proposed match |
+| One primary source URL | Points to the evidence used by the researcher |
+| Author and custody contract | Identifies the signer and the required market custody |
+| Signed timestamp | Records when the assignment was prepared |
 
-## Dossier contents
+The message signature binds the target, Ethscription ID, hashes, byte length, wrapper, author, custody contract, timestamp, claim, and source URL. The filename is display metadata and is not part of the current signed message.
 
-The signed payload should include:
+## Verification and publication
 
-```text
-schemaVersion
-documentType
-expeditionId
-findingId
-revision
-artifactRawSha256
-claimSummary
-sourceReferences[]
-knownUncertainties[]
-authorAddress
-createdAt
-previousRevisionHash
-payloadHash
-signature
-```
+The server reconstructs the signed message, recovers the author address, and rejects expired or inconsistent assignments. It independently reads the indexed Ethscription, decodes its content, reproduces the hashes, and verifies both target validation and market custody.
 
-Canonical serialization rules are part of the schema. The server validates a signature and stores the signed fields without rewriting them.
+Stored assignments are created without overwriting an existing record for the same target and Ethscription. The public Findings feed exposes the fields used by the expedition and wallet; it is not yet a full dossier viewer or a download of every stored signature.
 
-## Revisions
+A successful exact-target Finding can populate the corresponding expedition slot. For the lost target, accepted file format and custody are not historical authentication. Its candidate stays out of automatic exact-match completion.
 
-Researchers need to improve a case as new evidence arrives. Each Dossier revision therefore:
+## Timing and priority
 
-- receives a deterministic hash;
-- points to the preceding revision;
-- retains its original author and signature;
-- remains readable after a newer revision is published; and
-- freezes at the expedition deadline for eligibility review.
+Ethereum orders Ethscription creations independently of the site. A Finding's signed timestamp or server verification time is not proof that its author discovered the historical file first.
 
-Later corrections can append to the permanent record without pretending the original decision never happened.
+The catalogue currently merges exact Findings into its curated target map. It does not offer a decentralized voting mechanism or claim protocol-wide precedence across every alternate encoding.
 
-## Field Notes
+## Writing a useful source claim
 
-A Field Note is a small, signed contribution attached to a Finding. Its type is explicit:
+State where the file was recovered, the historical path or release involved, and what connects that preserved source to the target. Preserve the original archive and neighboring files where available.
 
-- **Corroboration** — adds independent support.
-- **Source** — contributes a primary or secondary reference.
-- **Correction** — fixes a factual or technical detail.
-- **Challenge** — identifies a concrete rubric failure.
-- **Response** — addresses an existing challenge.
+A screenshot can illustrate context but normally cannot establish exact bytes. A modern reconstruction should be identified as such, even if its pixels resemble the historical work.
 
-An endorsement is a discovery signal, not an evidence type.
+## Planned dossier model
 
-## Submission before the marketplace
+Later releases may add:
 
-The participation release can support a non-custodial flow:
+- Multiple source references with archived copies and access dates.
+- Append-only, signed research revisions.
+- Independent corroboration, corrections, and challenges.
+- Named eligibility decisions with reasons.
+- Public signature inspection and durable record export.
 
-1. Connect a wallet.
-2. Enter an Ethscription identifier.
-3. Verify and decode the artifact.
-4. Build the historical claim and source list.
-5. Review the canonical payload.
-6. Sign and publish the Dossier.
+These are development directions. The current submission form does not provide those review tools, and their existence should not be inferred from a “verified” byte match.
 
-No interface should imply that an artifact has been deposited, sold, or accessioned before those operations exist on-chain.
-
-## Submission after the marketplace
-
-When the vault contract is live, an eligible submission also deposits the Ethscription under an explicit withdrawal policy. The indexed deposit state becomes part of the Finding record. Research remains off-chain and signed; custody and settlement become on-chain.
-
-## Moderation
-
-Ethscribe is curated and may hide spam, abuse, irrelevant uploads, or unsafe links from normal discovery. Moderation is not permission to alter signed research. Hidden records retain their hashes and audit status where lawful; curator eligibility remains a separate decision.
+Read [your first Finding](first-finding.md) for the current submission steps and [curation and trust](curation-and-trust.md) for the limits of automated checks.

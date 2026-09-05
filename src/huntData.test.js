@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { artifacts, huntStats, lostArtifact } from './huntData';
 
 test('the Satoshi corpus has the researched completion totals', () => {
@@ -23,6 +26,9 @@ test('secured artifacts retain complete public provenance records', () => {
   secured.forEach((artifact) => {
     expect(artifact.sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(artifact.sourceUrl).toMatch(/^https:/);
-    expect(artifact.previewUrl).toMatch(/^https:/);
+    expect(artifact.previewUrl).toMatch(/^\/artifacts\/expedition-001\/[a-z0-9-]+\.(?:png|ico)$/);
+    const bytes = readFileSync(resolve(process.cwd(), 'public', artifact.previewUrl.slice(1)));
+    expect(bytes.length).toBe(artifact.bytes);
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(artifact.sha256);
   });
 });

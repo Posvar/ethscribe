@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchMarketStatus } from './marketApi';
 import { MARKET_ADDRESS } from './marketConfig';
 import {
@@ -116,6 +116,40 @@ export default function EthscribeWorkbench({
   const [finding, setFinding] = useState(null);
   const [targetCheck, setTargetCheck] = useState(null);
   const [walletEthscription, setWalletEthscription] = useState(null);
+  const [pendingSubmission, setPendingSubmission] = useState(null);
+  const operationVersion = useRef(0);
+  const contextRef = useRef('');
+  const contextKey = `${account?.toLowerCase() || ''}:${chainId || ''}:${artifact?.id || ''}:${existingEthscriptionId}`;
+  contextRef.current = contextKey;
+  const previousContext = useRef(contextKey);
+
+  const startOperation = () => {
+    const version = ++operationVersion.current;
+    const context = contextKey;
+    return () => operationVersion.current === version && contextRef.current === context;
+  };
+
+  useEffect(() => {
+    if (previousContext.current === contextKey) return;
+    previousContext.current = contextKey;
+    operationVersion.current += 1;
+    setConfirmation('');
+    setConfirmed(false);
+    setCustody(null);
+    if (pendingSubmission) {
+      setPhase('error');
+      setMessage('Your wallet or target changed. Reconnect the wallet that submitted this transaction and recheck it below. No new transaction is needed.');
+    } else {
+      setInspection(null);
+      setDuplicateChecks([]);
+      setExisting(null);
+      setTargetCheck(null);
+      setPhase('idle');
+      setMessage('');
+    }
+  }, [contextKey]);
+
+  useEffect(() => () => { operationVersion.current += 1; }, []);
 
   useEffect(() => {
     let active = true;
@@ -168,7 +202,7 @@ export default function EthscribeWorkbench({
   const connectedOwner = account?.toLowerCase();
   const existingOwnedByWallet = Boolean(existingOwner && connectedOwner && existingOwner === connectedOwner);
   const selectedEthscriptionId = ethscription?.transaction_hash || existingRecord?.transaction_hash || '';
-  const busy = ['inspecting', 'creating', 'indexing', 'depositing', 'reconciling', 'signing'].includes(phase);
+  const busy = ['loading-record', 'inspecting', 'creating', 'indexing', 'depositing', 'reconciling', 'signing'].includes(phase);
 
   const effectiveInspection = useMemo(() => {
     if (!inspection || !existing) return inspection;
@@ -192,6 +226,7 @@ export default function EthscribeWorkbench({
   const wrapperMatchesTarget = !submissionMode || effectiveInspection?.dataUriPrefix === requiredTargetPrefix;
 
   const resetAnalysis = () => {
+    operationVersion.current += 1;
     setInspection(null);
     setDuplicateChecks([]);
     setExisting(null);
@@ -203,6 +238,7 @@ export default function EthscribeWorkbench({
     setPhase('idle');
     setMessage('');
     setTransactionHash('');
+    setPendingSubmission(null);
     setConfirmation('');
     setConfirmed(false);
   };
@@ -216,7 +252,8 @@ export default function EthscribeWorkbench({
 
   const inspectExactBytes = async (event) => {
     event.preventDefault();
-    if (!file) return;
+    if (!file || busy || pendingSubmission) return;
+    const isCurrent = startOperation();
     setPhase('inspecting');
     setMessage('Hashing the raw file and complete Data URI locally, then checking the official indexer.');
     setExisting(null);
@@ -226,6 +263,7 @@ export default function EthscribeWorkbench({
 
     try {
       const nextInspection = await inspectFile(file, walletEthscription ? mediaType : (lockedMediaType || mediaType));
+      if (!isCurrent()) return;
       setInspection(nextInspection);
       if (embeddedTargetMode && !nextInspection.signatureMatchesMediaType) {
         setPhase('mismatch');
@@ -235,6 +273,7 @@ export default function EthscribeWorkbench({
       let checkedTarget = null;
       if (submissionMode) {
         checkedTarget = await checkExpeditionTarget(activeArtifact, nextInspection);
+        if (!isCurrent()) return;
         setTargetCheck(checkedTarget);
         if (!checkedTarget.eligible) {
           setPhase('mismatch');
@@ -250,6 +289,7 @@ export default function EthscribeWorkbench({
           : [nextInspection.mediaType],
       );
       const checked = await checkProtocolExistence(checks);
+      if (!isCurrent()) return;
       const selectedExisting = walletEthscription
         ? checked.find((result) => result.ethscription?.transaction_hash?.toLowerCase() === walletEthscription.transaction_hash?.toLowerCase())
         : null;
@@ -261,6 +301,7 @@ export default function EthscribeWorkbench({
         if (account && firstExisting.ethscription.current_owner?.toLowerCase() === MARKET_ADDRESS.toLowerCase()
           && firstExisting.ethscription.previous_owner?.toLowerCase() === account.toLowerCase()) {
           const verified = await waitForVerifiedCustody(account, firstExisting.ethscription.transaction_hash);
+          if (!isCurrent()) return;
           setEthscription({ ...firstExisting.ethscription, creationOutcome: 'canonical' });
           setCustody(verified);
           setPhase('custody-verified');
@@ -280,6 +321,7 @@ export default function EthscribeWorkbench({
           : 'No exact protocol duplicate was found. The transaction can now be prepared.');
       }
     } catch (error) {
+      if (!isCurrent()) return;
       setPhase('error');
       setMessage(error.message || 'The file could not be inspected. No transaction was prepared.');
     }
@@ -312,6 +354,7 @@ export default function EthscribeWorkbench({
   };
 
   const requestCreate = async () => {
+    if (!canCreate || busy || pendingSubmission) return;
     if (!account) {
       await connectWallet();
       return;
@@ -324,41 +367,63 @@ export default function EthscribeWorkbench({
     setConfirmation('create');
   };
 
-  const createEthscription = async () => {
-    if (!inspection || !account || !confirmed) return;
-    const creator = account;
-    setConfirmation('');
-    setPhase('creating');
-    setMessage('Simulating the exact direct-to-vault creation before opening your wallet.');
-
+  const verifySubmission = async (submission, isCurrent) => {
+    const { hash, creator } = submission;
     try {
-      const request = buildCreateEthscriptionTransaction(creator, inspection.dataUri);
-      const hash = await simulateAndSendTransaction(provider, request);
-      setTransactionHash(hash);
       setPhase('indexing');
-      setMessage('Ethereum received the transaction. Waiting for its receipt and official Ethscription recognition.');
+      setMessage('Transaction submitted. Checking its Ethereum confirmation and official ownership record. No new transaction is needed.');
       await waitForTransactionReceipt(provider, hash);
-      const record = await waitForEthscriptionRecord(hash, {
-        owner: creator,
-        protocolContentSha256: inspection.protocolContentSha256,
-        receiptContentSha256: inspection.receiptContentSha256,
-      });
-      setEthscription(record);
-      if (record.creationOutcome === 'receipt') {
-        setPhase('receipt');
-        setMessage('Another transaction claimed the canonical Data URI first. Your transaction still created an owned, timestamped Finding Receipt; it did not enter market custody.');
-        return;
+      if (!isCurrent()) return;
+      if (submission.type === 'create') {
+        const record = await waitForEthscriptionRecord(hash, {
+          owner: creator,
+          protocolContentSha256: submission.inspection.protocolContentSha256,
+          receiptContentSha256: submission.inspection.receiptContentSha256,
+        });
+        if (!isCurrent()) return;
+        setEthscription(record);
+        if (record.creationOutcome === 'receipt') {
+          setPhase('receipt');
+          setMessage('Another transaction claimed the canonical Data URI first. Your transaction created a Finding Receipt; it did not secure this target.');
+          return;
+        }
       }
-
       setPhase('reconciling');
-      setMessage('Canonical Ethscription confirmed. Waiting for direct market custody and the five-block safety window to reconcile.');
-      const verified = await waitForVerifiedCustody(creator, hash);
+      setMessage('Ethereum confirmed the transaction. Waiting for marketplace ownership and the confirmation window to finish.');
+      const verified = await waitForVerifiedCustody(creator, submission.ethscriptionId || hash);
+      if (!isCurrent()) return;
       setCustody(verified);
       setPhase(submissionMode ? 'custody-verified' : 'complete');
       setMessage(submissionMode
         ? 'Canonical artifact and direct market custody verified. One gas-free signature now binds it to this target.'
         : 'Canonical artifact verified in direct market custody. You can keep it vaulted, withdraw it, or assign it to a compatible expedition.');
     } catch (error) {
+      if (!isCurrent()) return;
+      if (error.code === 'TRANSACTION_REVERTED') setPendingSubmission(null);
+      setPhase('error');
+      setMessage(friendlyTransactionError(error));
+    }
+  };
+
+  const createEthscription = async () => {
+    if (!inspection || !account || !confirmed || !canCreate || busy || pendingSubmission) return;
+    const creator = account;
+    const isCurrent = startOperation();
+    setConfirmation('');
+    setPhase('creating');
+    setMessage('Checking the transaction before opening your wallet.');
+    try {
+      const request = buildCreateEthscriptionTransaction(creator, inspection.dataUri);
+      const hash = await simulateAndSendTransaction(provider, request);
+      const submission = { type: 'create', creator, hash, inspection };
+      // Preserve an already-submitted hash even if the user changes accounts
+      // while the wallet is open. Recovery must never prepare a second send.
+      setTransactionHash(hash);
+      setPendingSubmission(submission);
+      if (!isCurrent()) return;
+      await verifySubmission(submission, isCurrent);
+    } catch (error) {
+      if (!isCurrent()) return;
       setPhase('error');
       setMessage(friendlyTransactionError(error));
     }
@@ -366,7 +431,8 @@ export default function EthscribeWorkbench({
 
   const requestDeposit = async () => {
     const id = selectedEthscriptionId;
-    if (!id || !account) return;
+    if (!id || !account || !canDepositExisting) return;
+    const isCurrent = startOperation();
     if (!onMainnet) {
       await switchToMainnet();
       return;
@@ -379,6 +445,7 @@ export default function EthscribeWorkbench({
     }
     try {
       const nextMarket = await fetchMarketStatus();
+      if (!isCurrent()) return;
       setMarket(nextMarket);
       if (!nextMarket.intakeEnabled) {
         setPhase('error');
@@ -390,6 +457,7 @@ export default function EthscribeWorkbench({
       setConfirmed(false);
       setConfirmation('deposit');
     } catch {
+      if (!isCurrent()) return;
       setPhase('error');
       setMessage('Market readiness could not be verified. The Ethscription remains in your wallet.');
     }
@@ -397,8 +465,9 @@ export default function EthscribeWorkbench({
 
   const depositEthscription = async () => {
     const id = selectedEthscriptionId;
-    if (!id || !account || !confirmed) return;
+    if (!id || !account || !confirmed || !canDepositExisting) return;
     const depositor = account;
+    const isCurrent = startOperation();
     setConfirmation('');
     setPhase('depositing');
     setMessage('Simulating the Ethscription ID transfer before opening the second wallet confirmation.');
@@ -407,14 +476,12 @@ export default function EthscribeWorkbench({
       const request = buildDepositTransaction(depositor, id);
       const hash = await simulateAndSendTransaction(provider, request);
       setTransactionHash(hash);
-      setPhase('reconciling');
-      setMessage('Deposit confirmed on Ethereum. Waiting for the contract, cooldown, and official indexer to agree.');
-      await waitForTransactionReceipt(provider, hash);
-      const verified = await waitForVerifiedCustody(depositor, id);
-      setCustody(verified);
-      setPhase('custody-verified');
-      setMessage('Existing Ethscription custody verified. One gas-free wallet signature now binds it to the selected target.');
+      const submission = { type: 'deposit', creator: depositor, hash, ethscriptionId: id };
+      setPendingSubmission(submission);
+      if (!isCurrent()) return;
+      await verifySubmission(submission, isCurrent);
     } catch (error) {
+      if (!isCurrent()) return;
       setPhase('error');
       setMessage(friendlyTransactionError(error));
     }
@@ -422,7 +489,8 @@ export default function EthscribeWorkbench({
 
   const submitAssignment = async (event) => {
     event.preventDefault();
-    if (!activeArtifact || !effectiveInspection || !selectedEthscriptionId || !custody || !account) return;
+    if (!activeArtifact || !effectiveInspection || !selectedEthscriptionId || !custody || !account || busy || market?.localPreview) return;
+    const isCurrent = startOperation();
     setPhase('signing');
     setMessage('Review and sign the target assignment. This signature costs no gas and cannot move the artifact.');
 
@@ -436,23 +504,29 @@ export default function EthscribeWorkbench({
         sourceUrl,
       });
       const signed = await signFindingAssignment(provider, account, assignment);
+      if (!isCurrent()) return;
       setMessage('Signature accepted. Publishing the Finding while vault custody services reconcile. No new transaction is needed.');
       const result = await publishFinding(assignment, signed.message, signed.signature);
+      if (!isCurrent()) return;
       setFinding(result);
       onFindingPublished(result);
       setPhase('submitted');
       setMessage('Finding published. Custody and the signed target assignment are both independently recorded.');
     } catch (error) {
+      if (!isCurrent()) return;
       setPhase('assignment-error');
       setMessage(friendlyTransactionError(error));
     }
   };
 
-  const canCreate = inspection && rawMatchesTarget && !existing && phase === 'ready' && market?.intakeEnabled;
-  const canDepositExisting = submissionMode && inspection && rawMatchesTarget && wrapperMatchesTarget && existing && existingOwnedByWallet;
+  const canCreate = inspection && rawMatchesTarget && !existing && !pendingSubmission && phase === 'ready' && market?.intakeEnabled;
+  const canDepositExisting = submissionMode && inspection && rawMatchesTarget && wrapperMatchesTarget && existing && existingOwnedByWallet
+    && !custody && !pendingSubmission && !busy && phase === 'duplicate' && !market?.localPreview;
   const displayTransactionHash = transactionHash || selectedEthscriptionId;
   const preflightComplete = duplicateChecks.length > 0;
-  const preflightTitle = existing
+  const preflightTitle = pendingSubmission
+    ? 'BYTE CHECK PASSED'
+    : existing
     ? 'EXISTING ETHSCRIPTION FOUND'
     : preflightComplete
       ? 'READY TO ETHSCRIBE'
@@ -478,7 +552,9 @@ export default function EthscribeWorkbench({
       <div className="ethscribe-boundary-note">
         <strong>READ-ONLY BYTE CHECK</strong>
         <p>{embeddedTargetMode
-          ? 'The expedition supplies the required file wrapper and sealed target commitment. This test hashes the bytes and checks known duplicates. It never opens your wallet or sends a transaction.'
+          ? artifact.validationMode === 'provenance'
+            ? 'Check your candidate’s format and known duplicates for free. The original bytes are unknown, so historical authenticity still requires evidence. Testing sends no transaction.'
+            : 'Check your file against this target and look for known duplicates. Testing is free and does not open your wallet or send a transaction.'
           : 'This test hashes the selected bytes and checks known duplicates. It never opens your wallet or sends a transaction.'}</p>
       </div>
 
@@ -492,11 +568,11 @@ export default function EthscribeWorkbench({
         ) : (
           <label>
             <span>01 · EXACT FILE</span>
-            <input type="file" onChange={chooseFile} required />
+            <input type="file" onChange={chooseFile} disabled={busy || Boolean(pendingSubmission)} required />
             <small>Read locally. Opening and resaving a historical file can change its bytes.</small>
           </label>
         )}
-        <button type="submit" disabled={!file || busy}>Test bytes <ArrowIcon /></button>
+        <button type="submit" disabled={!file || busy || Boolean(pendingSubmission)}>Test bytes <ArrowIcon /></button>
       </form>
 
       {inspection && (
@@ -510,7 +586,9 @@ export default function EthscribeWorkbench({
             {preflightComplete && !existing && <span className="check-passed">✓ NO KNOWN DUPLICATE FOUND</span>}
             {existing && <span className="check-warning">! EXISTING CONTENT FOUND</span>}
           </div>
-          <p>{existing
+          <p>{pendingSubmission
+              ? 'Your transaction has been submitted. Follow its confirmation and Finding status below; there is no need to Ethscribe again.'
+              : existing
               ? 'Do not create another copy. Review the existing Ethscription below and continue only if your wallet owns it.'
               : preflightComplete
                 ? `${wrapperCheckSummary} No transaction has been sent.`
@@ -541,7 +619,7 @@ export default function EthscribeWorkbench({
       )}
 
       {(!inspection || !['inspecting', 'ready', 'duplicate', 'mismatch'].includes(phase)) && (
-        <StatusBanner phase={phase} message={message} transactionHash={displayTransactionHash && ['indexing', 'receipt', 'complete', 'depositing', 'reconciling', 'custody-verified', 'signing', 'assignment-error', 'submitted'].includes(phase) ? displayTransactionHash : ''} />
+        <StatusBanner phase={phase} message={message} transactionHash={transactionHash || (['custody-verified', 'signing', 'assignment-error', 'submitted'].includes(phase) ? displayTransactionHash : '')} />
       )}
 
       {existingRecord && (
@@ -567,6 +645,9 @@ export default function EthscribeWorkbench({
         {account && !onMainnet && <button type="button" onClick={switchToMainnet}>Switch to Ethereum mainnet <ArrowIcon /></button>}
         {account && onMainnet && canCreate && <button type="button" onClick={requestCreate}>ETHSCRIBE DIRECTLY INTO VAULT <ArrowIcon /></button>}
         {account && onMainnet && canDepositExisting && <button type="button" onClick={requestDeposit}>DEPOSIT MY EXISTING MATCH <ArrowIcon /></button>}
+        {account && onMainnet && pendingSubmission && phase === 'error' && pendingSubmission.creator.toLowerCase() === connectedOwner && (
+          <button type="button" onClick={() => verifySubmission(pendingSubmission, startOperation())}>Recheck submitted transaction · no gas <ArrowIcon /></button>
+        )}
       </div>
 
       {account && onMainnet && inspection && rawMatchesTarget && !existing && phase === 'ready' && !market?.intakeEnabled && (
@@ -612,7 +693,7 @@ export default function EthscribeWorkbench({
           <div><span>02 · SIGN TARGET ASSIGNMENT</span><strong>NO GAS · CANNOT MOVE THE ARTIFACT</strong></div>
           <label>Claim summary<textarea rows="3" maxLength="500" value={claimSummary} onChange={(event) => setClaimSummary(event.target.value)} required /></label>
           <label>{activeArtifact.status === 'lost' ? 'Candidate source / custody URL' : 'Primary source URL'}<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder={activeArtifact.status === 'lost' ? 'Where did these exact bytes come from?' : undefined} required /></label>
-          <button type="submit" disabled={phase === 'signing'}>Sign + publish Finding <ArrowIcon /></button>
+          <button type="submit" disabled={phase === 'signing' || market?.localPreview}>Sign + publish Finding <ArrowIcon /></button>
         </form>
       )}
 
@@ -651,7 +732,7 @@ export default function EthscribeWorkbench({
         </div>
       )}
 
-      <p className="ethscribe-market-state">MARKET {market?.paused === false ? 'ACTIVE' : market?.paused ? 'PAUSED' : 'CHECKING'} · TRANSACTION UI {market?.transactionsEnabled ? 'ENABLED' : 'LOCKED'} · INDEXER {market?.indexer?.healthy ? 'CURRENT' : 'TEMPORARILY UNAVAILABLE'}</p>
+      <p className="ethscribe-market-state">{market?.localPreview ? 'LOCAL REVIEW · Byte checks are available. Publishing and transactions are disabled.' : <>MARKET {market?.paused === false ? 'ACTIVE' : market?.paused ? 'PAUSED' : 'CHECKING'} · TRANSACTION UI {market?.transactionsEnabled ? 'ENABLED' : 'LOCKED'} · INDEXER {market?.indexer?.healthy ? 'CURRENT' : 'TEMPORARILY UNAVAILABLE'}</>}</p>
     </section>
   );
 }

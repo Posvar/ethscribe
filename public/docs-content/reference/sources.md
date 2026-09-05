@@ -21,9 +21,9 @@ Protocol behavior should be verified against current accepted specifications and
 ## Marketplace reference
 
 - [ittybits marketplace proxy `0xa8Ee…D36`](https://etherscan.io/address/0xa8Ee53258865c55a521727127D8a64c414163D36#code)
-- [Current verified ittybits implementation `0x3893…78D`](https://etherscan.io/address/0x3893F7792A4219Fc5407887d4e6F0831E083C78D#code)
+- [ittybits implementation studied during development `0x3893…78D`](https://etherscan.io/address/0x3893F7792A4219Fc5407887d4e6F0831E083C78D#code)
 
-The deployed ittybits source is the behavioral reference for ESIP-2 escrow, potential-deposit tracking, cooldowns, listings, bids, and withdrawals. Ethscribe's proposed differences are documented under [Ownership and marketplace](../product/ownership-and-marketplace.md).
+The ittybits source was a behavioral reference for conditional escrow, potential-deposit tracking, cooldowns, listings, bids, and withdrawals. Ethscribe's implemented boundaries are documented under [Ownership and marketplace](../product/ownership-and-marketplace.md). Its own source and deployment records are linked from [Mainnet deployment](mainnet-deployment.md).
 
 ## Ethereum standards
 
@@ -47,4 +47,4 @@ Ethscribe's `.gitbook.yaml`, `README.md`, and `SUMMARY.md` follow GitBook's Git 
 
 ## Documentation status
 
-This documentation describes the phased architecture and the immutable V1 and V2 mainnet deployments as of 1 September 2026. V2 adds direct-to-vault creation and separate bounded batch exits for registered market deposits and unregistered direct creations. Statements labeled “proposed,” “planned,” or “later” are not deployed contract behavior. Live product and contract surfaces take precedence over roadmap prose once released, and material changes should be reflected here with repository history.
+This documentation was reconciled with the implementation on 4 September 2026. It distinguishes current interface features, contract capabilities without a complete public UI, and proposed product work. Contract versions refer to deployments; roadmap phases refer to the product. Live ownership and availability require current reads and are not guaranteed by a static documentation page.

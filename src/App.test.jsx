@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from './App';
 import { useEthscribeWallet } from './useEthscribeWallet';
+import { MARKET_ADDRESS } from './marketConfig';
 
 vi.mock('./XpmPreview', () => ({ default: function MockXpmPreview() {
   return <div data-testid="xpm-preview" />;
@@ -129,7 +130,7 @@ test('expands secured and open artifact records directly in the timeline', async
   expect(screen.getByRole('heading', { name: 'The ₿ coin is revealed' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'The end of an era' })).toBeInTheDocument();
   expect(screen.getByText(/Bitboy introduces the orange, tilted mark\. Icons of that later community era belong in a separate expedition\./i)).toBeInTheDocument();
-  expect(screen.getByText(/known files secured/i)).toBeInTheDocument();
+  expect(screen.getByText(/known files ethscribed/i)).toBeInTheDocument();
   expect(screen.getByText(/Satoshi’s attested 20 × 20 transparent PNG remains/i)).toBeInTheDocument();
   expect(screen.queryByText(/expedition brief/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/primary source \/ 08 feb 2010/i)).not.toBeInTheDocument();
@@ -238,7 +239,8 @@ test('does not expose a standalone Ethscribe utility outside expeditions', () =>
   render(<App />);
 
   expect(screen.queryByRole('heading', { name: /ethscribe a file directly into the vault/i })).not.toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: /find the bytes.*establish the provenance/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /^expeditions$/i })).toBeInTheDocument();
+  expect(window.location.pathname).toBe('/expeditions');
   const primaryNavigation = screen.getByRole('navigation', { name: /primary navigation/i });
   expect(within(primaryNavigation).queryByRole('link', { name: 'Ethscribe' })).not.toBeInTheDocument();
 });
@@ -290,7 +292,7 @@ test('renders a compact Expeditions archive focused on the live hunt', () => {
   expect(screen.getByText(/live now \/ expedition 001/i)).toBeInTheDocument();
   expect(screen.queryByText(/active and completed field records/i)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: /lost pixels of satoshi/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
-  expect(screen.getByRole('link', { name: /enter the live expedition/i })).toHaveAttribute('href', '#live-expeditions');
+  expect(screen.getByRole('link', { name: /enter the live expedition/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
   expect(screen.queryByRole('link', { name: /propose/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/proposal notebook/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/what should the field investigate next/i)).not.toBeInTheDocument();
@@ -312,4 +314,208 @@ test('opens the RainbowKit wallet chooser when connection is requested', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: /connect wallet/i }));
   expect(connectWallet).toHaveBeenCalledTimes(1);
+});
+
+test('keeps the timeline compact, filters targets, and restores the full record', async () => {
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ result: [] }) }));
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi');
+  render(<App />);
+  expect(screen.queryByRole('heading', { name: 'bitcoin20x20.png' })).not.toBeInTheDocument();
+  expect(screen.getByText('23 targets · 22 known files + 1 lost original')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Lost bytes' }));
+  const timeline = document.getElementById('timeline');
+  expect(within(timeline).getByRole('heading', { name: 'The attachment disappears' })).toBeInTheDocument();
+  expect(within(timeline).queryByRole('heading', { name: 'The BC coin ships' })).not.toBeInTheDocument();
+  expect(screen.getByText('1 target matches your view')).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('searchbox', { name: 'FIND A TARGET' }), { target: { value: 'no-such-file' } });
+  expect(screen.getByText(/no targets match this view/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Show all targets' }));
+  expect(screen.getByText('23 targets · 22 known files + 1 lost original')).toBeInTheDocument();
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/findings', expect.anything()));
+});
+
+test('a corpus link opens its target even after a different timeline filter is selected', async () => {
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi');
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Ethscribed' }));
+  fireEvent.click(screen.getByRole('button', { name: /open field note for bitcoin20\.xpm, not yet ethscribed, 07 NOV 2009/i }));
+  expect(screen.getByRole('heading', { name: 'bitcoin20.xpm' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'All targets' })).toHaveAttribute('aria-pressed', 'true');
+  expect(new URLSearchParams(window.location.search).get('artifact')).toBe('november-20-xpm');
+  fireEvent.click(screen.getByRole('button', { name: /close record/i }));
+  expect(screen.queryByRole('heading', { name: 'bitcoin20.xpm' })).not.toBeInTheDocument();
+  await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+});
+
+test('mobile Escape returns focus to the menu button', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+  fireEvent.keyDown(window, { key: 'Escape' });
+  expect(screen.queryByRole('navigation', { name: 'Mobile navigation' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Open menu' })).toHaveFocus();
+});
+
+test('unknown routes show a useful not-found view instead of silently rendering the mission', () => {
+  window.history.pushState({}, '', '/missing-expedition');
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'This trail ends here.' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /explore expeditions/i })).toHaveAttribute('href', '/expeditions');
+  expect(document.title).toBe('Page not found — Ethscribe');
+});
+
+test('shows the exact listed amount and disables buying when a background listing refresh fails', async () => {
+  let offline = false;
+  const intervals = vi.spyOn(globalThis, 'setInterval');
+  global.fetch = jest.fn(async (url) => {
+    if (url === '/api/findings') return { ok: true, json: async () => ({ result: [] }) };
+    if (offline) throw new Error('offline');
+    return { ok: true, json: async () => ({ result: {
+      seller: `0x${'33'.repeat(20)}`,
+      listing: { active: true, expired: false, listingNonce: '1', priceWei: '12345' },
+      custody: { verified: true }, market: { transactionsEnabled: true },
+    } }) };
+  });
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi?artifact=original-bc-ico');
+  render(<App />);
+  expect(await screen.findByText('0.000000000000012345 ETH')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /connect wallet to buy/i })).toBeInTheDocument();
+  try {
+    offline = true;
+    await waitFor(() => expect(intervals.mock.calls.some(([, delay]) => delay === 15_000)).toBe(true));
+    const refreshListing = intervals.mock.calls.find(([, delay]) => delay === 15_000)[0];
+    await act(async () => { await refreshListing(); });
+    expect(screen.getByText('LISTING UNAVAILABLE')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /connect wallet to buy/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry listing check/i })).toBeInTheDocument();
+  } finally { intervals.mockRestore(); }
+});
+
+test.each([
+  ['paused', { transactionsEnabled: true, intakeEnabled: false, paused: true }],
+  ['intake unavailable', { transactionsEnabled: true, intakeEnabled: false, paused: false }],
+])('a %s market shows its listing without offering a purchase', async (_, market) => {
+  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === '/api/findings' ? [] : {
+    seller: `0x${'33'.repeat(20)}`,
+    listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
+    custody: { verified: true },
+    market,
+  } }) }));
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi?artifact=original-bc-ico');
+
+  render(<App />);
+
+  expect(await screen.findByText('1 ETH')).toBeInTheDocument();
+  const listing = screen.getByRole('region', { name: 'Marketplace listing' });
+  expect(within(listing).queryByRole('button', { name: /buy|purchase/i })).not.toBeInTheDocument();
+});
+
+test('switching wallets during the final listing read cancels purchase before any provider request', async () => {
+  const firstAccount = `0x${'11'.repeat(20)}`;
+  const nextAccount = `0x${'22'.repeat(20)}`;
+  const provider = { request: vi.fn().mockRejectedValue(new Error('A cancelled purchase must not reach the wallet')) };
+  const session = {
+    account: firstAccount, chainId: '0x1', walletState: 'connected', walletName: 'MetaMask', provider,
+    connectWallet, switchToMainnet, openAccountModal,
+  };
+  useEthscribeWallet.mockReturnValue(session);
+  const snapshot = {
+    seller: `0x${'33'.repeat(20)}`,
+    listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
+    custody: { verified: true },
+    market: { transactionsEnabled: true, intakeEnabled: true, paused: false },
+  };
+  let marketReads = 0;
+  let resolveFreshRead;
+  const freshRead = new Promise((resolve) => { resolveFreshRead = resolve; });
+  global.fetch = vi.fn(async (url) => {
+    if (url === '/api/findings') return { ok: true, json: async () => ({ result: [] }) };
+    marketReads += 1;
+    if (marketReads === 2) return freshRead;
+    return { ok: true, json: async () => ({ result: snapshot }) };
+  });
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi?artifact=original-bc-ico');
+  const { rerender } = render(<App />);
+
+  fireEvent.click(await screen.findByRole('button', { name: /buy for 1 eth/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'CONFIRM PURCHASE' }));
+  await waitFor(() => expect(marketReads).toBe(2));
+  expect(screen.getByText('CHECKING PURCHASE')).toBeInTheDocument();
+
+  useEthscribeWallet.mockReturnValue({ ...session, account: nextAccount });
+  rerender(<App />);
+  await act(async () => { resolveFreshRead({ ok: true, json: async () => ({ result: snapshot }) }); });
+
+  await waitFor(() => expect(screen.queryByText('CHECKING PURCHASE')).not.toBeInTheDocument());
+  expect(provider.request).not.toHaveBeenCalled();
+  expect(screen.queryByRole('button', { name: 'CONFIRM PURCHASE' })).not.toBeInTheDocument();
+});
+
+function recognizedArtifactFixture({ account = '', currentOwner = account, seller = null, creator = `0x${'11'.repeat(20)}` } = {}) {
+  const ethscriptionId = '0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef';
+  useEthscribeWallet.mockReturnValue({
+    account, chainId: '0x1', walletState: account ? 'connected' : 'idle', walletName: 'MetaMask',
+    provider: { request: vi.fn() }, connectWallet, switchToMainnet, openAccountModal,
+  });
+  const snapshot = {
+    ethscription: { transactionHash: ethscriptionId, currentOwner, creator },
+    seller, listing: null,
+    custody: { verified: Boolean(seller), status: seller ? 'verified' : 'not_in_market' },
+    market: {
+      address: MARKET_ADDRESS, chainId: 1, deployed: true, paused: false,
+      transactionsEnabled: true, intakeEnabled: true, indexer: { available: true, healthy: true },
+    },
+  };
+  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === '/api/findings' ? [] : snapshot }) }));
+  window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi?artifact=original-bc-ico');
+  return snapshot;
+}
+
+test('recognized artifacts offer their current owner a deposit instead of another upload or Finding', async () => {
+  recognizedArtifactFixture({ account: `0x${'22'.repeat(20)}` });
+  render(<App />);
+  expect(await screen.findByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /submit a finding/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /upload exact file/i })).not.toBeInTheDocument();
+});
+
+test('the original creator cannot deposit a recognized artifact now owned by another wallet', async () => {
+  recognizedArtifactFixture({
+    account: `0x${'11'.repeat(20)}`,
+    currentOwner: `0x${'22'.repeat(20)}`,
+    creator: `0x${'11'.repeat(20)}`,
+  });
+  render(<App />);
+  expect(await screen.findByText('NOT LISTED')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).not.toBeInTheDocument();
+});
+
+test('a recognized unlisted artifact offers a wallet connection before ownership can be checked', async () => {
+  recognizedArtifactFixture({ currentOwner: `0x${'22'.repeat(20)}` });
+  render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: 'CONNECT WALLET TO MANAGE' }));
+  expect(connectWallet).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).not.toBeInTheDocument();
+});
+
+test('already escrowed recognized artifacts offer their seller management even without a listing', async () => {
+  const account = `0x${'22'.repeat(20)}`;
+  recognizedArtifactFixture({ account, currentOwner: MARKET_ADDRESS, seller: account });
+  render(<App />);
+  expect(await screen.findByRole('link', { name: 'MANAGE IN FIELD WALLET' })).toHaveAttribute('href', '/wallet');
+  expect(screen.queryByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).not.toBeInTheDocument();
+});
+
+test('a failed ownership refresh removes an old owner deposit action', async () => {
+  recognizedArtifactFixture({ account: `0x${'22'.repeat(20)}` });
+  const intervals = vi.spyOn(globalThis, 'setInterval');
+  try {
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).toBeInTheDocument();
+    await waitFor(() => expect(intervals.mock.calls.some(([, delay]) => delay === 15_000)).toBe(true));
+    global.fetch.mockRejectedValue(new Error('offline'));
+    const refresh = intervals.mock.calls.find(([, delay]) => delay === 15_000)[0];
+    await act(async () => { await refresh(); });
+    expect(screen.getByText('LISTING UNAVAILABLE')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).not.toBeInTheDocument();
+  } finally { intervals.mockRestore(); }
 });

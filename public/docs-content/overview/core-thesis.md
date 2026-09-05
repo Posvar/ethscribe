@@ -23,11 +23,11 @@ Historical claims therefore require a dossier containing:
 - Relevant dates and version boundaries.
 - Known ambiguities and competing candidates.
 - Exact target hashes when authoritative bytes survive.
-- Signed revisions, challenges, and curator decisions.
+- Signed claims, with revisions, challenges, and explicit reviewer decisions as the research tools mature.
 
 ## 3. The chain establishes chronology and custody
 
-Ethereum can establish when an Ethscription was created, how it moved, and which address currently controls it. A marketplace contract can provide deterministic custody and settlement.
+Ethereum records the transactions and events from which the Ethscriptions protocol determines creation and ownership. A marketplace contract supplies payment and transfer rules; the application must reconcile its custody claims with the protocol index.
 
 Ethereum does not independently establish that a file was created by a historical figure or used in a particular event. That remains an evidence question.
 

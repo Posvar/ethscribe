@@ -1,85 +1,119 @@
 # Frequently asked questions
 
-## Is Ethscribe an NFT marketplace?
+## What is Ethscribe?
 
-No. Ethscribe is a curated digital-archaeology institution with a planned market for accepted Ethscriptions. The research brief, exact-byte verification, and provenance record come first. It does not index every asset someone wants to sell.
+An experiment in digital archaeology: follow a historical target, recover its exact file bytes, establish provenance, and collect the recognized Ethscription. The first expedition investigates Satoshi's early Bitcoin icons.
 
-## What is an Ethscription?
+## Do I need a wallet to explore?
 
-It is a digital artifact created and transferred under the Ethscriptions protocol using Ethereum data. See the [Ethscriptions primer](../foundations/ethscriptions.md) and the official [protocol specification](https://docs.ethscriptions.com/overview/protocol-specification).
+No. The mission, timeline, artifact records, and local-file testing can be used without a wallet. A wallet is required to submit a Finding, manage custody, or buy.
 
-## What does “byte perfect” mean?
+## How do I participate?
 
-The decoded bytes match exactly, as measured by SHA-256. Looking identical is not enough. Metadata, container structure, source whitespace, or one changed bit produces a different byte identity.
+Open an unresolved target in an [expedition](/expeditions) and choose **Submit a Finding**. Test either an original file from your device or an Ethscription you already own. The [first-finding guide](../product/first-finding.md) walks through the rest.
 
-## Can the same file bytes be Ethscribed more than once?
+## What costs gas?
 
-The protocol identifies the complete data URI. The same decoded bytes can potentially appear under different valid wrappers, MIME types, or protocol mechanisms. Ethscribe calculates `rawSha256` to group those equivalent payloads and find the earliest indexed raw-byte match.
+Browsing and candidate testing cost no gas. A Finding assignment is a message signature and also costs no gas.
 
-PNG and JPEG conventions reduce accidental variation but do not eliminate it: MIME aliases, parameters, percent encoding, gzip, attachments, and opt-in protocol rules can still change protocol identity without changing the eventual file bytes. Expedition actions therefore freeze and generate one accepted wrapper.
+Creation, deposit, registration for sale, listing changes, purchase, withdrawal, and claiming proceeds are Ethereum transactions. Their gas cost varies. The wallet shows the proposed transaction before submission.
 
-## Does `content_sha` identify the raw file?
+## Why did testing pass without changing the target to green?
 
-No. The official API's content hash identifies complete protocol content. Ethscribe separately decodes supported content and hashes the artifact bytes.
+Testing establishes candidate eligibility only. The asset must be recognized by the protocol, enter verified custody, and have its signed Finding published before an exact-match submission updates the target.
 
-## Can Ethscribe recognize a matching artifact created outside the site?
+The lost-file target never becomes authenticated from a file-format check alone.
 
-Yes. For a known complete data URI, the official API can find its `content_sha` immediately. Finding the same decoded bytes under every possible wrapper requires Ethscribe's raw-byte index. The artifact can be recognized and assigned to a target whether or not it was created through the site or deposited in the market contract.
+## Why is verification still pending after my transaction succeeded?
 
-For a lost target, there is no expected byte hash to query. Someone must first submit candidate bytes and a provenance case as a Finding.
+Ethereum confirmation and Ethscriptions indexing are separate. The site also waits for the applicable five-block custody window. Ownership and contract reads must agree before further actions become available.
 
-## Is Ethscribe's “earliest” claim complete today?
+Keep the transaction link and let reconciliation finish. Do not repeat a confirmed creation or deposit simply because indexing is delayed.
 
-Not until the protocol-wide raw-byte backfill covers all relevant creation paths and accepted ESIPs. The current interface can state whether a match is in the curated collection. Stronger chronology language is deliberately gated on index coverage.
+## What if someone ethscribes my candidate before my transaction?
 
-## Why use a curator instead of voting?
+Preflight is not a reservation. Ethereum transaction order determines the first canonical creation under the protocol rules.
 
-Historical truth is vulnerable to sybil voting and requires domain judgment. V1 lets votes surface work while a named curator applies a frozen public rubric and signs a reason. Custody and settlement later move to a contract so the curator does not control funds.
+The market's fallback Finding Receipt can record your attempt if the canonical input loses that race. The receipt is not the target artifact and gas is not refunded. See [artifact intake](../product/artifact-intake.md).
 
-## Could a curator still be wrong?
+## Does “first come, first scribe” mean nobody can copy the bytes?
 
-Yes. Decisions, evidence, and challenges remain public. Later evidence can append a correction or dispute. The product does not claim that an auction makes scholarship infallible.
+No. The Ethscriptions protocol ordinarily rejects a later creation of the same complete Data URI. It also supports duplicate opt-in for other use cases. Ethscribe targets do not use that opt-in.
 
-## Why not launch a token for researchers?
+The same file bytes can appear under a different valid wrapper, and the file remains copyable elsewhere. The target's canonical payload and the catalogue's byte identity are distinct.
 
-A token would encourage speculation and sybil behavior before contribution quality can be measured. V1 uses wallet-signed records. More complex reputation or bonds appear only if a demonstrated problem requires them.
+## What does SHA-256 prove?
 
-## What do I own if I buy an Accession?
+It allows the site to compare exact file bytes with a reference. A renamed file can still match; a resaved image or an XPM with changed line endings may not.
 
-You own the recognized Ethscription under the protocol's transfer rules. You do not automatically acquire copyright, trademark, authorship, exclusive access to the bytes, or a license to commercialize the historical work.
+A matching hash does not prove Satoshi authored the reference. That claim depends on historical sources.
 
-## Does the marketplace contract need to know about expeditions?
+## Does Ethscribe search every previously Ethscribed raw file?
 
-No. The V1 candidate stores Ethscription IDs, depositors, listings, offers, and payment state. Wallet-signed records connect those assets to expedition targets and Dossiers. A sale may anchor an opaque context hash without teaching the contract historical taxonomy or making the hash itself proof of curatorial approval.
+No. It checks the target's canonical protocol content and disclosed aliases, and compares decoded hashes for supported candidates. It does not yet have a complete historical raw-byte index across every wrapper and creation mechanism.
 
-## Can someone bid before an Ethscription is escrowed?
+“No known duplicate found” means no duplicate was found in those checks.
 
-Not with funds in V1. A recognized, non-escrowed artifact may collect a nonbinding interest signal, but executable offers begin only after the official API confirms contract custody. Funded pre-escrow bids are technically possible with a two-phase flow, but Solidity cannot inspect Ethscriptions ownership directly and the added stale-owner, cancellation, and bidder-finalization states are deferred until demand justifies them.
+## Can I submit something created outside this site?
 
-## Does the marketplace require a separate indexer?
+Yes, if you own it, its decoded bytes and wrapper meet the target, and it enters verified custody. Use the existing-Ethscription path inside the target.
 
-Not for escrow-first V1. The app reads market contract events and uses the official Ethscriptions API to reconcile `current_owner` and `previous_owner` before showing verified custody. Ethscribe's future decoded-byte index is still needed for wrapper-independent archaeological claims, but that is separate from bidding and settlement.
+There is no general-purpose creation page or arbitrary deposit action in Field Wallet.
 
-## Can a lost file have an expected hash?
+## I already own an artifact shown as recovered. How do I deposit it?
 
-No. If the bytes are genuinely lost, no authoritative target digest exists. The expedition instead freezes identifying criteria and requires a stronger provenance case for any recovered candidate.
+Open the recognized target in its expedition, connect the wallet that currently owns the Ethscription, and choose **Deposit into marketplace**. The creator shown on the historical transaction is not necessarily its current owner.
 
-## Will an XPM display in a browser?
+Review and confirm the existing-ID deposit in your wallet. It costs gas, but requires no new upload, Ethscription creation, or Finding for the existing catalogue record. Wait for Ethereum confirmation and ownership reconciliation; do not resubmit a confirmed deposit while the index catches up.
 
-Usually not natively. XPM is textual source data. Ethscribe can safely parse it and generate a pixelated preview, while preserving and hashing the original XPM bytes as the artifact.
+Then open Field Wallet to list it or withdraw it. A deposit does not automatically set a price or offer the asset for sale.
 
-## What is live now?
+## Why do I have to register a direct creation for sale?
 
-The Git-backed public site, mission, method, wallet connection, Expedition 001 research timeline, artifact inspection, project documentation, personal Ethscription creation, verified market custody, and signed target Finding intake. A protocol-wide raw-byte index, public Finding review pages, listings, offers, settlement, and bidding remain incomplete.
+The market receives the file during creation, but cannot read the containing transaction's hash to record the new Ethscription ID. A later registration transaction supplies that ID and initializes the deposit state used by listings.
 
-## How can I participate?
+It is a one-time step for that deposit. It does not create another Ethscription. Withdrawal is available without registering an otherwise verified direct creation.
 
-Explore the current expedition, inspect an unresolved target, preserve the candidate without modification, and use its embedded **Submit a Finding** flow. Ethscribing is intentionally available only in the context of a defined expedition target.
+## Where does my listing appear?
 
-## Can anyone propose an expedition?
+Manage the price in Field Wallet. The corresponding recovered artifact's record in the expedition displays the live listing and purchase action when custody and market checks pass.
 
-That is the intended participation model, but public proposal intake is not open yet. When enabled, proposals will be permissionless to submit and curated before they enter the prepared queue. A proposal will need a bounded question, historical importance, sources, and a workable acceptance rubric.
+An arbitrary contract deposit does not automatically receive a place in the expedition.
 
-## Why the name ethscri.be?
+## Are sale proceeds sent automatically?
 
-The name keeps the ownership mechanism visible: exact historical bytes are “ethscribed” into Ethereum's public record. The domain also supports a simple invitation—find it, prove it, ethscribe it.
+They become claimable credit in the contract. Open Field Wallet and use the claim action to send the balance to your wallet. A completed sale credits 95% to the seller and 5% to the marketplace fee recipient.
+
+Canceling a listing does not require claiming anything and does not withdraw the artifact.
+
+## Can I withdraw while intake is paused?
+
+The contract's withdrawal and claim functions remain callable during an intake pause. Site controls additionally require working ownership reads and an enabled UI transaction gate.
+
+See the [mainnet reference](mainnet-deployment.md) for the contract and exit methods.
+
+## Can I withdraw several artifacts at once?
+
+The contract supports batches of up to 100 for each custody type. Registered deposits and unregistered direct creations use different batch methods. The current Field Wallet offers individual withdrawals.
+
+## Is an Accession ownership of the original artwork?
+
+It is ownership of a recognized Ethscription containing the target bytes. It does not confer historical authorship, copyright, or control of all copies of the underlying work.
+
+## Can a lost file have a reference hash?
+
+Not until its original bytes have been established. The lost PNG target has historical identification clues; a candidate needs a provenance case, not just the right dimensions or a similar appearance.
+
+## Will XPM, HTML, audio, or text display?
+
+The wallet supports previews for several content types. XPM receives a generated pixel preview while its original text bytes remain the artifact. Audio uses playback controls, and plain text is displayed as text. HTML is rendered in an isolated frame with restrictions, so some interactive works may not behave exactly as on their original site.
+
+## Can I make a bid or propose the next expedition?
+
+Public funded-offer and auction workflows are not available yet. Expedition proposal intake is also closed. These are possible later additions, alongside research revisions and challenges.
+
+## Is the project decentralized?
+
+Ethscription creation and transfers follow the protocol; custody and payment rules are in an immutable contract. The current catalogue, target references, assignment storage, and interface are maintained by Ethscribe. The site relies on Ethereum read providers and the official index.
+
+A signature proves who submitted a claim, not its truth. Review and storage decentralization are future directions rather than current guarantees.

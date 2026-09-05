@@ -1,6 +1,7 @@
 # Table of contents
 
 * [Welcome to Ethscribe](README.md)
+* [Your first Finding](product/first-finding.md)
 
 ## Overview
 
@@ -35,6 +36,6 @@
 ## Reference
 
 * [Mainnet deployment](reference/mainnet-deployment.md)
-* [Controlled custody pilot](reference/custody-pilot.md)
+* [First custody test: historical record](reference/custody-pilot.md)
 * [Frequently asked questions](reference/faq.md)
 * [Sources and further reading](reference/sources.md)

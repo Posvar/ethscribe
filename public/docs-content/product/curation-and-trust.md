@@ -1,77 +1,49 @@
 # Curation and trust
 
-Digital history is not decided by wallet count. V1 therefore uses a legible trust model:
+Ethscribe starts with curated historical targets and reproducible byte checks. It does not use wallet votes, token stakes, or sale prices to establish historical truth.
 
-> Trusted curation, trustless ownership and settlement.
+## What is trusted today
 
-Community work discovers, documents, corroborates, and challenges. A named curator wallet or Safe decides whether a Finding satisfies the frozen rubric. The marketplace candidate controls assets and funds without giving the curator unilateral custody.
+The project selects expedition scope, historical references, and target commitments. Known candidates are tested against those commitments. The server verifies a signed Finding's bytes and custody before recording it.
 
-## Why votes cannot authenticate history
+This means participants trust the published research and the reference selected for each target. A deterministic hash check cannot tell whether that historical reference was correct.
 
-A single actor can cheaply control many wallets, submit a false Finding, endorse it, and bid on it. Token weighting only changes the price of the attack and may hand authority to wealth rather than expertise.
+For an attested lost file, no authoritative digest exists. A valid PNG is only a candidate. The current application does not automatically promote such a submission into a recovered artifact.
 
-For V1:
+## Three kinds of verification
 
-- endorsements affect discovery order only;
-- evidence quality matters more than endorsement count;
-- all substantive Field Notes are signed and public;
-- challenged Findings receive explicit review;
-- bids begin only after eligibility is decided; and
-- price is never evidence of authenticity.
+| Check | Establishes | Does not establish |
+|---|---|---|
+| Byte match | Equality with the selected reference file | Historical authorship or significance |
+| Wallet signature | Attribution of the signed claim to a wallet | Accuracy of the claim or a person's identity |
+| Custody reconciliation | Agreement between protocol ownership and the claimed market position | Historical authenticity |
 
-## Frozen rubric
+A high price or many supportive wallets adds no new factual evidence to any of these checks.
 
-Before an expedition opens, its rubric states:
+## Why voting is deferred
 
-- the exact claim under review;
-- acceptable sources and required evidence;
-- byte, format, date, and provenance boundaries;
-- how variants and earlier matches are handled;
-- material reasons for disqualification; and
-- the standard for `Insufficient evidence` or `No Accession`.
+One person can create many wallets, endorse a false story, and trade with themselves. Weighting those actions by a token changes the cost without turning them into reliable sources.
 
-Changing a rule after submissions begin requires a public amendment, a reason, and enough time for every participant to respond. Material target changes should reopen or restart the expedition.
+Community corroboration can be useful when it contributes an independent archive, reproducible extraction, or a documented correction. The current release has no public voting or formal challenge workflow.
 
-## Curator decisions
+## Review policy to build next
 
-The curator signs one of three states:
+A fuller public review process should publish:
 
-- **Eligible** — satisfies the published rubric.
-- **Ineligible** — fails a named requirement.
-- **Insufficient evidence** — may be plausible, but the record cannot support acceptance.
+- The precise claim and evidence required for each target.
+- The reviewer and any material conflicts of interest.
+- An eligible, ineligible, or insufficient-evidence decision with reasons.
+- The exact record reviewed.
+- Corrections and earlier decisions without silent rewriting.
 
-Every decision includes a concise reason and the reviewed Dossier hash. The curator must disclose material conflicts and abstain where appropriate.
+A recovery can remain unresolved. Trading should never be used as a substitute for deciding whether a historical claim is supported.
 
-## Separation of powers
+## Custody is a separate boundary
 
-The future marketplace should ensure that the curator cannot:
+The immutable market does not contain historical eligibility rules or curator voting. The curator cannot redirect a seller's claimable balance or withdraw someone else's artifact by editing site metadata.
 
-- move a hunter's deposited Ethscription outside defined settlement;
-- redirect bids or fees;
-- prevent an entitled withdrawal indefinitely;
-- change the fee split for an active expedition; or
-- fabricate a dossier signature.
+The market does rely on protocol interpretation and the application's ownership checks. See [ownership and marketplace](ownership-and-marketplace.md) for that limitation.
 
-Conversely, the contract should not pretend to judge whether an archive is authentic. It consumes a signed eligibility set produced by the public research process.
+## When to distribute review
 
-## Appeals and corrections
-
-V1 favors transparency over a complicated court:
-
-1. Challenges are visible during review.
-2. The curator responds through the signed decision.
-3. A clear procedural or factual mistake may be corrected before the eligibility root is finalized.
-4. Later evidence appends a correction or dispute to the permanent record.
-
-Auction finality and historical certainty are different. A settled sale is not silently reversed because scholarship later changes.
-
-## When to decentralize
-
-Additional machinery is justified only by observed constraints:
-
-- a small Safe when one curator key is an availability or trust bottleneck;
-- optimistic advancement when uncontested review volume becomes burdensome;
-- rotating expert panels when repeat contributors demonstrate domain competence;
-- bonds, random juries, and appeals when value at risk makes coordinated attacks rational.
-
-Launching a transferable governance token before that evidence would obscure, not remove, centralized judgment.
+Multiple curators, domain panels, reputation, or bonded challenges become useful only when participation reveals a concrete review or abuse problem. The roadmap keeps them optional. A token, jury system, or automated “proof of history” is not required to run the first expedition.

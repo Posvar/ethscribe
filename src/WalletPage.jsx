@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import XpmPreview from './XpmPreview';
-import { artifactById } from './huntData';
+import { artifactById, artifacts } from './huntData';
 import { fetchMarketStatus, fetchWalletInventory } from './marketApi';
 import {
   MAINNET_CHAIN_ID,
@@ -20,6 +20,14 @@ import {
   waitForTransactionReceipt,
 } from './marketTransactions';
 
+const catalogueAssignments = new Map(artifacts
+  .filter((artifact) => artifact.status === 'secured' && artifact.ethscriptionId)
+  .map((artifact) => [artifact.ethscriptionId.toLowerCase(), {
+    expeditionId: 'lost-pixels-of-satoshi',
+    targetId: artifact.id,
+    ethscriptionId: artifact.ethscriptionId,
+  }]));
+
 function ArrowIcon() {
   return <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4l5 5-5 5" /></svg>;
 }
@@ -35,11 +43,12 @@ function formatDate(timestamp) {
   }).format(new Date(timestamp * 1000));
 }
 
-function formatWeiAsEth(value, maximumDecimals = 4) {
+function formatWeiAsEth(value) {
   try {
     const wei = BigInt(value || 0);
     const whole = wei / 10n ** 18n;
-    const fraction = (wei % 10n ** 18n).toString().padStart(18, '0').slice(0, maximumDecimals).replace(/0+$/, '');
+    const fullFraction = (wei % 10n ** 18n).toString().padStart(18, '0').replace(/0+$/, '');
+    const fraction = fullFraction;
     return fraction ? `${whole}.${fraction}` : whole.toString();
   } catch {
     return '—';
@@ -85,13 +94,14 @@ function TextAssetPreview({ source, label }) {
 
   useEffect(() => {
     const controller = new AbortController();
+    setPreview({ state: 'loading', text: '' });
 
     fetch(source, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error(`Text preview returned ${response.status}`);
         return response.text();
       })
-      .then((text) => setPreview({ state: 'ready', text }))
+      .then((text) => { if (!controller.signal.aborted) setPreview({ state: 'ready', text }); })
       .catch((previewError) => {
         if (previewError.name !== 'AbortError') setPreview({ state: 'error', text: '' });
       });
@@ -108,18 +118,19 @@ function TextAssetPreview({ source, label }) {
 
 function AssetPreview({ record }) {
   const source = record.transactionHash ? `/api/ethscriptions/media/${record.transactionHash}` : '';
+  const [failedSource, setFailedSource] = useState('');
   const mimetype = (record.mimetype || '').toLowerCase();
   const mediaType = mimetype.split(';')[0].trim();
   const label = `Ethscription #${record.ethscriptionNumber ?? ''}`.trim();
 
-  if (!source) {
+  if (!source || failedSource === source) {
     return <div className="wallet-asset-fallback"><span>PREVIEW UNAVAILABLE</span><strong>{record.mimetype || 'UNKNOWN MEDIA'}</strong></div>;
   }
   if (['image/x-xpixmap', 'image/x-xpm', 'image/xpm', 'text/x-xpm'].includes(mediaType)) {
     return <XpmPreview source={source} label={`${label} XPM preview`} className="wallet-asset-xpm" />;
   }
   if (mediaType.startsWith('image/')) {
-    return <img src={source} alt={`${label} preview`} loading="lazy" />;
+    return <img src={source} alt={`${label} preview`} loading="lazy" onError={() => setFailedSource(source)} />;
   }
   if (mediaType === 'text/html' || mediaType === 'application/xhtml+xml') {
     return <iframe src={source} title={`${label} HTML preview`} loading="lazy" sandbox="" referrerPolicy="no-referrer" />;
@@ -244,9 +255,17 @@ export default function WalletPage({
   const [autoRefreshIn, setAutoRefreshIn] = useState(0);
   const [reconcileRefreshIn, setReconcileRefreshIn] = useState(0);
   const previousAccount = useRef(account);
+  const refreshSequence = useRef(0);
+  const currentSelection = useRef('');
+  const selectionKey = `${account?.toLowerCase() || ''}:${pageKeys.directPageKey}:${pageKeys.escrowPageKey}`;
+  currentSelection.current = selectionKey;
   const hasPendingCustody = Boolean(inventory?.escrow?.some((record) => !record.custody?.verified));
 
   const refresh = useCallback(async ({ quiet = false } = {}) => {
+    // Late responses from a previous account/page must never restore its assets
+    // or its claimable balance in the currently connected wallet.
+    const requestSequence = ++refreshSequence.current;
+    const isCurrent = () => requestSequence === refreshSequence.current && currentSelection.current === selectionKey;
     if (!quiet) {
       setLoading(true);
       setError('');
@@ -255,35 +274,47 @@ export default function WalletPage({
     try {
       if (account) {
         const nextInventory = await fetchWalletInventory(account, pageKeys);
+        if (!isCurrent()) return null;
+        if (nextInventory.owner?.toLowerCase() !== account.toLowerCase()) throw new Error('Wallet inventory owner mismatch.');
         setInventory(nextInventory);
         setStatus(nextInventory.market);
+        setError('');
         return nextInventory;
       } else {
         const nextStatus = await fetchMarketStatus();
+        if (!isCurrent()) return null;
         setStatus(nextStatus);
         setInventory(null);
+        setError('');
         return { market: nextStatus, directlyOwned: [], escrow: [] };
       }
     } catch {
-      if (!quiet) {
-        setError('The live Ethereum or Ethscriptions read service is temporarily unavailable. No custody claim is being shown as verified.');
+      if (isCurrent()) {
+        setError('Live wallet data is temporarily unavailable. Any visible assets are from the last successful check. Marketplace actions will resume when the next check succeeds.');
       }
       return null;
     } finally {
-      if (!quiet) setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [account, pageKeys]);
+  }, [account, pageKeys, selectionKey]);
 
   useEffect(() => {
     if (previousAccount.current === account) return;
     previousAccount.current = account;
+    setInventory(null);
+    setStatus(null);
     setPageKeys({ directPageKey: '', escrowPageKey: '' });
     setPageHistory({ direct: [], escrow: [] });
     setInventoryView('escrow');
   }, [account]);
 
   useEffect(() => {
+    setConfirmation(null);
+  }, [account, chainId]);
+
+  useEffect(() => {
     refresh();
+    return () => { refreshSequence.current += 1; };
   }, [refresh]);
 
   useEffect(() => {
@@ -407,9 +438,15 @@ export default function WalletPage({
     ? inventory?.pagination?.escrowNextPageKey
     : inventory?.pagination?.directlyOwnedNextPageKey;
 
-  const findingForRecord = (record) => resolvedFindings.find(
-    (finding) => finding.ethscriptionId?.toLowerCase() === record.transactionHash?.toLowerCase(),
-  ) || null;
+  const findingForRecord = (record) => {
+    const id = record.transactionHash?.toLowerCase();
+    if (!id) return null;
+    // Recognized catalogue IDs already identify their expedition target. A
+    // later owner deposit does not need a new Finding to restore that link.
+    return resolvedFindings.find((finding) => finding.ethscriptionId?.toLowerCase() === id)
+      || catalogueAssignments.get(id)
+      || null;
+  };
 
   const showNextInventoryPage = () => {
     if (!visibleHasMore || !visibleNextPageKey) return;
@@ -432,11 +469,11 @@ export default function WalletPage({
   };
 
   const openConfirmation = (type, record = null, details = {}) => {
-    setConfirmation({ type, record, ...details });
+    setConfirmation({ type, record, account, ...details });
   };
 
   const executeConfirmedTransaction = async () => {
-    if (!confirmation || !account) return;
+    if (!confirmation || !account || confirmation.account?.toLowerCase() !== account.toLowerCase() || error || loading) return;
     const { type, record, price } = confirmation;
     const id = record?.transactionHash || account;
     const expectedPriceWei = type === 'listing' ? parseEthPriceToWei(price).toString() : '';
@@ -479,6 +516,8 @@ export default function WalletPage({
   };
 
   const withdrawAction = (record) => {
+    if (market?.localPreview) return { disabled: true, label: 'READ-ONLY PREVIEW', hint: 'Live custody is shown here. Withdrawals are disabled in this local review.' };
+    if (error || loading) return { disabled: true, label: 'CHECKING WALLET DATA', hint: 'Waiting for a successful live wallet check.' };
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
     if (!record.custody?.verified) {
       const indexerSyncing = ['indexer_lagging', 'indexer_unavailable'].includes(record.custody?.status);
@@ -504,6 +543,8 @@ export default function WalletPage({
   };
 
   const registerAction = (record) => {
+    if (market?.localPreview) return { disabled: true, label: 'READ-ONLY PREVIEW', hint: 'Trading registration is disabled in this local review.' };
+    if (error || loading) return { disabled: true, label: 'CHECKING WALLET DATA', hint: 'Waiting for a successful live wallet check.' };
     if (hasDepositSelectorCollision(record.transactionHash)) return { disabled: true, label: 'TRADING UNAVAILABLE', hint: 'This Ethscription ID conflicts with a reserved market action.' };
     if (transactionBusy) return { disabled: true, label: 'TRANSACTION IN PROGRESS', hint: 'Complete the active wallet operation first.' };
     if (!onMainnet) return { disabled: true, label: 'SWITCH TO MAINNET', hint: 'Trading registration uses Ethereum mainnet.' };
@@ -512,6 +553,8 @@ export default function WalletPage({
   };
 
   const listingAction = (record) => {
+    if (market?.localPreview) return { disabled: true, hint: 'This is a live listing. Price changes are disabled in the local review.', onClick: () => {} };
+    if (error || loading) return { disabled: true, hint: 'Waiting for a successful live wallet check.', onClick: () => {} };
     if (record.listing == null) return { disabled: true, hint: 'Listing state is temporarily unavailable. Refresh before setting a price.', onClick: () => {} };
     if (transactionBusy) return { disabled: true, hint: 'Complete the active wallet operation first.', onClick: () => {} };
     if (!onMainnet) return { disabled: true, hint: 'Listings use Ethereum mainnet.', onClick: () => switchToMainnet() };
@@ -524,6 +567,7 @@ export default function WalletPage({
   };
 
   const cancelListingAction = (record) => {
+    if (error || loading) return { disabled: true, onClick: () => {} };
     if (transactionBusy) return { disabled: true, onClick: () => {} };
     if (!onMainnet) return { disabled: true, onClick: () => switchToMainnet() };
     if (!market?.transactionsEnabled || !market?.exitsEnabled) return { disabled: true, onClick: () => {} };
@@ -535,7 +579,7 @@ export default function WalletPage({
   const hasClaimableCredit = claimableKnown && BigInt(claimableWei) > 0n;
   const formattedClaimableCredit = claimableKnown ? formatWeiAsEth(claimableWei, 6) : '—';
   const claimDisabled = Boolean(
-    transactionBusy
+    error || loading || transactionBusy
     || !claimableKnown
     || !hasClaimableCredit
     || (onMainnet && !market?.transactionsEnabled),
@@ -561,7 +605,7 @@ export default function WalletPage({
   return (
     <div className="wallet-page">
       {header}
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="wallet-hero">
           <div>
             <p className="kicker"><span /> Researcher inventory</p>
@@ -578,7 +622,7 @@ export default function WalletPage({
               {!onMainnet && <div className="wallet-network-notice"><p>Marketplace actions use Ethereum mainnet.</p><button className="primary-action" type="button" onClick={switchToMainnet}>Switch to Ethereum <ArrowIcon /></button></div>}
 
               <TransactionStatus transaction={transaction} countdown={reconcileRefreshIn} onDismiss={() => setTransaction(null)} />
-              {hasPendingCustody && transaction?.phase !== 'reconciling' && (
+              {inventoryView === 'escrow' && hasPendingCustody && transaction?.phase !== 'reconciling' && (
                 <div className="wallet-processing-notice" role="status"><div><span>FINALIZING MARKET UPDATE</span><strong>Ethereum or the official ownership index is still catching up.</strong></div><p>Ethscribe checks again automatically in {autoRefreshIn || 0}s. No action is required.</p></div>
               )}
 
@@ -598,12 +642,18 @@ export default function WalletPage({
                   </div>
                   <button type="button" disabled={claimDisabled} onClick={claimCredit}>{claimButtonLabel} <ArrowIcon /></button>
                 </div>
-                <div className="wallet-inventory-tabs" role="tablist" aria-label="Ethscription location">
-                  <button type="button" role="tab" aria-selected={inventoryView === 'escrow'} className={inventoryView === 'escrow' ? 'active' : ''} onClick={() => setInventoryView('escrow')}>MARKETPLACE CUSTODY <span>{escrow.length}{inventory?.pagination?.escrowHasMore ? '+' : ''}</span></button>
-                  <button type="button" role="tab" aria-selected={inventoryView === 'direct'} className={inventoryView === 'direct' ? 'active' : ''} onClick={() => setInventoryView('direct')}>MY WALLET <span>{direct.length}{inventory?.pagination?.directlyOwnedHasMore ? '+' : ''}</span></button>
+                <div className="wallet-inventory-tabs" role="tablist" aria-label="Ethscription location" onKeyDown={(event) => {
+                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                  event.preventDefault();
+                  const next = event.key === 'Home' ? 'escrow' : event.key === 'End' ? 'direct' : inventoryView === 'escrow' ? 'direct' : 'escrow';
+                  setInventoryView(next);
+                  document.getElementById(`wallet-tab-${next}`)?.focus();
+                }}>
+                  <button id="wallet-tab-escrow" type="button" role="tab" aria-controls="wallet-inventory-panel" tabIndex={inventoryView === 'escrow' ? 0 : -1} aria-selected={inventoryView === 'escrow'} className={inventoryView === 'escrow' ? 'active' : ''} onClick={() => setInventoryView('escrow')}>MARKETPLACE CUSTODY <span>{escrow.length}{inventory?.pagination?.escrowHasMore ? '+' : ''}</span></button>
+                  <button id="wallet-tab-direct" type="button" role="tab" aria-controls="wallet-inventory-panel" tabIndex={inventoryView === 'direct' ? 0 : -1} aria-selected={inventoryView === 'direct'} className={inventoryView === 'direct' ? 'active' : ''} onClick={() => setInventoryView('direct')}>MY WALLET <span>{direct.length}{inventory?.pagination?.directlyOwnedHasMore ? '+' : ''}</span></button>
                 </div>
                 {!loading && visibleRecords.length === 0 && !error && <p className="wallet-empty-record">{inventoryView === 'escrow' ? 'No Ethscriptions from this wallet are currently verified in marketplace custody.' : 'The official indexer reports no Ethscriptions directly held by this address.'}</p>}
-                <div className="wallet-inventory-grid">{visibleRecords.map((record) => (
+                <div className="wallet-inventory-grid" id="wallet-inventory-panel" role="tabpanel" aria-labelledby={`wallet-tab-${inventoryView}`} tabIndex={0}>{visibleRecords.map((record) => (
                   <InventoryCard
                     key={record.transactionHash}
                     record={record}
@@ -622,9 +672,9 @@ export default function WalletPage({
                 ))}</div>
                 {(visibleHistory.length > 0 || visibleHasMore) && (
                   <div className="wallet-pagination" aria-label="Inventory pagination">
-                    <button type="button" onClick={showPreviousInventoryPage} disabled={visibleHistory.length === 0}>PREVIOUS</button>
+                    <button type="button" onClick={showPreviousInventoryPage} disabled={loading || visibleHistory.length === 0}>PREVIOUS</button>
                     <span>PAGE {visibleHistory.length + 1} · UP TO {inventory?.pagination?.maximumResultsPerSection || 50} ITEMS</span>
-                    <button type="button" onClick={showNextInventoryPage} disabled={!visibleHasMore || !visibleNextPageKey}>NEXT</button>
+                    <button type="button" onClick={showNextInventoryPage} disabled={loading || !visibleHasMore || !visibleNextPageKey}>NEXT</button>
                   </div>
                 )}
               </div>

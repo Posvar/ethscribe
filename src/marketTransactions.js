@@ -199,7 +199,9 @@ export async function waitForTransactionReceipt(provider, transactionHash, optio
 
     if (receipt) {
       if (Number.parseInt(String(receipt.status ?? '0x0'), 16) !== 1) {
-        throw new Error('The Ethereum transaction reverted.');
+        const error = new Error('The Ethereum transaction reverted.');
+        error.code = 'TRANSACTION_REVERTED';
+        throw error;
       }
       return receipt;
     }

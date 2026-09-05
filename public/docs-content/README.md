@@ -1,59 +1,62 @@
 # Welcome to Ethscribe
 
-Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
-
-Its category is **ownable digital archaeology**.
-
-An Ethscribe expedition begins with a bounded historical question: which exact file mattered, where did it come from, and do its original bytes still survive? Researchers locate candidates, assemble evidence, and ethscribe exact payloads on Ethereum. Accepted artifacts enter a permanent public catalogue with an auditable provenance record and a transferable owner.
+Ethscribe is an experiment in **ownable digital archaeology**: a place to recover historically significant files, establish their provenance, and collect their exact bytes as Ethscriptions.
 
 > Find the bytes. Establish the provenance. Own the artifact.
 
-## The problem
+A tiny icon, an early software asset, or a file rescued from an old archive can carry a remarkable story. The hunt is to recover the file itself, with evidence connecting it to that story. A matching thumbnail is only the beginning.
 
-Digital history is unusually fragile. Important files are silently recompressed, renamed, resaved, stripped from old forums, or separated from the context that made them meaningful. A visually identical file may not be the original file. A popular story may not be a supported story. An onchain timestamp may establish when something was inscribed without establishing what it meant historically.
+## Start with the first expedition
 
-Ethscribe combines three records that should remain distinct:
+[The Lost Pixels of Satoshi](/expeditions/lost-pixels-of-satoshi) explores Bitcoin's earliest icon systems. Its timeline contains known files to recover and one attested PNG whose original bytes remain unknown.
 
-| Record | What it establishes |
+You can explore without connecting a wallet. To participate, open an unresolved target and choose **Submit a Finding**. Test a local file or an Ethscription you already own before preparing a transaction.
+
+[Follow the first-finding guide](product/first-finding.md) for the complete flow, including what costs gas and when the expedition updates.
+
+## What is available
+
+| Available in this release | What it does |
 |---|---|
-| Historical evidence | Why the artifact matters and where its bytes came from |
-| Raw-byte identity | Whether two payloads are exactly the same file |
-| Ethereum ownership | Inscription history, custody, and marketplace settlement |
+| Expeditions and artifact timeline | Shows historical context, recovered files, and gaps |
+| Candidate testing | Checks supported files against the target and checks known protocol duplicates before gas |
+| Wallet connection | Identifies the researcher and opens transaction or signature requests |
+| Expedition submission | Creates directly into market custody, or deposits an existing matching Ethscription, then publishes a signed Finding |
+| Field Wallet | Shows personal and market-held Ethscriptions, assignments, withdrawal controls, listings, and claimable proceeds |
+| Fixed-price marketplace | Shows eligible listings within recovered artifact records and provides a purchase flow |
 
-No one layer substitutes for the others.
+Public expedition proposals are closed. Research revisions, community challenges, researcher rewards, auctions, funded-offer screens, and automatic expedition scheduling remain proposed work. The [roadmap](roadmap/phased-development.md) separates those ideas from the current product.
 
-## What Ethscribe is
+## What the evidence establishes
 
-- A recurring series of focused digital-archaeology expeditions.
-- A public catalogue of accepted, byte-perfect artifacts.
-- An evidence system for Findings, sources, challenges, and curator decisions.
-- A Web3-native ownership and settlement layer built around Ethscriptions.
-- A future marketplace for historically significant Ethscriptions.
+| Record | What it tells you |
+|---|---|
+| Historical sources | Why the file matters and where it came from |
+| Decoded-file SHA-256 | Whether a candidate matches the exact reference bytes |
+| Ethscription record | Creation order and ownership under the Ethscriptions protocol |
+| Signed Finding | Which wallet submitted the claim against an expedition target |
 
-## What Ethscribe is not
+A hash establishes byte equality; it does not establish authorship. A wallet signature attributes a submission; it does not make its historical claim true.
 
-- A marketplace for arbitrary inscriptions.
-- A popularity contest that turns votes into historical truth.
-- A claim of copyright, authorship, or exclusive access to public files.
-- A token-governed oracle in its first version.
-- A comprehensive index of everything ever Ethscribed.
+## First come, first scribe
 
-## Current status
+Each target specifies one canonical Data URI, the format in which its bytes are submitted. For that payload, without duplicate opt-in, the Ethscriptions protocol recognizes the first valid creation. Ethereum itself does not enforce this uniqueness rule.
 
-The public site, reverse-chronological Expeditions archive, and Expedition 001 are live. Wallet connection, the researched artifact timeline, exact target hashes, XPM previews, transaction records, and live ownership checks are available now. Target-specific creation uses one direct-to-vault transaction: the connected wallet remains protocol creator, and the V2 market becomes initial owner while preserving a user-controlled exit. Open targets lock their accepted Data URI wrapper, verify known duplicates before gas, and publish a signed Finding only after server-side content and custody verification. The Field Wallet supports deposits, withdrawals, fixed-price seller listings, cancellation, and proceeds claims; creation remains expedition-only. Both immutable market versions are deployed and exact-match source-verified; new first-party intake is directed to V2. On August 31, 2026, one disposable Ethscription completed Deposit → Verify → Withdraw through the production V1 wallet with fail-closed contract/indexer reconciliation. Neither contract is independently audited or approved for valuable custody or trading; public purchase pages, funded offers, decoded-byte backfill, external review, and low-value settlement testing remain incomplete.
+Another wrapper can contain the same underlying bytes. Ethscribe compares decoded file hashes for the records it checks, but does not yet search every historical Ethscription under every possible wrapper. “No known duplicate found” is a scoped check, not a global guarantee.
 
-The current trust model is straightforward:
+## Ownership and the experiment
 
-> Trusted curation; trustless ownership and settlement.
+An **Accession** is a recognized artifact in the expedition catalogue, linked to an Ethscription and its evidence. Ownership can change without changing the file. Buying does not transfer copyright, historical authorship, or control over copies elsewhere.
 
-Early historical eligibility is decided by a named curator applying a published rubric. The marketplace candidate enforces custody, funded offers, refunds, transfers, and fees without deciding historical truth. The system becomes more distributed only when actual scale and value justify the complexity.
+Ethscribe currently depends on curated target definitions, its hosted records, Ethereum read services, and the official Ethscriptions index. Marketplace custody and payment rules live in an immutable contract. The contract is source-verified; no independent security audit is documented. [Ownership and marketplace](product/ownership-and-marketplace.md) explains this boundary.
+
+The experiment asks whether people return for the research, contribute useful discoveries, and value collecting the resulting artifacts. Further development follows what participants actually find useful.
 
 ## Read next
 
-- Start with [Why Ethscribe exists](overview/why-ethscribe.md).
-- Understand the technical distinction in [Byte-perfect identity](foundations/byte-perfect-identity.md).
-- See the product loop in [Expeditions](product/expeditions.md).
-- Follow the two submission paths in [Ethscribe, deposit, and assign](product/artifact-intake.md).
-- Review the contract in [Ownership and marketplace](product/ownership-and-marketplace.md) and its [Mainnet deployment](reference/mainnet-deployment.md).
-- Review the rollout in [Phased development](roadmap/phased-development.md).
-- Enter the live first hunt in [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md).
+- [Your first Finding](product/first-finding.md)
+- [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md)
+- [Byte-perfect identity](foundations/byte-perfect-identity.md)
+- [Ownership and marketplace](product/ownership-and-marketplace.md)
+- [Frequently asked questions](reference/faq.md)
+- [Phased development](roadmap/phased-development.md)

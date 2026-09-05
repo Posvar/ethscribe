@@ -1,94 +1,44 @@
 # Path to autonomy
 
-Ethscribe should run like a durable institution, but autonomous cadence must be earned. A settlement event can trigger the next expedition automatically; it cannot create a worthy historical question, a defensible rubric, or expert judgment.
+Autonomy is a long-term ambition. Today, Ethscribe runs one curated expedition with hosted research records and an immutable market. There is no automatic proposal selection or next-hunt scheduler.
 
-## The prepared queue
+## Start with a prepared queue
 
-The central mechanism is a public queue of launch-ready expeditions. A queued entry includes:
+A future queue should contain researched briefs rather than topic names alone. Each entry needs a bounded target, historical context, acceptance rules, suitable sources, and someone accountable for review.
 
-- a bounded title and target;
-- a historical brief and source pack;
-- a tested, versioned rubric;
-- a curator or panel commitment;
-- timing and market parameters;
-- a proposal author address; and
-- a readiness state.
+Public proposal intake is currently closed. Reopening it should follow a process for reviewing and preparing good ideas.
 
-Only `Ready` entries can be activated. Popularity can help order review, but it cannot bypass preparation.
+## Automate scheduling after preparation
 
-## Activation loop
+A future sequence could be:
 
-```text
-Community proposes
-  -> researchers improve the brief
-  -> curator marks it Ready
-  -> current expedition settles or concludes
-  -> automation activates next queue entry
-  -> author and next-expedition pools receive defined funding
-```
+1. Contributors suggest and improve a brief.
+2. A reviewer marks the expedition ready.
+3. A schedule or completed expedition triggers the next ready entry.
+4. Documented treasury policy funds maintenance and any rewards.
+5. New findings and research replenish the catalogue.
 
-Before the marketplace exists, the state transition is performed transparently by the application. After launch, an indexed settlement event can trigger activation under frozen queue rules; the market contract itself does not store expedition taxonomy.
+A sale should not force an unprepared hunt to open. Completion without a sale or without an accepted artifact also needs a defined outcome.
 
-## Roles that can decentralize separately
+## Distribute responsibilities separately
 
-- **Cartographers** propose and prepare expeditions.
-- **Hunters** recover and submit artifacts.
-- **Researchers** add sources, corrections, and challenges.
-- **Curators** decide rubric eligibility.
-- **Patrons** fund Accessions through bids.
-- **Maintainers** operate index, storage, interface, and contracts.
+Hunters recover files. Researchers add evidence. Reviewers evaluate claims. Collectors buy artifacts. Maintainers run the services.
 
-These roles should not be collapsed into one transferable token balance. Each can develop its own accountability and succession path.
+Each role can gain a succession path without giving one token balance authority over historical truth, treasury spending, and custody at once.
 
-## Progressive handoff
+## What needs to exist first
 
-### Founder-prepared queue
+- Several expeditions with repeat independent participation.
+- Clear review criteria and a way to correct errors.
+- Signed records that can be inspected and exported.
+- Redundant publication and recovery procedures.
+- Published queue status and accountable reviewers.
+- Evidence that fees cover some recurring costs.
 
-Several launch-ready expeditions prevent an empty-product problem and establish examples of good scope.
+The contract can enforce settlement rules. It cannot select an interesting historical question or determine whether a recovered source is authentic.
 
-### Community proposals, founder curation
+## Cadence follows quality
 
-Anyone can submit a structured idea. The founder selects and prepares the best candidates while publishing reasons.
+A daily opening might eventually coexist with hunts that stay open for weeks. It is not a launch commitment. The queue, researcher attention, review capacity, and collector demand have to support that rhythm.
 
-### Community Cartographers, curator Safe
-
-Repeat authors prepare complete briefs. A small multi-signature group approves readiness and resolves conflicts.
-
-### Domain panels and automatic scheduling
-
-Specialists curate within bounded categories. The queue and contract schedule qualified entries without routine founder action.
-
-### Replaceable interfaces and maintainers
-
-Signed records, open schemas, redundant storage, and contract state allow multiple frontends and operational succession.
-
-## Guardrails against a dumping ground
-
-Permissionless proposal is not permissionless accession. The queue maintains quality through:
-
-- structured proposal requirements;
-- evidence of historical significance;
-- a bounded and answerable target;
-- rubric review before scheduling;
-- public readiness states;
-- finite active capacity; and
-- No Accession when evidence fails.
-
-This preserves openness at the edge and curation at the permanent collection.
-
-## When daily cadence is healthy
-
-One opening per day is appropriate only if:
-
-- the ready queue remains several weeks deep;
-- each expedition stays open long enough for serious research;
-- curators can meet review deadlines without shallow decisions;
-- visitors can follow overlapping work without confusion;
-- participation and collector demand persist across themes; and
-- fees cover the marginal operating and review burden.
-
-“Daily” describes launch rhythm, not a 24-hour research deadline.
-
-## The destination
-
-The end state is not governance for its own sake. It is a credible public archive where new fieldwork continues, ordinary decisions have accountable owners, custody does not rely on them, and any interface can verify the permanent record.
+The useful test of autonomy is whether the archive keeps producing worthwhile fieldwork when the founder stops handling every ordinary decision.

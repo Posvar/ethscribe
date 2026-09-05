@@ -2,27 +2,27 @@
 
 Ownable digital archaeology: Ethscribe turns historically significant digital files into Accessions—recognized, transferable onchain artifacts backed by public evidence and an auditable chain of custody.
 
-The current release establishes the brand, Genesis Hunt, archival sourcing, wallet-based researcher identity, direct-to-vault Ethscription creation, verified market custody, and signed Finding intake. Listings and settlement remain behind the marketplace milestones described in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
+The current release includes Expedition 001, historical artifact records, wallet connection, target-specific creation and existing-asset deposit, signed Finding intake, Field Wallet inventory, fixed-price listings and purchases, withdrawals, and proceeds claims. Public expedition proposals are closed. The [roadmap](./public/docs-content/roadmap/phased-development.md) separates current capabilities from proposed research and automation features.
 
 ## Documentation
 
-The living whitepaper is published at `https://ethscri.be/docs`. Its canonical Markdown source lives in [`public/docs-content`](./public/docs-content), and `.gitbook.yaml` makes that same directory ready for GitBook Git Sync. Update the source once; the first-party docs and connected GitBook publication share the same history and navigation.
+The living whitepaper is published at `https://ethscri.be/docs`. Its canonical Markdown source lives in [`public/docs-content`](./public/docs-content), and `.gitbook.yaml` makes that same directory ready for optional GitBook Git Sync. The site renders this source directly. Keep [`SUMMARY.md`](./public/docs-content/SUMMARY.md) and [`src/docsNavigation.js`](./src/docsNavigation.js) aligned when adding a page. Start with [Your first Finding](./public/docs-content/product/first-finding.md) for the current visitor workflow.
 
 ## Local development
 
-Requires Node.js 20 or newer.
+Requires Node.js 22.12 or newer, as specified in `package.json`.
 
 ```bash
 npm ci
 npm start
 ```
 
-The development server opens at `http://localhost:3000`.
+The Vite development server listens at `http://localhost:3000` and proxies public reads to the production `/api` routes. Target byte checks are allowed, but publishing and wallet transactions are disabled in development. Production `/api` routes are Netlify Functions and redirects; the production build uses the marketplace's live operational checks.
 
 ## Verification
 
 ```bash
-npm test -- --watchAll=false
+npm test
 npm run test:functions
 npm run build
 ```
@@ -38,11 +38,11 @@ Netlify configuration lives in `netlify.toml`:
 - SPA fallback: `/index.html`
 - Production domain: `https://ethscri.be`
 
-The connected Netlify site should build the `main` branch on every GitHub push.
+The connected Netlify site builds the `main` branch on GitHub push. A local audit or preview is not a deployment; push only when publishing has been authorized.
 
 ## Azure asset storage
 
-Azure credentials must remain server-side and must never use a `REACT_APP_` prefix. The signed Finding function reads:
+Azure credentials must remain server-side and must never use a `REACT_APP_` or `VITE_` prefix. The signed Finding function reads:
 
 ```text
 AZURE_STORAGE_ACCOUNT_NAME=ethscribe
@@ -50,7 +50,7 @@ AZURE_STORAGE_CONTAINER=ethscribe-assets
 AZURE_STORAGE_SAS_TOKEN=<secret>
 ```
 
-The browser never reads or receives the SAS token. The three variable names above are configured on the linked Netlify project. The SAS must allow creation/write of Finding JSON blobs in the named container; restrict its permissions, resource scope, and expiry to the minimum required by the server-side function.
+The browser never reads or receives the SAS token. The configured SAS must support the server's Finding creation, read, and list operations within the named container. Restrict its resource scope, permissions, and expiry to the server's needs. Store deployment signing material only in the ignored private deployment workspace; `.gitignore` is a safeguard, not a replacement for checking staged files.
 
 Open exact-byte targets use the secret-scoped Functions variable `EXPEDITION_001_TARGET_HASHES`. It contains a base64-encoded JSON map of target IDs to raw SHA-256 commitments (plain JSON remains supported for local tests). The public bundle sends a candidate hash to `/api/targets/check` and receives only eligibility; expected hashes and raw source URLs are revealed in the public record only after accession.
 

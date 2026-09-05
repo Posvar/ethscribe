@@ -1,76 +1,47 @@
 # Ethscriptions primer
 
-Ethscriptions are a way to create and transfer digital artifacts on Ethereum without a separate token contract for every collection. A creation transaction places a valid data URI in Ethereum transaction data; the protocol index interprets that transaction as a new Ethscription when the protocol rules are satisfied.
+Ethscriptions is a protocol for creating and transferring digital artifacts using Ethereum data. Ethscribe uses it to give recovered historical files a public creation record and a transferable owner.
 
-Ethscribe uses this primitive because it gives a recovered file a public creation event, an owner, and a transferable chain of custody.
+Ethscribe is this project and catalogue. Ethscriptions is the underlying protocol.
 
-## The basic object
+## From a file to an Ethscription
 
-A simple image Ethscription may begin as a data URI such as:
-
-```text
-data:image/png;base64,iVBORw0KGgo...
-```
-
-The complete UTF-8 data URI is protocol content. Its media type, parameters, encoding, and payload all matter. The protocol's `content_sha` identifies this complete string; it is not merely a hash of the decoded file.
-
-The official protocol also supports later extensions, including contract-based creation, gzip transport, duplicate content under defined rules, and attachments. Ethscribe's index must understand the accepted ESIPs before it makes historical-order claims.
-
-## Creation and transfer
-
-At a high level:
-
-1. A creator submits an Ethereum transaction whose input satisfies the Ethscriptions creation rules.
-2. The first eligible creation of that protocol content receives an Ethscription ID derived from the transaction and, where applicable, event position.
-3. The owner transfers the Ethscription by sending a valid transaction to the recipient under the protocol rules.
-4. An indexer reconstructs creation, ownership, and transfer history from Ethereum.
-
-The Ethereum chain provides the durable event log. The Ethscriptions protocol supplies the interpretation. Indexers make the result usable, but any important conclusion should remain reproducible from chain data.
-
-## Why this fits Ethscribe
-
-Ethscriptions offer four properties useful to digital archaeology:
-
-- **Public chronology.** Creation and transfer events are ordered on Ethereum.
-- **Content addressability.** The complete protocol content has a deterministic identity.
-- **Native ownership.** The artifact can have a current owner and a custody history.
-- **Low-friction participation.** A hunter can preserve eligible bytes without deploying a bespoke NFT contract.
-
-These properties do not establish historical authenticity by themselves. They make an evidence-backed artifact ownable after the historical case has been made.
-
-## What an Ethscription proves
-
-An Ethscription can prove that particular protocol content appeared under the protocol's rules at a particular point in Ethereum history. It can also support a reconstruction of later ownership.
-
-It does **not** prove:
-
-- who originally authored the historical file;
-- when that file first existed off-chain;
-- that a source attribution is correct;
-- that no equivalent bytes were wrapped in a different data URI;
-- copyright ownership or a license grant; or
-- that the artifact is culturally significant.
-
-Ethscribe treats those as separate claims supported by evidence and curation.
-
-## Protocol compatibility
-
-Ethscribe intends to follow the current accepted Ethscriptions Improvement Proposals rather than freeze an incomplete interpretation of the protocol. Of particular relevance are:
-
-- ESIP-3 event-based creation;
-- ESIP-6 duplicate-content behavior;
-- ESIP-7 gzip transport; and
-- ESIP-8 attachments.
-
-The official references are maintained in the [Ethscriptions protocol specification](https://docs.ethscriptions.com/overview/protocol-specification) and [accepted ESIPs](https://docs.ethscriptions.com/esips/accepted-esips).
-
-## Two identities, one artifact record
-
-Ethscribe records both:
+A supported file can be represented by a Data URI such as:
 
 ```text
-protocol identity = SHA-256(complete UTF-8 data URI)
-artifact identity = SHA-256(decoded artifact bytes)
+data:image/png;base64,<original file bytes encoded as base64>
 ```
 
-The first answers “which Ethscription content is this?” The second answers “have these exact file bytes appeared under another valid wrapper?” The distinction is foundational to every hunt.
+A valid creation is interpreted under protocol rules. Its ID is the Ethereum creation transaction hash. That remains the convention for contract-event creations: the protocol recognizes at most one Ethscription per transaction, prioritizing valid calldata over events.
+
+For Ethscribe's direct-to-market creation, the connected wallet is creator and the market contract is initial owner. A later signed Finding links that Ethscription to a target; the protocol does not know the expedition.
+
+## First come, first scribe
+
+Ordinary duplicate detection compares the SHA-256 of complete protocol content. The first valid occurrence is recognized and a later duplicate is ignored. Ethereum itself can include both transactions; the uniqueness rule belongs to Ethscriptions.
+
+The protocol also allows content to opt into duplication using `rule=esip6`. Ethscribe's target wrappers do not include that parameter. A fallback Finding Receipt uses it to record an attempt if canonical creation loses a race.
+
+See the [official creation rules](https://docs.ethscriptions.com/overview/protocol-specification), [ESIP-3 ordering](https://docs.ethscriptions.com/esips/accepted-esips/esip-3-smart-contract-ethscription-creations), and [ESIP-6 duplicate opt-in](https://docs.ethscriptions.com/esips/accepted-esips/esip-6-opt-in-ethscription-non-uniqueness).
+
+## Ownership and indexing
+
+Protocol-aware services interpret Ethereum transactions and events to reconstruct creation and transfers. The owner shown by the index is different from a marketplace's unverified deposit claim.
+
+Ethscribe uses the official index and reads market contract state before presenting a position as usable for a sale or withdrawal. An Ethereum receipt may arrive before the index reflects it.
+
+The contract's conditional transfer events require the correct previous owner. For a deeper explanation, see [ownership and marketplace](../product/ownership-and-marketplace.md).
+
+## What it does and does not establish
+
+An Ethscription records protocol content and its Ethereum chronology. It supports ownership history under the protocol.
+
+It does not establish who authored a file decades earlier, that a source is authentic, that the work is important, or that copyright has transferred. It also does not prove the raw bytes are absent from other valid wrappers.
+
+Historical evidence and [decoded-byte identity](byte-perfect-identity.md) provide those separate research layers.
+
+## Scope of support
+
+The protocol includes contract creation, bulk transfers, gzip transport, and attachments. Ethscribe's current expedition flow supports its specifically defined target formats and wrappers. It is not a complete decoder or historical index of every accepted extension.
+
+Primary references are collected in [Sources and further reading](../reference/sources.md).
