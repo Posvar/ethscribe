@@ -34,6 +34,12 @@ export const docsSections = [
     ],
   },
   {
+    title: 'Expedition 000',
+    items: [
+      { title: 'EBURP: Before the Punks', slug: 'expedition-000/eburp-before-the-punks', file: 'expedition-000/eburp-before-the-punks.md' },
+    ],
+  },
+  {
     title: 'Expedition 001',
     items: [
       { title: 'The Lost Pixels of Satoshi', slug: 'expedition-001/the-lost-pixels-of-satoshi', file: 'expedition-001/the-lost-pixels-of-satoshi.md' },

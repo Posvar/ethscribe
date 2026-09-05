@@ -12,6 +12,8 @@ A tiny icon, an early software asset, or a file rescued from an old archive can 
 
 [You've Got History](/expeditions/youve-got-history), Expedition 002, is open for exact-byte sound submissions. Recover 17 release-defined WAV files from Windows, AOL, ICQ, MSN Messenger and AIM. Five AOL artifacts are already recognized; other matches enter the catalogue through a verified Finding.
 
+[EBURP: Before the Punks](/expeditions/eburp), Expedition 000, is a completed collection: 92 source-matched core characters and a separate 124-character burned archive. Explore the story and original Ethscriptions; current core owners can use the existing marketplace without creating replacements. [Read the collection guide](expedition-000/eburp-before-the-punks.md).
+
 You can explore without connecting a wallet. To participate, open an unresolved target and choose **Submit a Finding**. Test a local file or an Ethscription you already own before preparing a transaction.
 
 [Follow the first-finding guide](product/first-finding.md) for the complete flow, including what costs gas and when the expedition updates.
@@ -57,6 +59,7 @@ The experiment asks whether people return for the research, contribute useful di
 ## Read next
 
 - [Your first Finding](product/first-finding.md)
+- [EBURP: Before the Punks](expedition-000/eburp-before-the-punks.md)
 - [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md)
 - [You've Got History](expedition-002/youve-got-history.md)
 - [Byte-perfect identity](foundations/byte-perfect-identity.md)

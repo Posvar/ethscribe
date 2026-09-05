@@ -5,7 +5,7 @@ import DocsPage from './DocsPage';
 import ExpeditionCard from './ExpeditionCard';
 import EthscribeWorkbench from './EthscribeWorkbench';
 import RecognizedArtifactDeposit from './RecognizedArtifactDeposit';
-import WalletPage from './WalletPage';
+import { matchesArtifactRecord } from './artifactIdentity';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
 import { fetchVerifiedFindings, mergeVerifiedFindings, reconcileFindingSnapshot, retainPublishedFinding, statsForArtifacts } from './findingApi';
@@ -18,6 +18,16 @@ import {
   waitForTransactionReceipt,
 } from './marketTransactions';
 import { useEthscribeWallet } from './useEthscribeWallet';
+
+// Unreleased research pages and their reference bytes are absent from builds.
+// These optional files also stay out of the public repository until approved.
+const localExpeditionModules = import.meta.env.DEV ? import.meta.glob('./localExpeditions.jsx') : {};
+const loadLocalExpedition = localExpeditionModules['./localExpeditions.jsx'];
+const LocalExpedition = loadLocalExpedition ? lazy(loadLocalExpedition) : null;
+const LocalExpeditionCards = loadLocalExpedition ? lazy(() => loadLocalExpedition().then(module => ({ default: module.LocalExpeditionCards }))) : null;
+const EburpExpedition = lazy(() => import('./EburpExpedition.jsx'));
+const EburpCard = lazy(() => import('./EburpExpedition.jsx').then(module => ({ default: module.EburpCard })));
+const EburpWallet = lazy(() => import('./EburpWallet'));
 
 const loadSoundExpedition = () => Promise.all([import('./SoundExpeditionPage'), import('./soundExpedition')]);
 const SoundExpedition = lazy(() => loadSoundExpedition().then(([ui, data]) => ({
@@ -344,7 +354,7 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
   );
 }
 
-function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onRecord }) {
+function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switchToMainnet, provider, onRecord, readOnlyArtifact = false }) {
   const [snapshot, setSnapshot] = useState(null);
   const [marketState, setMarketState] = useState(artifact.ethscriptionId ? 'loading' : 'idle');
   const [purchase, setPurchase] = useState(null);
@@ -361,17 +371,20 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
     try {
       const nextSnapshot = await fetchArtifactMarket(artifact.ethscriptionId);
       if (version !== requestVersion.current || activeAsset.current !== artifact.ethscriptionId) return null;
+      if (!matchesArtifactRecord(nextSnapshot.ethscription, artifact)) throw new Error('Artifact record or payload mismatch');
       setSnapshot(nextSnapshot);
       setMarketState('ready');
-      if (nextSnapshot.ethscription?.transactionHash?.toLowerCase() === artifact.ethscriptionId.toLowerCase()) {
-        onRecord?.(nextSnapshot.ethscription);
-      }
+      onRecord?.(nextSnapshot.ethscription);
       return nextSnapshot;
     } catch {
-      if (version === requestVersion.current) setMarketState('error');
+      if (version === requestVersion.current) {
+        setSnapshot(null);
+        setMarketState('error');
+        onRecord?.(null);
+      }
       return null;
     }
-  }, [artifact.ethscriptionId, onRecord]);
+  }, [artifact.ethscriptionId, artifact.recordProtocolSha256, onRecord]);
 
   useEffect(() => {
     let active = true;
@@ -401,6 +414,8 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
   const isSeller = Boolean(account && seller && account.toLowerCase() === seller.toLowerCase());
   const hasCurrentRecord = snapshot?.ethscription?.transactionHash?.toLowerCase() === artifact.ethscriptionId?.toLowerCase();
   const inMarketplace = hasCurrentRecord && snapshot?.ethscription?.currentOwner?.toLowerCase() === MARKET_ADDRESS.toLowerCase();
+  const inLegacyEburpVault = artifact.collectionGroup === 'core'
+    && snapshot?.ethscription?.currentOwner?.toLowerCase() === '0x719a411555ec93a896cf64dc07db72883fb57144';
   const onMainnet = chainId?.toLowerCase() === MAINNET_CHAIN_ID;
   const transactionBusy = purchase && ['simulating', 'mining', 'settling'].includes(purchase.phase);
 
@@ -416,7 +431,7 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
   }, [snapshot, purchase?.phase, purchase?.buyer]);
 
   const buyListing = async () => {
-    if (!account || !seller || !liveListing || !custodyVerified || marketState !== 'ready' || transactionBusy
+    if (readOnlyArtifact || !account || !seller || !liveListing || !custodyVerified || marketState !== 'ready' || transactionBusy
       || snapshot?.market?.transactionsEnabled === false || snapshot?.market?.intakeEnabled === false || snapshot?.market?.paused) return;
     const session = activeSession.current;
     setPurchase({ phase: 'simulating', hash: '', message: '' });
@@ -477,6 +492,14 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
     );
   })();
 
+  if (readOnlyArtifact) {
+    return <div className="artifact-market-note" role="status">
+      {marketState === 'loading' ? 'Checking the current ownership record…' : marketState === 'error'
+        ? <><p>Current ownership could not be verified. No historical wallet snapshot is shown in its place.</p><button className="artifact-market-retry" type="button" onClick={() => loadMarket()}>Retry ownership check</button></>
+        : 'Burned Archive · preserved for the record, not offered for trading.'}
+    </div>;
+  }
+
   return (
     <section className={`artifact-market-card${liveListing ? ' has-listing' : ''}`} aria-label="Marketplace listing">
       <div className="artifact-market-heading">
@@ -506,6 +529,7 @@ function ArtifactMarketPanel({ artifact, account, chainId, connectWallet, switch
           {action}
         </>
       )}
+      {inLegacyEburpVault && <p className="artifact-market-note">This Ethscription is still held by the original EBURP vault. It must be withdrawn to your wallet through that vault’s supported flow before you can deposit it here. Connecting a wallet does not transfer control of the old vault.</p>}
       <RecognizedArtifactDeposit
         artifact={artifact}
         snapshot={marketState === 'ready' ? snapshot : null}
@@ -758,6 +782,9 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
             recognized={resolvedStats.secured} total={resolvedStats.known} lost={resolvedStats.lost}
             visual={<img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" />} />
         </section>
+
+        <Suspense fallback={<p role="status">Loading the completed collection…</p>}><EburpCard /></Suspense>
+        {import.meta.env.DEV && LocalExpeditionCards && <Suspense fallback={<p role="status">Loading local previews…</p>}><LocalExpeditionCards /></Suspense>}
 
       </main>
       <SiteFooter />
@@ -1040,14 +1067,16 @@ function App() {
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
   const isSoundExpedition = pathname === SOUND_EXPEDITION_PATH;
-  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet && !isSoundExpedition;
+  const localExpeditionSlug = import.meta.env.DEV && LocalExpedition && ['/expeditions/browser-wars', '/expeditions/skin-deep'].includes(pathname) ? pathname.split('/').pop() : null;
+  const isEburp = pathname === '/expeditions/eburp';
+  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet && !isSoundExpedition && !localExpeditionSlug && !isEburp;
 
   useEffect(() => {
     if (isLegacyProposalPath || isLegacyCreationPath) window.history.replaceState({}, '', '/expeditions');
   }, [isLegacyProposalPath, isLegacyCreationPath]);
 
   useEffect(() => {
-    if (isDocs) return;
+    if (isDocs || localExpeditionSlug || isEburp) return;
     document.title = isSoundExpedition ? 'You’ve Got History — Ethscribe Expedition 002' : notFound ? 'Page not found — Ethscribe' : isWallet
       ? 'Wallet — Ethscribe'
       : isExpeditions
@@ -1055,7 +1084,7 @@ function App() {
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound, isSoundExpedition]);
+  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound, isSoundExpedition, localExpeditionSlug, isEburp]);
 
   useEffect(() => {
     if (!modal) return undefined;
@@ -1106,10 +1135,17 @@ function App() {
   return (
     <>
       {import.meta.env.DEV && import.meta.env.MODE !== 'test' && <div className="local-review-notice" role="note"><strong>LOCAL REVIEW</strong> · Live public data. Byte checks work; publishing and transactions are disabled. The live site is unchanged.</div>}
-      {isSoundExpedition ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading Expedition 002…</p></main></div>}><SoundExpedition headerProps={headerProps} pageProps={pageProps} findings={soundFindings} findingIndexState={soundFindingIndexState} /></Suspense> : notFound ? <NotFoundPage header={<SiteHeader {...headerProps} expeditions />} /> : isDocs
+      {isEburp ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading Expedition 000…</p></main></div>}>
+        <EburpExpedition
+          renderHeader={meta => <SiteHeader {...headerProps} expedition expeditionMeta={{ ...meta, id: meta.number }} />}
+          footer={<SiteFooter />}
+          renderMarket={({ artifact, onRecord }) => <ArtifactMarketPanel {...pageProps} artifact={artifact} onRecord={onRecord} />}
+          renderOwnership={({ artifact, onRecord }) => <ArtifactMarketPanel {...pageProps} artifact={artifact} onRecord={onRecord} readOnlyArtifact />}
+        />
+      </Suspense> : localExpeditionSlug ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading local expedition…</p></main></div>}><LocalExpedition slug={localExpeditionSlug} renderHeader={meta => <SiteHeader {...headerProps} expedition expeditionMeta={{ ...meta, id: meta.number }} />} footer={<SiteFooter />} /></Suspense> : isSoundExpedition ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading Expedition 002…</p></main></div>}><SoundExpedition headerProps={headerProps} pageProps={pageProps} findings={soundFindings} findingIndexState={soundFindingIndexState} /></Suspense> : notFound ? <NotFoundPage header={<SiteHeader {...headerProps} expeditions />} /> : isDocs
         ? <DocsPage header={<SiteHeader {...pageProps} docs />} footer={<SiteFooter />} />
         : isWallet
-          ? <WalletPage
+          ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} wallet /><main id="main-content" tabIndex={-1}><p role="status">Loading Field Wallet…</p></main></div>}><EburpWallet
               account={account}
               chainId={chainId}
               connectWallet={connectWallet}
@@ -1119,7 +1155,7 @@ function App() {
               findingIndexState={walletFindingIndexState}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
-            />
+            /></Suspense>
           : isExpeditions
               ? <ExpeditionsPage {...pageProps} />
             : isExpedition ? <ExpeditionPage {...pageProps} /> : <HomePage {...pageProps} />}

@@ -55,6 +55,23 @@ test('shows a documentation 404 without requesting an unknown file', () => {
   expect(global.fetch).not.toHaveBeenCalled();
 });
 
+test('publishes the completed EBURP guide without exposing unpublished expedition guides', async () => {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    text: async () => '# EBURP: Before the Punks\n\nA completed collection. [Read its story](/expeditions/eburp#eburp-story).',
+  });
+  window.history.pushState({}, '', '/docs/expedition-000/eburp-before-the-punks');
+
+  render(<DocsPage />);
+
+  expect(await screen.findByRole('heading', { name: 'EBURP: Before the Punks' })).toBeInTheDocument();
+  expect(global.fetch).toHaveBeenCalledWith('/docs-content/expedition-000/eburp-before-the-punks.md', expect.objectContaining({ signal: expect.anything() }));
+  expect(screen.getByRole('link', { name: 'Read its story' })).toHaveAttribute('href', '/expeditions/eburp#eburp-story');
+  expect(screen.getByRole('link', { name: 'EBURP: Before the Punks' })).toHaveAttribute('href', '/docs/expedition-000/eburp-before-the-punks');
+  expect(screen.queryByText('Expedition 003')).not.toBeInTheDocument();
+  expect(screen.queryByText('Expedition 004')).not.toBeInTheDocument();
+});
+
 test('malformed encoded documentation paths show a 404 instead of crashing', () => {
   global.fetch = vi.fn();
   window.history.pushState({}, '', '/docs/%E0%A4%A');

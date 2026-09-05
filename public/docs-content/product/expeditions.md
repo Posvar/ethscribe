@@ -4,6 +4,8 @@ An expedition is a bounded public search for historically significant digital fi
 
 Two expeditions are open: [The Lost Pixels of Satoshi](../expedition-001/the-lost-pixels-of-satoshi.md) and [You've Got History](../expedition-002/youve-got-history.md). Each has its own target definitions, signed assignments and public Finding index, while sharing the same marketplace contract.
 
+[EBURP: Before the Punks](../expedition-000/eburp-before-the-punks.md) is the completed Expedition 000. Its 216 existing Ethscription records are a retrospective, not new submission targets. The 92-character core can use the existing owner-deposit and marketplace flow; the separate 124-character burned archive has no trading controls.
+
 ## Explore before connecting
 
 Open [Expeditions](/expeditions), choose a hunt, and select an artifact in its grid, timeline or release-by-release sound collection.
@@ -31,6 +33,8 @@ Creation, assignment, and sale are separate actions. [Your first Finding](first-
 ## What the progress count means
 
 Each expedition's count is derived from its own known-file target map, including recognized seed artifacts and exact Findings. Expedition 001's attested lost file is tracked separately; all 17 Expedition 002 targets have known exact bytes.
+
+Expedition 000's completed count instead describes its existing 216-ID catalogue. It does not claim all 216 are currently in escrow, source-authenticated, freshly index-verified or available for sale. Its [collection guide](../expedition-000/eburp-before-the-punks.md) explains the core/archive boundary and the audit coverage.
 
 Green means a matching Ethscription has been recognized in the collection. It does not mean every green artifact is escrowed, available for sale, or owned by Ethscribe. Current custody and listing terms are checked separately when the artifact opens.
 

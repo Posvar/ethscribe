@@ -65,6 +65,26 @@ test('allows the current owner to review an existing asset even when somebody el
   expect(input.provider.request).not.toHaveBeenCalled();
 });
 
+test('an imported catalogue requires its pinned protocol payload before offering a deposit', () => {
+  const pinned = { ...artifact, recordProtocolSha256: 'aa'.repeat(32) };
+  const input = props({ artifact: pinned });
+  const { container, rerender } = render(<RecognizedArtifactDeposit {...input} />);
+  expect(container).toBeEmptyDOMElement();
+  rerender(<RecognizedArtifactDeposit {...input} snapshot={{ ...snapshot, ethscription: { ...snapshot.ethscription, contentSha: pinned.recordProtocolSha256 } }} />);
+  expect(screen.getByRole('button', { name: /deposit into marketplace/i })).toBeInTheDocument();
+});
+
+test('rechecks an imported payload immediately before the wallet can open', async () => {
+  const pinned = { ...artifact, recordProtocolSha256: 'aa'.repeat(32) };
+  const input = props({ artifact: pinned, snapshot: { ...snapshot, ethscription: { ...snapshot.ethscription, contentSha: pinned.recordProtocolSha256 } } });
+  fetchArtifactMarket.mockResolvedValue({ ...snapshot, ethscription: { ...snapshot.ethscription, contentSha: 'bb'.repeat(32) } });
+  render(<RecognizedArtifactDeposit {...input} />);
+  review(); send();
+  expect(await screen.findByText(/artifact payload no longer matches/i)).toBeInTheDocument();
+  expect(input.provider.request).not.toHaveBeenCalled();
+  expect(input.onDeposited).not.toHaveBeenCalled();
+});
+
 test.each([
   { account: creator },
   { account: '' },

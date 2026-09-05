@@ -30,6 +30,16 @@ The ittybits source was a behavioral reference for conditional escrow, potential
 - [EIP-1193: Ethereum Provider JavaScript API](https://eips.ethereum.org/EIPS/eip-1193)
 - [EIP-712: Typed structured data hashing and signing](https://eips.ethereum.org/EIPS/eip-712)
 
+## Expedition 000
+
+- [EBURP: Before the Punks — collection guide](../expedition-000/eburp-before-the-punks.md)
+- [The full Gurk-to-EBURP-to-Ethscriptions story and chapter sources](/expeditions/eburp#eburp-story)
+- [John Watkinson's first EBURP source commit, 1 November 2013](https://github.com/pents90/eburp/commit/dca3cf9a56c955ad87063253d8a34eaa38fcc002)
+- [The first-commit README and reuse wording](https://github.com/pents90/eburp/blob/dca3cf9a56c955ad87063253d8a34eaa38fcc002/README.md)
+- [216-record byte audit and explicit verification limits](https://github.com/Posvar/ethscribe/blob/main/research/expedition-000/README.md)
+
+The core has 92 source-matched files; the 124-character preservation archive is separate and non-trading. Catalogue membership, byte provenance, current ownership and permissions are different questions.
+
 ## Expedition 001
 
 - [Satoshi Nakamoto, “New icon/logo,” BitcoinTalk, 24 February 2010](https://bitcointalk.org/index.php?topic=64.0)
@@ -57,4 +67,4 @@ Ethscribe's `.gitbook.yaml`, `README.md`, and `SUMMARY.md` follow GitBook's Git 
 
 ## Documentation status
 
-This documentation was reconciled with the implementation on 4 September 2026. It distinguishes current interface features, contract capabilities without a complete public UI, and proposed product work. Contract versions refer to deployments; roadmap phases refer to the product. Live ownership and availability require current reads and are not guaranteed by a static documentation page.
+This documentation was reconciled with the implementation on 5 September 2026. It distinguishes current interface features, contract capabilities without a complete public UI, and proposed product work. Contract versions refer to deployments; roadmap phases refer to the product. Live ownership and availability require current reads and are not guaranteed by a static documentation page.

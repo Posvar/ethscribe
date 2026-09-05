@@ -14,6 +14,7 @@ const SATOSHI_FINDINGS_URL = '/api/findings?expedition=lost-pixels-of-satoshi';
 const connectWallet = jest.fn();
 const switchToMainnet = jest.fn();
 const openAccountModal = jest.fn();
+const listedRecord = (id = '0xa96f32bc3cb428966aafe501b598ac57e5716fd22ff7576b054ea960ce5bdaef') => ({ transactionHash: id, currentOwner: MARKET_ADDRESS });
 
 beforeEach(() => {
   global.fetch = jest.fn().mockRejectedValue(new Error('offline test'));
@@ -106,10 +107,7 @@ test('expands secured and open artifact records directly in the timeline', async
     json: async () => ({
       result: url === '/api/market/status'
         ? { paused: false, transactionsEnabled: true, indexer: { healthy: true } }
-        : {
-            creator: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37',
-            current_owner: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37',
-          },
+        : { ethscription: { ...listedRecord(), creator: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37', currentOwner: '0x1f01d99a90ad0c752e7765de29c386a169bd9e37' }, listing: null },
     }),
   }));
   window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi');
@@ -267,6 +265,7 @@ test('promotes an exact verified Finding into the live expedition grid and count
     }
     if (String(url).startsWith('/api/market/artifact?')) {
       return { ok: true, json: async () => ({ result: {
+        ethscription: listedRecord(findingId),
         seller: `0x${'33'.repeat(20)}`,
         listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
         custody: { verified: true, status: 'verified' },
@@ -372,6 +371,7 @@ test('shows the exact listed amount and disables buying when a background listin
     if (url === SATOSHI_FINDINGS_URL) return { ok: true, json: async () => ({ result: [] }) };
     if (offline) throw new Error('offline');
     return { ok: true, json: async () => ({ result: {
+      ethscription: listedRecord(),
       seller: `0x${'33'.repeat(20)}`,
       listing: { active: true, expired: false, listingNonce: '1', priceWei: '12345' },
       custody: { verified: true }, market: { transactionsEnabled: true },
@@ -397,6 +397,7 @@ test.each([
   ['intake unavailable', { transactionsEnabled: true, intakeEnabled: false, paused: false }],
 ])('a %s market shows its listing without offering a purchase', async (_, market) => {
   global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === SATOSHI_FINDINGS_URL ? [] : {
+    ethscription: listedRecord(),
     seller: `0x${'33'.repeat(20)}`,
     listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
     custody: { verified: true },
@@ -421,6 +422,7 @@ test('switching wallets during the final listing read cancels purchase before an
   };
   useEthscribeWallet.mockReturnValue(session);
   const snapshot = {
+    ethscription: listedRecord(),
     seller: `0x${'33'.repeat(20)}`,
     listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
     custody: { verified: true },

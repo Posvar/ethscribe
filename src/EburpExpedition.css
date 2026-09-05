@@ -1,0 +1,6 @@
+.completed-expeditions { margin: 0; padding: 26px 0 40px; border-top: 1px solid var(--line); }
+.completed-expeditions-heading { display: flex; gap: 24px; align-items: end; justify-content: space-between; margin-bottom: 24px; }
+.completed-expeditions-heading > div > p { margin: 0 0 10px; color: #55574a; font: 700 13px/1.6 "Courier New", monospace; }
+.completed-expeditions-heading h2 { margin: 0; font: 400 clamp(28px, 3vw, 40px)/1.15 Georgia, serif; letter-spacing: -.025em; }
+.completed-expeditions-heading > p { color: #55574a; font-size: 15px; line-height: 1.7; margin: 0; }
+@media (max-width: 700px) { .completed-expeditions-heading { flex-direction: column; align-items: start; gap: 12px; } }

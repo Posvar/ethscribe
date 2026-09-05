@@ -24,6 +24,10 @@
 * [Ownership and marketplace](product/ownership-and-marketplace.md)
 * [Economics and flywheel](product/economics-and-flywheel.md)
 
+## Expedition 000
+
+* [EBURP: Before the Punks](expedition-000/eburp-before-the-punks.md)
+
 ## Expedition 001
 
 * [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md)

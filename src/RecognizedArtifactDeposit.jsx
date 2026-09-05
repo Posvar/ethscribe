@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchArtifactMarket } from './marketApi';
+import { matchesArtifactRecord } from './artifactIdentity';
 import { MAINNET_CHAIN_ID, MARKET_ADDRESS } from './marketConfig';
 import {
   buildDepositTransaction,
@@ -39,9 +40,10 @@ function forgetPending(submitted) {
   catch { /* Browser storage may be disabled. */ }
 }
 
-function ownedBy(snapshot, id, account) {
+function ownedBy(snapshot, artifact, account) {
+  const id = artifact?.ethscriptionId;
   return isEthscriptionId(id) && isAddress(account)
-    && same(snapshot?.ethscription?.transactionHash, id)
+    && matchesArtifactRecord(snapshot?.ethscription, artifact)
     && same(snapshot.ethscription.currentOwner, account)
     && !same(account, MARKET_ADDRESS);
 }
@@ -103,7 +105,7 @@ export default function RecognizedArtifactDeposit({
   }, [identity]);
 
   const onMainnet = chainId?.toLowerCase() === MAINNET_CHAIN_ID;
-  const isOwner = ownedBy(snapshot, id, account);
+  const isOwner = ownedBy(snapshot, artifact, account);
   const busy = ['checking', 'wallet', 'confirming', 'verifying'].includes(phase);
   const collision = hasDepositSelectorCollision(id);
   const issue = collision
@@ -178,7 +180,7 @@ export default function RecognizedArtifactDeposit({
     try {
       const fresh = await fetchArtifactMarket(id);
       if (!run.current()) return;
-      if (!ownedBy(fresh, id, depositor)) throw new Error('The current ownership record no longer matches this wallet. No deposit transaction was sent.');
+      if (!ownedBy(fresh, artifact, depositor)) throw new Error('The current ownership record or artifact payload no longer matches this wallet and file. No deposit transaction was sent.');
       const freshIssue = intakeIssue(fresh);
       if (freshIssue) throw new Error(freshIssue);
       setPhase('wallet');

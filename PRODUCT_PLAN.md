@@ -2,14 +2,14 @@
 
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
-**Status:** Public experiment with Expeditions 001 and 002, expedition-scoped signed Findings, and an active immutable marketplace
-**Updated:** September 4, 2026
+**Status:** Public experiment with active Expeditions 001 and 002, completed Expedition 000 approved for publication, expedition-scoped signed Findings, and an active immutable marketplace
+**Updated:** September 5, 2026
 
 ## Current product baseline
 
 MVP and V1 are one wallet-native release. The current experiment asks whether people enjoy recovering historically significant files, documenting provenance, and collecting the resulting Ethscriptions.
 
-The implemented public routes are Mission, Expeditions, the active Satoshi and sound expeditions, Field Wallet, and Docs. Public proposals are closed. Ethscribing and existing-asset deposits begin inside an expedition target; there is no general-purpose creation utility or arbitrary wallet deposit action.
+The public release includes Mission, Expeditions, the active Satoshi and sound expeditions, the completed EBURP collection, Field Wallet, and Docs. Public proposals are closed. Ethscribing and existing-asset deposits begin inside an expedition record; there is no general-purpose creation utility or arbitrary wallet deposit action. Completed EBURP records accept only eligible existing-owner deposits, not replacement creations or new Finding submissions.
 
 The submission sequence is candidate test → create or deposit → wait for protocol/custody verification → sign and publish the Finding. Testing and the assignment signature cost no gas. A direct creation enters market custody with the researcher as protocol creator. It can be withdrawn without listing; a later one-time registration supplies the Ethscription ID needed to list it for sale.
 
@@ -31,6 +31,14 @@ The active contract is `EthscribeMarketV2` at `0x65a6771a4f82bcc1fad26CC944cA673
 - An Accession is a recognized catalogue artifact whether or not it has sold. It does not confer copyright or exclusive access to copies.
 
 ## Next development priorities
+
+### Expedition 000 — completed EBURP collection, publication approved
+
+**EBURP: Before the Punks** brings the existing `eburp.art` collection into a completed retrospective at `/expeditions/eburp`. It preserves all 216 original PNG payloads and Ethscription IDs: 92 core sprites matched to EBURP’s first repository commit (1 November 2013), plus a separate 124-character preservation archive. “Complete” describes the existing catalogue, not current custody, fresh verification of every ID, or availability for sale.
+
+The page includes the Gurk-to-EBURP-to-Ethscriptions story, primary evidence, a searchable image-only gallery showing all 92 or 124 sprites without pagination, and Satoshi-style expanded file records. It distinguishes the 2005 game’s origins from the 2013 source files. All file bytes and original catalogue metadata remain unchanged. The initial official API audit covered 62 records before rate limiting; the other 154 are not presumed absent. Opening a record requests fresh ownership and validates both its ID and pinned protocol payload before displaying the owner or offering controls.
+
+The owner approved **public release of Expedition 000 on September 5, 2026**: its page, completed directory card, Docs entry and reviewed core Field Wallet associations are included. Core sprites reuse the recognized-owner deposit and existing immutable marketplace; Burned Archive records remain non-trading. The original Ethscription IDs remain unchanged, and no new contract, chain migration, automatic transfer or replacement Finding is introduced. Owners of sprites held by an older vault must use its supported withdrawal flow before depositing into Ethscribe. Local development remains read-only; production transactions retain fresh ownership, payload and custody checks. Active Expeditions 001/002 and `eburp.art` are otherwise untouched. See [the Expedition 000 release and migration boundary](planning/EXPEDITION_000_EBURP.md), [public collection guide](public/docs-content/expedition-000/eburp-before-the-punks.md), and [the byte audit](research/expedition-000/README.md).
 
 ### Expedition 002 release — known-byte sounds
 

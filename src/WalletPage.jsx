@@ -28,6 +28,21 @@ const catalogueAssignments = new Map(catalogueArtifacts
     ethscriptionId: artifact.ethscriptionId,
   }]));
 
+// Optional display context for additional recognized collections. It must never
+// grant custody, trading permissions, or replace a published catalogue entry.
+function supplementalAssignment(record, extraCatalogue, extraExpeditions) {
+  const id = record.transactionHash?.toLowerCase();
+  const artifact = extraCatalogue.find(item => item.ethscriptionId?.toLowerCase() === id);
+  if (!artifact || expeditionArtifactById(artifact.expeditionId, artifact.id)) return null;
+  const expedition = getExpedition(artifact.expeditionId)
+    || extraExpeditions.find(item => item.id === artifact.expeditionId);
+  if (!expedition || !/^\/expeditions\/[a-z0-9-]+$/.test(expedition.path || '')) return null;
+  const normalizeHash = value => typeof value === 'string' ? value.replace(/^0x/i, '').toLowerCase() : '';
+  const expected = normalizeHash(artifact.protocolContentSha256);
+  if (!/^[a-f0-9]{64}$/.test(expected) || normalizeHash(record.contentSha) !== expected) return null;
+  return { expeditionId: artifact.expeditionId, targetId: artifact.id, ethscriptionId: artifact.ethscriptionId };
+}
+
 function ArrowIcon() {
   return <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4l5 5-5 5" /></svg>;
 }
@@ -191,9 +206,16 @@ function MarketplaceControls({ record, registerAction, listingAction, cancelActi
   );
 }
 
-function InventoryCard({ record, assignment = undefined, assignmentState = 'ready', action = null, marketControls = null }) {
-  const assignedArtifact = assignment ? expeditionArtifactById(assignment.expeditionId || 'lost-pixels-of-satoshi', assignment.targetId) : null;
-  const assignedExpedition = assignedArtifact ? getExpedition(assignedArtifact.expeditionId) : null;
+function InventoryCard({ record, assignment = undefined, assignmentState = 'ready', action = null, marketControls = null, extraCatalogue = [], extraExpeditions = [], tradingRestricted = false }) {
+  const assignedArtifact = assignment ? expeditionArtifactById(assignment.expeditionId || 'lost-pixels-of-satoshi', assignment.targetId)
+    || extraCatalogue.find(item => item.expeditionId === assignment.expeditionId && item.id === assignment.targetId) : null;
+  const assignedExpedition = assignedArtifact ? getExpedition(assignedArtifact.expeditionId)
+    || extraExpeditions.find(item => item.id === assignedArtifact.expeditionId) : null;
+  const assignmentHref = assignedArtifact && assignedExpedition
+    ? artifactRecordHref(assignedExpedition.id, assignedArtifact.id)
+      || (/^\/expeditions\/[a-z0-9-]+$/.test(assignedExpedition.path || '')
+        ? `${assignedExpedition.path}?artifact=${encodeURIComponent(assignedArtifact.id)}#record-${encodeURIComponent(assignedArtifact.id)}` : null)
+    : null;
   const assignmentAvailable = assignmentState === 'ready';
 
   return (
@@ -210,10 +232,10 @@ function InventoryCard({ record, assignment = undefined, assignmentState = 'read
       {assignment !== undefined && (
         <div className={`wallet-expedition-assignment${assignment ? ' assignment-linked' : assignmentAvailable ? ' assignment-unassigned' : ''}`}>
           <span>EXPEDITION ASSIGNMENT</span>
-          {assignedArtifact && assignedExpedition ? (
-            <a href={artifactRecordHref(assignedExpedition.id, assignedArtifact.id)}>
+          {assignedArtifact && assignedExpedition && assignmentHref ? (
+            <a href={assignmentHref}>
               <strong>EXPEDITION {assignedExpedition.number} · {assignedExpedition.title.toUpperCase()}</strong>
-              <small>{assignedArtifact?.filename || assignment.targetId}</small>
+              <small>{[assignedArtifact.name, assignedArtifact.filename].filter(Boolean).join(' · ') || assignment.targetId}</small>
             </a>
           ) : assignmentAvailable ? (
             <><strong>UNASSIGNED CONTRACT DEPOSIT</strong><small>No verified Finding links this Ethscription to an expedition target.</small></>
@@ -222,6 +244,7 @@ function InventoryCard({ record, assignment = undefined, assignmentState = 'read
           )}
         </div>
       )}
+      {tradingRestricted && <div className="wallet-expedition-assignment"><strong>PRESERVATION ARCHIVE · NOT FOR TRADING</strong><small>This Ethscription is an archival record, outside the tradable collection. It cannot be listed here. Any verified custody can still be withdrawn to its rightful depositing wallet.</small></div>}
       {marketControls}
       {action && (
         <div className="wallet-custody-action">
@@ -241,6 +264,9 @@ export default function WalletPage({
   provider,
   resolvedFindings = [],
   findingIndexState = 'ready',
+  extraCatalogue = [],
+  extraExpeditions = [],
+  nonTradingEthscriptionIds = [],
   header,
   footer,
 }) {
@@ -438,6 +464,8 @@ export default function WalletPage({
   const visibleNextPageKey = inventoryView === 'escrow'
     ? inventory?.pagination?.escrowNextPageKey
     : inventory?.pagination?.directlyOwnedNextPageKey;
+  const tradingRestrictedForRecord = record => nonTradingEthscriptionIds.some(id =>
+    typeof id === 'string' && id.toLowerCase() === record?.transactionHash?.toLowerCase());
 
   const findingForRecord = (record) => {
     const id = record.transactionHash?.toLowerCase();
@@ -447,6 +475,7 @@ export default function WalletPage({
     return resolvedFindings.find((finding) => finding.ethscriptionId?.toLowerCase() === id
         && expeditionArtifactById(finding.expeditionId || 'lost-pixels-of-satoshi', finding.targetId))
       || catalogueAssignments.get(id)
+      || supplementalAssignment(record, extraCatalogue, extraExpeditions)
       || null;
   };
 
@@ -484,6 +513,9 @@ export default function WalletPage({
 
     try {
       let request;
+      if (['register', 'listing'].includes(type) && tradingRestrictedForRecord(record)) {
+        throw new Error('This Ethscription belongs to the preservation archive and cannot be registered or listed for trading here. No transaction was sent.');
+      }
       if (type === 'register') request = buildDepositTransaction(account, id);
       else if (type === 'withdraw') request = buildWithdrawTransaction(account, id, {
         directCreation: record.custody?.custodyKind === 'direct_creation',
@@ -545,6 +577,7 @@ export default function WalletPage({
   };
 
   const registerAction = (record) => {
+    if (tradingRestrictedForRecord(record)) return { disabled: true, label: 'ARCHIVAL RECORD', hint: 'This preservation record is not available for trading.' };
     if (market?.localPreview) return { disabled: true, label: 'READ-ONLY PREVIEW', hint: 'Trading registration is disabled in this local review.' };
     if (error || loading) return { disabled: true, label: 'CHECKING WALLET DATA', hint: 'Waiting for a successful live wallet check.' };
     if (hasDepositSelectorCollision(record.transactionHash)) return { disabled: true, label: 'TRADING UNAVAILABLE', hint: 'This Ethscription ID conflicts with a reserved market action.' };
@@ -555,6 +588,7 @@ export default function WalletPage({
   };
 
   const listingAction = (record) => {
+    if (tradingRestrictedForRecord(record)) return { disabled: true, hint: 'This preservation record is not available for trading.', onClick: () => {} };
     if (market?.localPreview) return { disabled: true, hint: 'This is a live listing. Price changes are disabled in the local review.', onClick: () => {} };
     if (error || loading) return { disabled: true, hint: 'Waiting for a successful live wallet check.', onClick: () => {} };
     if (record.listing == null) return { disabled: true, hint: 'Listing state is temporarily unavailable. Refresh before setting a price.', onClick: () => {} };
@@ -661,8 +695,14 @@ export default function WalletPage({
                     record={record}
                     assignment={inventoryView === 'escrow' ? findingForRecord(record) : undefined}
                     assignmentState={findingIndexState}
+                    extraCatalogue={extraCatalogue}
+                    extraExpeditions={extraExpeditions}
+                    tradingRestricted={tradingRestrictedForRecord(record)}
                     action={inventoryView === 'escrow' ? withdrawAction(record) : null}
                     marketControls={inventoryView === 'escrow' && record.custody?.verified ? (
+                      tradingRestrictedForRecord(record) ? (
+                        record.listing?.active ? <div className="wallet-market-actions"><button className="secondary-market-action" type="button" disabled={cancelListingAction(record).disabled} onClick={cancelListingAction(record).onClick}>CANCEL LISTING</button></div> : null
+                      ) :
                       <MarketplaceControls
                         record={record}
                         registerAction={registerAction(record)}

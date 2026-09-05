@@ -1,0 +1,874 @@
+{
+  "expeditions": [
+    {
+      "id": "eburp",
+      "number": "000",
+      "title": "EBURP: Before the Punks",
+      "path": "/expeditions/eburp"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "eburp-0000",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x7896bbd48a884b43127560587a1efd9bfd63821eb56d7218deb7b9c09ed52e14",
+      "name": "Zombie",
+      "filename": "zombie3.png",
+      "protocolContentSha256": "f0801ea2215389b57d91fa01154654376319c9c3eb49e76ca2773db34391651e"
+    },
+    {
+      "id": "eburp-0001",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x02af9daeeb5eb9cfa5257c6471304c21b00e61f979a90008a68e3d03be748a2a",
+      "name": "Grath",
+      "filename": "assassin.png",
+      "protocolContentSha256": "f7ef2a532ebe4af7b683b968a0d667d71ab9305f1424d6e1cc5710cb94296c59"
+    },
+    {
+      "id": "eburp-0002",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x16b62f0ca83ff263910a83d9e8fc8fd0a01ca7b7a4132d0aa9999d458ce0f992",
+      "name": "Giant Bear",
+      "filename": "bear.png",
+      "protocolContentSha256": "72c732ebced39f5c948bf16f458a1ddb8a18dbd7a04aa3aa907c0de281f55df2"
+    },
+    {
+      "id": "eburp-0003",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xfebc7afcb30863460d87ef8dea0fbfd2f4a00289f2ed35f5c1d5f64fa38df77e",
+      "name": "Black Spider",
+      "filename": "blackSpider.png",
+      "protocolContentSha256": "8d767fb977a61cfef3ecf340b882d44a2f0d7e02da594ea0adfbe8639047976c"
+    },
+    {
+      "id": "eburp-0004",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x244dca36dc323284040da22692e91673b4e6f74bb9e0ec9e4a016ebc20eaecc5",
+      "name": "Blue Goblin",
+      "filename": "blueGoblin.png",
+      "protocolContentSha256": "62ec7c2b4d00cbba71853b7565c27dba84691a446fa3a46d9f8b66cf3b55a8ca"
+    },
+    {
+      "id": "eburp-0005",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x2bb87407eeff5205881f9f9163afc0630f14939b118c16df7a0bb2714a7b2007",
+      "name": "Sea Snake",
+      "filename": "blueSnake.png",
+      "protocolContentSha256": "579fe79c1161ee748aacc73d16a210d844fae05c633c7372b01ec8bc0accf593"
+    },
+    {
+      "id": "eburp-0006",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x548d2179ade824ec333b98882c8b80f0be1b0f2a68972f976914d55ff2cb53f3",
+      "name": "Orc Champion",
+      "filename": "bugbear.png",
+      "protocolContentSha256": "2bd50e4199d456ffaa57f98c42f6285fd6843a7b73288eecb9418e4ffcc0be28"
+    },
+    {
+      "id": "eburp-0007",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xc142c894016366887b2ec3ae93a388db66d7ea04475b00b2e457b9a26affe72a",
+      "name": "Bugbear",
+      "filename": "bugbear2.png",
+      "protocolContentSha256": "7a292c88e74c16a2104a38ef8096b1feef5a96df79a0d2e5906fd0b5fa1ab82d"
+    },
+    {
+      "id": "eburp-0008",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xb7625d2a4fbe514bdba1e94606859950353defb7c8ee36b4c98f20b9f602598f",
+      "name": "Cave Peeper",
+      "filename": "cavePeeper.png",
+      "protocolContentSha256": "85bbc7a8c93e4ce3abaccdbf706bb59331a36f5345cbe7edb9bf380b977c080a"
+    },
+    {
+      "id": "eburp-0009",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x7ba9da63cbb4a496d0fda59361d6987d732cf3a636941c9f2c0c7ada330a6aec",
+      "name": "Clay Golem",
+      "filename": "clayGolem.png",
+      "protocolContentSha256": "b3e76b5b95a62ed119eac4cc90df2ebfe883cdc6a57609f7c1c2cff358f56bc7"
+    },
+    {
+      "id": "eburp-0010",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xd7c0eb0f94cbb0d7b5a5eda9fe673b5be0921561a2b1b71e007ceac589de1da1",
+      "name": "Giant Crab",
+      "filename": "crab.png",
+      "protocolContentSha256": "c3f858c3d2d4b3b3d91fc73afdad387ec528863b5282ce667b12feb12750be61"
+    },
+    {
+      "id": "eburp-0011",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x52cf92e848eec003ea4ff0d4279ca19db456f8f61b9970fe6ce1842929a7b811",
+      "name": "Craw Fighter",
+      "filename": "crawFighter.png",
+      "protocolContentSha256": "ff0e95df6392b8a8b0f919d14b4362636d4f1c9163c4888d97e329d50ef0a126"
+    },
+    {
+      "id": "eburp-0012",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xc3cd178f8de66152381ecd77f554f72c2cd683c4f638d69c65ce87a7ea740e07",
+      "name": "Cyclops",
+      "filename": "cyclops.png",
+      "protocolContentSha256": "5b917f784a70f18cef110d9a4f86cfbbcd5e52620f4430569cbff99f6fa2a031"
+    },
+    {
+      "id": "eburp-0013",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x7df99430e50240bd839bd43c8fc9316bb6e5a03eb8af88eba6c4a4875ae79360",
+      "name": "Drow Elf",
+      "filename": "drowElf.png",
+      "protocolContentSha256": "85b5ef326aa6c5a7ade67cdd8780a3f56c175632e8bc6aa4525d408dfbf2ef60"
+    },
+    {
+      "id": "eburp-0014",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xaaec1830e6bd833b95adf10cab102b2f2d36d0011ebb6d81f3094ee8ea407aeb",
+      "name": "Hobgoblin",
+      "filename": "dude.png",
+      "protocolContentSha256": "36e3fd9667db463d0284d07a7109ea9dde147b99064bf478bbd8a83dbf891a82"
+    },
+    {
+      "id": "eburp-0015",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x21baa255d0e7423370435f7c78c028c6962a4be7c229cd6b83b1eb72516fe93f",
+      "name": "Dwarf",
+      "filename": "dwarf2.png",
+      "protocolContentSha256": "c9d0f094844f853a2d5ca041ebb9a4ed230a951ecc5d83909df6c62ff6fde119"
+    },
+    {
+      "id": "eburp-0016",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xdc67fb75976987d54bf4a6dbc3eb432d18f6891f79d34a221d68bb72de2f97f1",
+      "name": "Dwarf Guard",
+      "filename": "dwarfGuard.png",
+      "protocolContentSha256": "78faa063e09bd13ac3da827c5678aba239133ec01803fdd4baf188afbe126058"
+    },
+    {
+      "id": "eburp-0017",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x8b4e9b73e93bdd45bc7c8baa0e5a4136d981863fbaa77b5a74e36434f04db45e",
+      "name": "Gurnstaad Baron",
+      "filename": "dwarfKing.png",
+      "protocolContentSha256": "aad6f6e05f789faab06937a3b5b635c0aca0e4fa91cc046897afe43151023995"
+    },
+    {
+      "id": "eburp-0018",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xe2699754ad9e135767854472165b461b021310db4dfc803bb3d7a69d80b4b6ac",
+      "name": "Padishah",
+      "filename": "emperor.png",
+      "protocolContentSha256": "51892a3899959bb7ea8535c334af9daa427081c2cd27c4b1cfeae3ba20055400"
+    },
+    {
+      "id": "eburp-0019",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x1a187d8348c018fa092fc23d3bae5ac05219178d149f38ee9782051d24d523b2",
+      "name": "Ghoul",
+      "filename": "ghoul.png",
+      "protocolContentSha256": "358232c6bc5db16ca4a6330b367c27e5c1bba98427de8de77455146ade8c5f5b"
+    },
+    {
+      "id": "eburp-0020",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x645768e225593fb39069ca21539c8bc76cf41807100195356bdd21be54222d9a",
+      "name": "Silvana",
+      "filename": "girlArcher.png",
+      "protocolContentSha256": "ca828df3860d4de761c382f1a0ee9d1366a9aeb902c1272378e42e283fe1db1e"
+    },
+    {
+      "id": "eburp-0021",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xc11e2b90f11cea0c9d94fdd94262e7616836155abab2a1ffbfa8e9a62802deac",
+      "name": "Lady Alwyn",
+      "filename": "girlKnight.png",
+      "protocolContentSha256": "15901ff2bdee6a6f359338e61e6f82932e0787b913d0193aec732eaae7a6aff0"
+    },
+    {
+      "id": "eburp-0022",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x1013856efc2bd1051044de3cadf3dd8d4f571108a87fc4880e0d18b34a96ec73",
+      "name": "Gaelabeth",
+      "filename": "girlWizard.png",
+      "protocolContentSha256": "d3a0df036cdaf306637233f211e77b47ae88d9625b779d295054d4157dd89011"
+    },
+    {
+      "id": "eburp-0023",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x184bd4e49d5f875426c13b6379db940c9ce16175bdd3a02e622b71c337f97ae9",
+      "name": "Elf",
+      "filename": "gnome.png",
+      "protocolContentSha256": "429f1da8b1002f6e19e1b1c408a4a881a892ac2bdca1d15f35f8c137ceb843d9"
+    },
+    {
+      "id": "eburp-0024",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x3d0d5652e789dda46a010fbd9b4fdb7c1944b5c1d26ad60a18764a6f19bd3483",
+      "name": "Elven Guard",
+      "filename": "gnome2.png",
+      "protocolContentSha256": "4b0817d48fd4be483a3dbedca5c67963e0dce9cf1553eaec2ff52c4a857fb789"
+    },
+    {
+      "id": "eburp-0025",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xd0140fb3d9dc1cb87994b74ff3d6f42bb77e8b2a045523752cd038f815518149",
+      "name": "Elf Ranger",
+      "filename": "gnome3.png",
+      "protocolContentSha256": "f0baf6adeba116db2f307c64b43d05c6e0ab81c0708daf9771a191d14587882d"
+    },
+    {
+      "id": "eburp-0026",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xdd5c489f5f4ff97d5153ec5de26a305c2aec756ca648097fa0a4e570b99d140b",
+      "name": "Forest Chieftain",
+      "filename": "gnomeKing.png",
+      "protocolContentSha256": "be8c63d2858f6d792978ba5234ee0331a992e6b56d19e4ab78419fcd6da84d51"
+    },
+    {
+      "id": "eburp-0027",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x89710ec540e6afcf1a5b08d9cf160d4d207bb79b030f0c874dc8e61c0a1156b9",
+      "name": "Orc",
+      "filename": "goblin4.png",
+      "protocolContentSha256": "5de4992d08e3b549ed20aa929cb477cad41fc7e8490101d009d3193ac3827a97"
+    },
+    {
+      "id": "eburp-0028",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xe29a489c76888a4671b4cebf635fd3f87b705ec7b5fec89379222a22d6c0730c",
+      "name": "Goblin",
+      "filename": "goblin.png",
+      "protocolContentSha256": "c3ac1e617e416207b589d1cfb53c45ef9031b687edbe5b6b195f4d009935368d"
+    },
+    {
+      "id": "eburp-0029",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x65382ea89a79c9c0eb9ec6b4469552a5182bf1c3bbc39e55918e45a64ff4484b",
+      "name": "Goblin Swashbuckler",
+      "filename": "goblin6.png",
+      "protocolContentSha256": "048856fe70a96b6e92433a05b7e86c8f593072d37e73411a6f2f3b71b4304041"
+    },
+    {
+      "id": "eburp-0030",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x4f6fe5b43854afcd6e95f9fe3992f14c4d6764768f5b7bd63ed592a1ec23af5a",
+      "name": "Goblin Warrior",
+      "filename": "goblin7.png",
+      "protocolContentSha256": "50a338c53e39e03109ded69425244487e4c00622616baac6f08f18d86f57b175"
+    },
+    {
+      "id": "eburp-0031",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x3d3b6b3ad32da7d7a4cbb09da0496d891693df51457c50c51c17e6fcd0d67fa7",
+      "name": "Goblin Archer",
+      "filename": "goblinArcher.png",
+      "protocolContentSha256": "9eff8ae83a491a49ba4024b57152af6f801a1a0996a0d0a03d02593b02c5350e"
+    },
+    {
+      "id": "eburp-0032",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xaa16459188c1e2312ca847e89f9e6c598449cc7ed000e48fc7153ab1c242dff7",
+      "name": "Goblin King",
+      "filename": "goblinKing.png",
+      "protocolContentSha256": "0e3672eb5a0f98810bca9f937dd9147750f64f97a43e6728c07b532be330a893"
+    },
+    {
+      "id": "eburp-0033",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xea8076936329d9b3a25779596deab0db5feff003e75f75051a439c64aeeeeda0",
+      "name": "Goblin Scout",
+      "filename": "goblinScout.png",
+      "protocolContentSha256": "a43f42d2c7ec1a5d756d635f7dc0e55d1954b49c8743eafbb8e96b77e412050a"
+    },
+    {
+      "id": "eburp-0034",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x8d95fb70e6fc2618baf55a3614d76993df662c5ae76700e4f22ef6c82f2054af",
+      "name": "Guard",
+      "filename": "guard2.png",
+      "protocolContentSha256": "8f234886e370aeae428129279815461c51e9dd99110d5c26790a0e0e9896b6a9"
+    },
+    {
+      "id": "eburp-0035",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x61b1595b53b1c56dc56b0e27ee25bb6e23b39363b15189bbd59f7732163c7273",
+      "name": "Giant Spider",
+      "filename": "greenSpider.png",
+      "protocolContentSha256": "2c5577e2b9311aa268f881597874f6cc345c9c72ef2cd5417115c70b92a1eafe"
+    },
+    {
+      "id": "eburp-0036",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x3ba4662bfabd1ba8c771fcfcaf00793d77e5faeddce738ba10d2292da4502aa7",
+      "name": "Goblin Shaman",
+      "filename": "goblinWizard.png",
+      "protocolContentSha256": "82bc2f6331bc414efc4fa5e8939c090d92e91315ce8eb1abd14216bb6fd34c1a"
+    },
+    {
+      "id": "eburp-0037",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x058a0c94fd6ec0ffcadfe271e9f38f2cabec2e7682c193fb6e12795d1fcaa8bb",
+      "name": "Spider Queen",
+      "filename": "hugeSpider.png",
+      "protocolContentSha256": "8119e1e8ac4d446893ec382933c9aa65d6390bd2b77305141f692c59cb2ca098"
+    },
+    {
+      "id": "eburp-0038",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x20e75fc007283da4540c4fc17bfffa9168bf41b632a89a00231a4a5727ad8bea",
+      "name": "Ice Golem",
+      "filename": "iceGolem.png",
+      "protocolContentSha256": "14e2d55fa0b49890f8ef504c3510d98587b5cf7860440ed234c75ae5fdc55ac8"
+    },
+    {
+      "id": "eburp-0039",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x243ee33bf57a2094931f85591acad10d9d3f4c63ea96109bd5e1b4d626851ae7",
+      "name": "Ice Magus",
+      "filename": "iceMage.png",
+      "protocolContentSha256": "74436d6f9353aadd43deafe8eb3a29919339a85a9d2496477196ad25bc2d54a0"
+    },
+    {
+      "id": "eburp-0040",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x2ae4ebac32623217be5c640b4310dffb6d4b55c89dc10f7732a4e8d9693c5251",
+      "name": "Ice Troll",
+      "filename": "iceTroll.png",
+      "protocolContentSha256": "bcd672068094739f107d620ebf6aa8944ab08578ccf6f29107abe0badfce4e77"
+    },
+    {
+      "id": "eburp-0041",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x74980d0d52f7660abb12919dd456f3bb6f3191f81ac98c6b34fe04e4ca590e6e",
+      "name": "Imp",
+      "filename": "imp.png",
+      "protocolContentSha256": "7fc6dd662a83822acf674b09d69adcaad02063a4bf765ac258f6d54cca0b6da7"
+    },
+    {
+      "id": "eburp-0042",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x2879d37fe352f26f9646d70aedd3d6a207b6a8447b9bb33ff2496eb699008b1f",
+      "name": "Giant Jellyfish",
+      "filename": "jellyfish.png",
+      "protocolContentSha256": "450abfc28ec8822353d79dc65c30a8987381f75f1d7d6236e6c778106776f228"
+    },
+    {
+      "id": "eburp-0043",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xb7915d6e33fe4fd7955e3f53f97360ee2607f1631419d299ecc6173740bf1cf9",
+      "name": "Sir Rugnar",
+      "filename": "knight.png",
+      "protocolContentSha256": "a76056f5241a98d1892b35c0cba0443f1995bb216e94d7dfbbdcd53ba9348372"
+    },
+    {
+      "id": "eburp-0044",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xba8fc20c5b5ac93279a6224b7e3b4bbff11fa7df5cfcee5910caf1c1f4418c74",
+      "name": "Kobold",
+      "filename": "kobold.png",
+      "protocolContentSha256": "53a0dbdbb01c23c9aa16c4fdc6cc1138c943d24e3ff3149d7a9f2cbcb61f7efa"
+    },
+    {
+      "id": "eburp-0045",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x1e754872dd77147d49d6f5dee530ed60bb4332c3f40d99263014f21940344e02",
+      "name": "Kobold Mystic",
+      "filename": "koboldShaman.png",
+      "protocolContentSha256": "cfba4fd55639662d89c5c025634dab9aa1644aba103e78057c453879d8c704dd"
+    },
+    {
+      "id": "eburp-0046",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x9741e2af147ed933dcfb435bb33d9df17c8d8ae377e650daf2cbf06f4f017849",
+      "name": "Lord Yester",
+      "filename": "man3.png",
+      "protocolContentSha256": "97e016b4d02f653961056149403ad5187a5bc7c4b7db23fb7885ca22dff3f5d6"
+    },
+    {
+      "id": "eburp-0047",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x22425aa22d0f822bb1ea7fc1465a0038d5e91f41a5fe78199b4d0a0ac7d5d132",
+      "name": "Citizen",
+      "filename": "man.png",
+      "protocolContentSha256": "8fd4542ce50604d538df55ef4b262c7d7ac1153643ebddbd857e22fe983d32c8"
+    },
+    {
+      "id": "eburp-0048",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xfcdbeb0a413130fa044789f4ca3b9b244d57c74ecf044691ae6e4d63dc835a6b",
+      "name": "Kobold Fighter",
+      "filename": "koboldSwordsman.png",
+      "protocolContentSha256": "5fa2e47f25818e1ec5f5251b989b356fc2a47841236e79a5124a9f46bc56c8cd"
+    },
+    {
+      "id": "eburp-0049",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xac3d9d22862c430015c5fd56104ed8702a88aa1b13e443aba095b6123e0fedd8",
+      "name": "Oloman",
+      "filename": "mercenary.png",
+      "protocolContentSha256": "0b0d66e86036d149b7aca5b9778bfd84640c82a21d54bd066c90ef25f8cb11a9"
+    },
+    {
+      "id": "eburp-0050",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xda75fbaf02b295143e258e326306abe4e1e913a3e9096c105fcaf4c43c8d4cae",
+      "name": "Merman Sorcerer",
+      "filename": "mermanWizard.png",
+      "protocolContentSha256": "ff8cb63567cf5cbedc382a847782608395f7effb0a599e5b20694202c5b4cb69"
+    },
+    {
+      "id": "eburp-0051",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xf5e5e15848bf8b27dae33fe226a0540d7ea3fb048af3341ff7cd4a1ca2a54682",
+      "name": "Merman Swordsman",
+      "filename": "merman.png",
+      "protocolContentSha256": "fcadd3fde99df2132bfb66bcafb48753f05533fd40425ff1b1a76066150b2cb7"
+    },
+    {
+      "id": "eburp-0052",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xe9bef4db6fb8f6f6918306ed260e9b45677ea49d2b6f8684a91f8cf9a70c7c11",
+      "name": "Mind Flayer",
+      "filename": "mindFlayer.png",
+      "protocolContentSha256": "e44fd404a1173c58d780a3209f528cf7a3b519855234f819024e97aa61685110"
+    },
+    {
+      "id": "eburp-0053",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xf9d6507d755e6ed1203b6268fda6ea5d67af75d4831792f05a77c45a83f849ff",
+      "name": "Minotaur",
+      "filename": "minotaur.png",
+      "protocolContentSha256": "04b36dea7062e760f0acfd851b7b44b1e9396dde6636c24860f14385060bfbd6"
+    },
+    {
+      "id": "eburp-0054",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xfb43bbac8cf93071f74876dee31b86ae35aa5483e19fa07e3a394b78c5f1c6d9",
+      "name": "Mummy",
+      "filename": "mummy.png",
+      "protocolContentSha256": "3ad0f01ff56ac3ec9ea331d044f76097cde5f7b0c4c2866e5ed58177fa67ea2c"
+    },
+    {
+      "id": "eburp-0055",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xe1a6bab075da5edecfa7eb1828fa24fd62eb47d402415bfebb6bf6c5e65c67ca",
+      "name": "B'Az Aptar",
+      "filename": "necromancer.png",
+      "protocolContentSha256": "c2e5662527685225a737c01c21cb12b9800837955962e333eaf0d24dae938616"
+    },
+    {
+      "id": "eburp-0056",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xfe442257fe6bb3e1c1d85a325c2ec0cc93b31f771163d68efbbe25145162898a",
+      "name": "Ogre Assassin",
+      "filename": "ogre2.png",
+      "protocolContentSha256": "d76b2aa6cca4f50f5c5f78d40ec6aab01d337ae31b002c5b38268a5e00604ce8"
+    },
+    {
+      "id": "eburp-0057",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x3d0d81bd79e6b967b196da085bbaaf174bfa13c945891c26339cccce8d742334",
+      "name": "Ogre",
+      "filename": "ogre.png",
+      "protocolContentSha256": "69b31f432285c1b5daefce06e13b8a08fa3ab06019f2d7112c6d2dad05b9c069"
+    },
+    {
+      "id": "eburp-0058",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xe85eadbc9f935cfbb1b4d7b344c01c40e566f3312a98dcefd24f0294f96561c7",
+      "name": "Oliphant Priestess",
+      "filename": "oliphant.png",
+      "protocolContentSha256": "2f5a34375e19a0becd00638f4308d4b24dfc612769371e37896221f631525e6c"
+    },
+    {
+      "id": "eburp-0059",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x45e8c6467c101a5fc07ba04e8271b4b7bb41db4877b508958e7de53f2211fd30",
+      "name": "Steward of Trintha",
+      "filename": "oldMan2.png",
+      "protocolContentSha256": "b62047778f6534ff0a3b1a27e16176f1f01f6b9cb39fb7e07e13a2c17a0f0b4b"
+    },
+    {
+      "id": "eburp-0060",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x32c85e21179377d2a31a2be35b68620cc225a930468924e5f4dcf0c7d8976b15",
+      "name": "Thowan Elder",
+      "filename": "oldMan.png",
+      "protocolContentSha256": "7b16d63efa8ab26ff17ecfb7e5b3aa00e38c251a2b80ceb596bccf3956fccd15"
+    },
+    {
+      "id": "eburp-0061",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xa35cfcdebff5babdfad55dd734344642804510744e6ea044b3a4c5e36649e6c6",
+      "name": "Oliphant Sentry",
+      "filename": "oliphant4.png",
+      "protocolContentSha256": "4673f94c3cc856417cd21775fb60cd29607b5a3d3d42325c2a4ed238b4b59534"
+    },
+    {
+      "id": "eburp-0062",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x33f5087c3cfa8aa3290638b5952bfa0a1889225dee80467fb5c1bba02f579359",
+      "name": "Oliphant Charger",
+      "filename": "oliphant3.png",
+      "protocolContentSha256": "898f8274b8a3dce4803dc45bbd01407814808c5387631738be6db2fcd2a542bb"
+    },
+    {
+      "id": "eburp-0063",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x6c6679245191db56b17f6cfa6ef8601ae262ccba1c4a6916c0bccecc39068205",
+      "name": "Oliphant",
+      "filename": "oliphant2.png",
+      "protocolContentSha256": "c0f05ea0d4fccdadd4e9093ca602217f971fe413797317e05ae53459c7c0fcd8"
+    },
+    {
+      "id": "eburp-0064",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x888bfabb1000d48d29ba7887b53ea5827467c2f78bc83bcb43771353b108e208",
+      "name": "Sailor",
+      "filename": "pirate.png",
+      "protocolContentSha256": "5ccde429e6a8fe3f29e46e85a1b093154bd772a7dc93421ea0ce5d7326c069b9"
+    },
+    {
+      "id": "eburp-0065",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x35c26bbfda95f200ba804711a2fe204001cdb7447a11df23b3092789eb3afae5",
+      "name": "Phantom",
+      "filename": "phantom2.png",
+      "protocolContentSha256": "eb6b419fedf5ebaab0b744897cb73288daea40e07eb6bd5be294f0a881252063"
+    },
+    {
+      "id": "eburp-0066",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xb70f64ba370d817f178f02347dd0802bbf604710f19e6668a500659fdb4c24ed",
+      "name": "Urlani Elder",
+      "filename": "oolanMaster.png",
+      "protocolContentSha256": "e3d2bd4f0eab59fa00e0399cb10211a995b5bd57fdcc6ea43129056b589bca86"
+    },
+    {
+      "id": "eburp-0067",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xa090a491e24fe7a26d9fe2093e9881658921559835003875073842571cbdfd8e",
+      "name": "Pirate",
+      "filename": "pirate2.png",
+      "protocolContentSha256": "01e13b83322c949be9f6fec51dc8ad0cf241da685e12c7bdb4bf194bf70a8836"
+    },
+    {
+      "id": "eburp-0068",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xeac050eeab8c90499573f0b8bb7dc675a44b70004712ac1aad988de06c35f4fe",
+      "name": "Feraldan",
+      "filename": "ranger.png",
+      "protocolContentSha256": "88349eeafdb5052440f7fbc1a759ae299f4e15c8f9dc3f5b69341f8125e4e8c0"
+    },
+    {
+      "id": "eburp-0069",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xa05d29fd39921d8faeac9b8f94c14a6047109a482df161657a4fef0a72f884fc",
+      "name": "Fire Snake",
+      "filename": "redSnake.png",
+      "protocolContentSha256": "3962b09178cc68a6bd1febf60ad3a062507b5d83400f8343cb685603bdebb652"
+    },
+    {
+      "id": "eburp-0070",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xefce18fb083ae6b4ee115a0aa28baf31c2b6f028f5b527dd8b493aad09b0d541",
+      "name": "Spitting Spider",
+      "filename": "redSpider.png",
+      "protocolContentSha256": "b9b012a52adaa4b79bac1953601c512a1e496e9a9b60f04af86753e4520fb443"
+    },
+    {
+      "id": "eburp-0071",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xb12cc822797200ea7f8838d297d68cb38e194c5d313586a3b9f5df08f1ea8e50",
+      "name": "Rock Golem",
+      "filename": "rockGolem.png",
+      "protocolContentSha256": "42e83814f5c478c9465e35cf9b89be02f8f9b5c7316671d93a27fd0d5bb435ab"
+    },
+    {
+      "id": "eburp-0072",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x8f1c5e988c78bbee0bb99959ee360ceea9764b30e9a4f480e4fd28494425f030",
+      "name": "Skeleton",
+      "filename": "skeleton.png",
+      "protocolContentSha256": "f439e201c53e605dbaaae3c4a2db60cf4a393e4921b95745eb1f0e3933b52f7d"
+    },
+    {
+      "id": "eburp-0073",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x1ae3a77e1decc2b63b014c3d762e1726ada8ee98100ef6fb9a4fba38d5ae1516",
+      "name": "Skeleton Guard",
+      "filename": "skeletonGuard.png",
+      "protocolContentSha256": "f3e1941aaa9f18e69c5ea357fde6c72124067340e5368f21e404dc8ff6631a29"
+    },
+    {
+      "id": "eburp-0074",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x670397cf1873ea597bf03ee48db24f08d788cf2860d57a023e4706427de7ee5f",
+      "name": "Skeleton Wizard",
+      "filename": "skeletonWizard.png",
+      "protocolContentSha256": "d0b6fd38626c883e7e3481f873b4dc454c4a65f0af9b9f2a847d8484916f9dc0"
+    },
+    {
+      "id": "eburp-0075",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x527bc5309a9de822dce34bdb9eb04222f7f7f523f077a5f0d5486ab6649e7c06",
+      "name": "Giant Snake",
+      "filename": "snake.png",
+      "protocolContentSha256": "52b56487ae58ca174ec928d27601b4433a9d5f3e7bc99dfdeacba5aea44f8a2f"
+    },
+    {
+      "id": "eburp-0076",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x998016344701a43b5c8d41cd9c31817b0877be5269bc0aef67921dac6d6e3295",
+      "name": "Snow Ogre",
+      "filename": "snowman.png",
+      "protocolContentSha256": "56890e812099e2d1a421f463cc78f49b751d749e0eb432f32a00e5b3738f7780"
+    },
+    {
+      "id": "eburp-0077",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x708eff00fae4e06d3dc18f4c707f4ce91413fb09195abaa7d6aaed08e9a1b762",
+      "name": "Guard",
+      "filename": "soldier.png",
+      "protocolContentSha256": "0950753e537b2c41df221829706ba825c4dbf33d660169e1a6fdcf5f90b4a67d"
+    },
+    {
+      "id": "eburp-0078",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xf9422a8c7b6003629ea7c2e48cfada061592ef28a68d16d7eb5a826e118ece43",
+      "name": "Spectre",
+      "filename": "spectre.png",
+      "protocolContentSha256": "92b4552801d6ad4e23f7db1c8f1438eab6510c9c569e7e2f2b4314c79b790106"
+    },
+    {
+      "id": "eburp-0079",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xa8159322bea4c6328b99b5aaaad26c0a97b1b42c41cd1baf29a02472ea000f28",
+      "name": "Swordfish",
+      "filename": "swordFish.png",
+      "protocolContentSha256": "5b73b2bf6e63ecbdd1c5bf11a74d6e0cba22410b304abfe9e2835e7090f38b01"
+    },
+    {
+      "id": "eburp-0080",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xb6a0433dbb54a6d87ddea776de96f62396541b8117a719753495b1816718bb5a",
+      "name": "Guard",
+      "filename": "tarrSoldier.png",
+      "protocolContentSha256": "9c0a54465e9e9fb381963cbe2a7265ab6ddcbd1995742d5f893afcf59d422fa7"
+    },
+    {
+      "id": "eburp-0081",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xa9955026a75a602a05bce8839ef00b2a688d95dea81e2a41746e7497d9e9c24e",
+      "name": "Urlani Citizen",
+      "filename": "tarrMan2.png",
+      "protocolContentSha256": "e02b7dceae384ec654c543163de1c3171fa770fc80e651705af270ff080b5262"
+    },
+    {
+      "id": "eburp-0082",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x3dabac9edd5d714bced0d98230a577b516c63e164389a9eafa434541afdb264d",
+      "name": "Troll",
+      "filename": "troll.png",
+      "protocolContentSha256": "14d2ea964e1152a0846e70d8a914b33c943013d993262a7d122975d30defd2e6"
+    },
+    {
+      "id": "eburp-0083",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x03200c502de243c7c3b1aa5042515bf4148428ccdc3d5b4d52ef552120732c44",
+      "name": "Treant Elder",
+      "filename": "treantElder.png",
+      "protocolContentSha256": "ab7e2cfef38ae48c7441e0c122b609c999884e7a572680eaecab510d5b3d319e"
+    },
+    {
+      "id": "eburp-0084",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x9c1bb7ef234beb8cfa3cb4b164cda3a41cc0b7133ce0562325483322adb39cb6",
+      "name": "Treant",
+      "filename": "treant.png",
+      "protocolContentSha256": "147462341f7381f02e8d252200cb3a970336861b476dae286aabcd5830b686c0"
+    },
+    {
+      "id": "eburp-0085",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x16cd89767eb59b67479926c0292915f65fc6d72ebe5a1bb8ac61c4824b6acda6",
+      "name": "Two-headed Troll",
+      "filename": "twoHeadedTroll.png",
+      "protocolContentSha256": "8e788180c169afc813c10547125c8580a03e69065100fc529158b1158269be3e"
+    },
+    {
+      "id": "eburp-0086",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x70f7c683e4e3569d3dded502feec4b4d6829c3f2a7ecabd4c2efdc772b4a72bf",
+      "name": "Vezu",
+      "filename": "vezu.png",
+      "protocolContentSha256": "636e0af5d03a2a612e08c9ad6f3d2015d431f8a4f09a7fe0c19a117d508475a4"
+    },
+    {
+      "id": "eburp-0087",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0xeae5aeb9f7959307522141a21477bc8c800fd5dc022f93161b7887278a0b8f5e",
+      "name": "Wererat",
+      "filename": "wererat.png",
+      "protocolContentSha256": "86475392ac27149d64db5bed2e759dd4a35458d4a07d938e91ea5a1f6927a918"
+    },
+    {
+      "id": "eburp-0088",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x4e8680deb72e6ddd51d0c58add90815053e546b2b998a152b7a9a532bea7d6bd",
+      "name": "Frost Snake",
+      "filename": "whiteSnake.png",
+      "protocolContentSha256": "889e3ed6977d070bd6a985496b1c32730ecd43d459f786e2a5f60ec9ebccd5f3"
+    },
+    {
+      "id": "eburp-0089",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x347ddf7d69ef0f1bfb6a4209ae750c1eead9481bf4f3dcaad03f25eed760ae1a",
+      "name": "Gorlok",
+      "filename": "wizard.png",
+      "protocolContentSha256": "55467c55b28dea33492cbaa340a3be2f9156eeb72b2bbd617bedc305190a43c5"
+    },
+    {
+      "id": "eburp-0090",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x3a8dd4be30c8842ae627a8f656c1a95459ed4f10634e3b650678b0f2a572ea5e",
+      "name": "Wraith",
+      "filename": "wraith2.png",
+      "protocolContentSha256": "4dcfa51362c9d800aea48154d0d67f15b49cc419c06e794987019e46c66825a1"
+    },
+    {
+      "id": "eburp-0091",
+      "expeditionId": "eburp",
+      "ethscriptionId": "0x8bd55dee0b583be69cff926b80672299c36bb181bc84fabbb0f337424ec31018",
+      "name": "Merman",
+      "filename": "mermanFighter.png",
+      "protocolContentSha256": "a20ebd55a3b95f66d588b40fe3b1a9bcbc22f6d66a44d3f929fc267002ab5b47"
+    }
+  ],
+  "nonTradingEthscriptionIds": [
+    "0xc32d6387088ab9712b86d0bbe217878f9d667295afdbe7c45d62d13a7ab28c9c",
+    "0x095d60ce26ab301afdb41c0303258b73e068fb6080c4e48784d5c4450f5b824f",
+    "0x365db94f2d262ef7cde76fd087d0a375aa57852a099daa6b043153097188a1fd",
+    "0x6db6a6ea69750fda5dbd7c416b229ba6aa2f31a2e505a28d7a654fa4a79d515f",
+    "0x9c024e45c1c9973275c86cd589aa7bb5c7886febe9a756bde74bb2b8e3183eba",
+    "0x0793ee9826fba46d1ac165e03f8dd49c1e198d38d25d4bc2e16f12bd71c3f78a",
+    "0x91fee1c7928e0c85ead35dc7b03aaa4c1a8bfbb652df5f8478299f02c3184d84",
+    "0x275ce442010c54bfa9c47563e28502b3a4acd06fe00448b0ff7f41834c3698ec",
+    "0x00403b788257eb846cc1b432302c41d7b9c8710bb12d465f7cf76e7eb051a45f",
+    "0xcb6eca1f20971be28b9ae4e0ba963b023d92c77c0a10120e4b0ddfab474b2558",
+    "0x626f552996b451a7576502d45dd8e9d64c969ed664fc9f0243d7c4a7a1b0bf02",
+    "0xc76c80b2b85c4c17226e0b9687ecfe89cd6afcfa5e30ca50228a9c55372f9f23",
+    "0x05d3e84940baf8676d9e35f91be821f50c97828abfcb5ddad3d35fc566896c35",
+    "0xc0ec32cf0316ee4f3420318f6d1e2c56d5111b9eaf7ae9124c68d321dd1e62ad",
+    "0x96200b3bedf03db8fa7a04f2c9acf6624b615eb52ae9ebd8013e4a9543c3156d",
+    "0x25aa54f24ceefe7fa75b7c7b8437110ee4fcd5fd81d676cd1da7b2b70b5d6f9d",
+    "0x2d837d078d16cf78029be55540457480ed7a82e0796b6024de63595cf2e272d2",
+    "0x4050a134340a65ddcab82e9d4d0a5841f3be46054bb9aea008cfffaab23b4be4",
+    "0xc9eddda2b5313c1ea91c43bce770ba6067e7d8e1d7b055d1fe8585bc89e0877c",
+    "0x3e2321f2572a58e3051e04351295ecc1c7305704de5a4415c3dadd72a00c95a4",
+    "0x1d24bbe7d11c08fea98d37c57e0c19dbbf7ea6d44ff6c1c7fa5dd4d8d4c9b14e",
+    "0x022b9b9e230891be87f5f3c8dbcce73c2aaeb733e74739cf63b1adbe16cce320",
+    "0xba6d479177f4aeeb18cc6a1d6007f3c03957dc2129137e4517270d59ef246d8f",
+    "0x9a57076b43bcaa91f1e7ddca59d9fc59b706b3b7261046bab9c01b4d77116880",
+    "0xa139f5a8804cd66714951850c94056fa4c079123e08b16f751a15937904a1b52",
+    "0x3789b8a08abeb485880a01e2bbab8edc85424fa94a00af0e4dfbb2da349411b3",
+    "0xbc0b76baad94913906e0e60f71f3867890c83dc4e4136a463ad4e37ac7e79317",
+    "0x0f201365d1e8ccfd905db29c650ca81da97d202fdbf3d4a1ac00d071cb646be8",
+    "0x8cf20bf1f41bcb4c86e307c3c35b34daa02de8f15903a17bc9a3830d02f8da0d",
+    "0x298e6e8f2095a864458f39ba3c6c8d89b9506cd212be601719bda80cb021e0c0",
+    "0x8e4f0f8be65c24c1e790e0f7905045e7c784085e17cbb6339d4da81d9d610668",
+    "0x7ca03ee234ddde87edd3ec92396bd3f061ee2da535bfd7237ec430231ce9e059",
+    "0x1da773b9a267694ac47a58dfb1ddeb1c4a6985d7928c16079d7e2dc869d6e0bc",
+    "0x4e7973adbf2737db2b7b0f6c32450383d05c9fcecac676a1a48ee4e1d6fd3e5a",
+    "0xd0a786f2f1103da0a489b64ae1d265e407cdeb03a718a84d3e17f1061f8b53cb",
+    "0x291e0e028f4349450928f9ca4ab29765aa58a2dbd568ca73d7ea684e63d4b4c6",
+    "0x87dfc07bd7bba358f5a7b1894930966617db82d5d1b9a86e1a298d97c2fb53cb",
+    "0x11ecc74d99ede25a8d05a3754e89c4f0a1e0625f02fba4542c3f62a03ba38151",
+    "0x1c7d539578f64440274a527659b023404c3f8ff07fd118276872b0ac7e61295b",
+    "0xade3a1cc20dfbc9d7ecb0e5746b3a7562eeaa732ed58a2d2b578812550502284",
+    "0x1a41cd5c12a66914d1ea5115be20222e54cfc1c3104e436d4a2ea86540de371b",
+    "0x2648e60dcc0992c63efa29d30828b5b8fb28c709a2583197db23c63caaa07536",
+    "0x8139a27173b853386cf4f4a2aeb327e1026c7d9d739b6abaa03f70ff059d5819",
+    "0x2e40e7fe6135d1b0915b7722b8bb2de1faf1c882430da1b7a68cfadc56695890",
+    "0x9652f0261a592dfe76d2b36471048718bb5d8af0a92f9e3d63924ea77424500e",
+    "0xcaa9e7f7bbf7f58cfc191bb9bbef73f65e3697040346b2174b96c08ad2129f8c",
+    "0xd050f0cb7458f649bb7bf2c83faadb19e072c050778e51a8a6f29a7ef8ba5021",
+    "0x5424a0eca9e8191fdf83e194b622e321958561f8e8ff05527a24cf432f5f92da",
+    "0xb085efc0cd4cc5798cecbe4db201bd1163b3aa84e0777bbca29ce4d7bf8fb140",
+    "0xc21f320f241f5668fafd0473986554e632592dbe25fcd415a9e4f18675e5daf3",
+    "0x35ec7aede0e23d87328a6d54c753486910906b482d97ca867977e7c3247473c6",
+    "0x8bc64a8d3836d54886495c180c98c8453651e72f425a162012baea6cdcf5d93b",
+    "0x5892d75ab91208e12b28941ce77e923da925f2d722bbfebcb84dfdb1e009895e",
+    "0xa990c78ff309311e61423ca8ffc5e41db847a18a8fec2b50df07b4c8634fb146",
+    "0xba71c2a9f56386c592af4f528722fdc1cbeed5da21db79a47e57404237246d56",
+    "0x1250273bc119477438d41653b97b414325c3ef185515543f105b68678a970772",
+    "0x0f43506c8b96e3a384fae73b6a9e26f35f8ca610b0c98cea141e9b8100baf165",
+    "0x199297644c5ecca0a6957ec7d349d25383bd8fc54228305f8ed40be8ca73ab67",
+    "0x03516d4a0e2920ce9dbedd03698d34df852537d3c7b0b69f45c7afff1735c0ff",
+    "0x46dfcc512a01733694804a070936b44bbb2d867c4b10151a6c2d819cb28c7caf",
+    "0x795cf7ca904a59af112bc73720eb79846ba286128065dcd5afb2cc90a5132a63",
+    "0xf44b0334d8b73e507514837f64fbc07318af5b22ed3c13b6fadc28dc03b6326b",
+    "0xab5262a935e1e014df8ac5e6799722f6da83aa17552f4b88e14a9c4439ba3f30",
+    "0x2031c24fcc8eebe4ba2a30afbf48aaa33e3be844dca2ffb9965c4362f98d74f9",
+    "0x220a04a15a2cb10e134fa92cb489c004763ecbf3d35e98fbc6a5469172770d2b",
+    "0xeeacd275aed4594ed131ee4b7893abb1481b9389e1b46f2e07beb789d6902796",
+    "0x40c391050a57af32f72020ea9622eb402712532a242f5025dbe000131a34c90f",
+    "0xe2cd89e4c33a42557d38f2414f362cddb445c6d1b72ea8e66e8b5841e3ad7ec8",
+    "0xd988412a46204d9618e544fcdbce82fcf022a42ca91b829271918d49ed4282b8",
+    "0x98f2550664a6228bd9845f3a47e02d16243569095591f7db93d71fd295882d4a",
+    "0x04859af5dd86143cdf3b02c6e1069796471bf9242011e0c16fc76bcd5f8dc94c",
+    "0x1d7e31b5d40d0429f0104fa99cf77eb617ad1818f75ec44690784f5ef8cfee66",
+    "0xa6309d03907a6304ecfc39b992b3d6ad4fecc7b240af34082719cd7d7fd89f32",
+    "0x5e66b60a6c4157d06ca52fd99d5653e55ce1f7e30620f09506227a20c0725337",
+    "0x9bdfc2a32ed633359fcb76cff7dbae8350c914f7c705d919a4e832e9dfbc783e",
+    "0x5eea58d57ebfaea15123bb9aa4cd1bcc455402746a19e450887f55eb8c324d70",
+    "0x520eb1ffe3bc74234a12d85f5e3ade8da0030ad3a65fd738f5c326ed56cddf32",
+    "0x69ce394b7b055b32e3e08c706eda2046ae6199783ad8bbac557d02af1af3d432",
+    "0x530ca8aabb0fcf24c6f23ec4f6ee0f923c12ecdcbb37ef1efcbfadee47e18cd8",
+    "0x9c27c4c080804c9cd3c14db7905e3775819b261b87f00a49dbac89cb3a0c965c",
+    "0x4e58ff29857c27ba28b55bd410a05ee9f45ee4674f49f11de5ef9db21235ccf5",
+    "0x63facddfe4edec1a2d2198eb8de6233d9e06905b6ef188e0e325ed928148308e",
+    "0x0110a42c36bab9c2d1cf191380d6143273b348079081e3019c8e2a6b300fd7cf",
+    "0xfb54f5abb495d90f32f9e649e0238925a6aa5be14e78a871c12d0cffc8c9c99b",
+    "0x71a8cb93b46ca0caee44c0cd37c0918d793dbb461a1f499c22244ff6de2c8ad7",
+    "0x475539aac3aaf4e41d9790687dffc6304c8316f9f1646880b0f416eb4c32cf9a",
+    "0x38a54f01bfce06cb9b83eb2d427e4bed093723ee1157b7dc14522c52fa70a22d",
+    "0xcd0294240cb8d2df740a8f4584d77749e5011239c5c388fa6a2223ac718e38db",
+    "0xc8b79dcc87547f594eee3684d528e1c81b7117447523877880a1e4f3ee8f101b",
+    "0x4f5565d8ea26aca232857543600a8740c6f028dbf3061118e65e81d82e11e437",
+    "0x31671b73c3ab76a0c802eca9795aa53869ae85a32838a3d665027c81eeaf8b63",
+    "0xb974dfe77c92cbc2887aa8d01cefcf651b570efa607f215421845ae8682636c6",
+    "0x6acd411118a428f69e834c59211758d3e61b87c13152536d82c0c21d954e52c7",
+    "0x7d99c4a06fcce5d430ea3bb65280b29bf81ef5533d7ad4645b42d6ca13408118",
+    "0xbe57fc3470446a8c5e22c91b60498598227c0c08a6bb069c167a17c962c38018",
+    "0xaf3d00e61bdc79f64ad842242b1de130e6e5069636cee5b7f49ff05d57b7ad3c",
+    "0xbff092dcba295b4a175b77819b93fb4fd24b1243b47af9b87f8c9c7f3c414bac",
+    "0x5b21a88ee2a52bfd0e03e7baf604944fe4ac946a9b25095b14f4a320fffce138",
+    "0x7738bfe3572f97dbe6a22f36cd7b88df804679c072bfca942d687b1e537b9411",
+    "0x0d4ffc461a2e36c650b90a1ef74f15305a683f0f4264009ad8ad891fa89581bc",
+    "0x35233f04c33b6715296c2e3e46967fb378a449a2dd6fa33a5eeece398a5d2bf4",
+    "0xc9bcb9fa1f7b4e233a707acf300a4331f14525ef0a252238c7e049b8ee8d78c7",
+    "0x9f8ca9d994c50240d25cc976cb041a657388d09962945c211a9a0db4776f505d",
+    "0xf3e49dfe6e1a65d89658c97bbec3aced2ccbc5983bb99f0d3bc1e4a27cedee9b",
+    "0x044613f23b131453a65a7e3da8c707e614b09ddb538726e6a6ec8cb5fda18998",
+    "0x695db60ca6f2a72b84e75376416aaf66a10642226f9607f322c27bbeefc5f104",
+    "0x2b1680981f6428b063aa951b45b4ef2d6a046b2a6d5fb3c179ac64a4f5d999c9",
+    "0x31b15e88578debe4ed2d6be1489626c3195d03b2cc6f193016dd91dc7cef0ad3",
+    "0x37398acbf27a03a4caa41ce6c466d45f3b0e46741f3556e76181659f7027900a",
+    "0x5372b21927c14c3e646cfcaf8b0014351da101cbcf33079afa552472e15b5048",
+    "0x0657d4da210739b1d718eb200b36046388f3f7fbc2300d616944b3467f64e054",
+    "0x4e4a6fe43c4ba39d8acc8f96dc887ba14fb8a47a3e38a4838f021543574b3b58",
+    "0x3c29c14047f2d0d1b2bff7cc67f9298a5b228ae10d0f732154218aaca96b3713",
+    "0x92a2235d35bf4d22675e3f107f7bc6907fe46cfa8425a1e845b8690cda544c6a",
+    "0x10705102fcd2132e9d18e20eda0f8e87f6639a89730f02f83d0f4376661fe97f",
+    "0x38403b5e51c1bbaad62fccea81ec4de4559cbfcace952941244b7ef744fadb75",
+    "0x9ab38833400626196cfd2c331e3612239d6b528b2736ab9a1b137a17ccf1e9ff",
+    "0xbe93f37b356f7ce30dbbe042d375f026fc551b9f994e918c3ccb58b6dd8dbdd9",
+    "0xc2a8f3471491d3c3d1c068c9d7e85daa77a51fcd235f862cb1311b54649c9153",
+    "0x043a42bad93e6fc62c9ab2f1a98536c8a48e0815ee5b267c329140ae9ab33dd8",
+    "0x20408324d2b7655475f18207ac5dafb2ef876b8d55ee147b8be455447137e700",
+    "0xbdd4db27e2403d6902c6208b6db16bbafbfc52586aaa163c4bb66a5b22420679",
+    "0x8407784a3c26d17891b58ef218293330c3369affd6f7b350a14751485c7856a7",
+    "0x680f683b7e0316f03ed87b31abb29b0abed97b06cdbdcacd9771fcacfb2ba9f3"
+  ]
+}
