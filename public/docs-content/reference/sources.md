@@ -1,6 +1,6 @@
 # Sources and further reading
 
-This page collects the primary technical references behind the whitepaper and starting points for Expedition 001. Per-artifact historical citations belong in the live expedition record.
+This page collects the primary technical references behind the whitepaper and starting points for the expeditions. Per-artifact historical citations belong in the live expedition record.
 
 ## Ethscriptions protocol
 
@@ -37,6 +37,16 @@ The ittybits source was a behavioral reference for conditional escrow, potential
 - Exact hashes and byte lengths derived from the files identified in the expedition manifest
 
 Archived copies should supplement primary links when available, with access dates and provenance notes. A screenshot is not a substitute for a recoverable underlying file.
+
+## Expedition 002
+
+- [Sound expedition research and reproducible source chains](https://github.com/Posvar/ethscribe/blob/main/research/expedition-002/README.md)
+- [17 exact-file reference hashes](https://github.com/Posvar/ethscribe/blob/main/research/expedition-002/targets.csv)
+- [Microsoft's Windows 3.1 release history](https://learn.microsoft.com/en-us/shows/history/history-of-microsoft-1992)
+- [AOL's Windows launch announcement, preserved as a company press-release republication](https://technologizer.com/2010/05/24/aol-anniversary/index.html)
+- [Microsoft's MSN Messenger launch announcement](https://news.microsoft.com/source/1999/07/21/microsoft-launches-msn-messenger-service/)
+
+Original package/member hashes and signature verification are documented separately from historical release dates. A file hash proves equality to its reference, not copyright ownership or absolute first appearance.
 
 ## Publishing system
 

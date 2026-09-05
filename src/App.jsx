@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import './refinements.css';
 import DocsPage from './DocsPage';
+import ExpeditionCard from './ExpeditionCard';
 import EthscribeWorkbench from './EthscribeWorkbench';
 import RecognizedArtifactDeposit from './RecognizedArtifactDeposit';
 import WalletPage from './WalletPage';
 import XpmPreview from './XpmPreview';
 import { artifactById, artifacts, huntStats, lostArtifact, timelineEvents } from './huntData';
-import { fetchVerifiedFindings, mergeVerifiedFindings, statsForArtifacts } from './findingApi';
+import { fetchVerifiedFindings, mergeVerifiedFindings, reconcileFindingSnapshot, retainPublishedFinding, statsForArtifacts } from './findingApi';
 import { fetchArtifactMarket, fetchWalletInventory } from './marketApi';
 import { MAINNET_CHAIN_ID, MARKET_ADDRESS } from './marketConfig';
 import {
@@ -18,7 +19,32 @@ import {
 } from './marketTransactions';
 import { useEthscribeWallet } from './useEthscribeWallet';
 
+const loadSoundExpedition = () => Promise.all([import('./SoundExpeditionPage'), import('./soundExpedition')]);
+const SoundExpedition = lazy(() => loadSoundExpedition().then(([ui, data]) => ({
+  default: function SoundExpeditionView({ headerProps, pageProps, findings, findingIndexState }) {
+    const targets = useMemo(() => mergeVerifiedFindings(data.soundExpedition.targets, findings), [findings]);
+    const expedition = { ...data.soundExpedition, targets };
+    return <ui.default
+      expedition={expedition}
+      findingIndexState={findingIndexState}
+      onFindingPublished={pageProps.onFindingPublished}
+      renderSubmission={({ artifact, onClose, onFindingPublished }) => <TargetSubmission {...pageProps} artifact={artifact} onClose={onClose} onFindingPublished={onFindingPublished} />}
+      renderMarket={({ artifact }) => <ArtifactMarketPanel {...pageProps} artifact={artifact} />}
+      header={<SiteHeader {...headerProps} expedition expeditionMeta={{ ...expedition, path: `/expeditions/${expedition.slug}` }} />}
+      footer={<SiteFooter />}
+    />;
+  },
+})));
+const SoundExpeditionDirectoryCard = lazy(() => loadSoundExpedition().then(([ui, data]) => ({
+  default: function SoundDirectoryCard({ findings }) {
+    const targets = useMemo(() => mergeVerifiedFindings(data.soundExpedition.targets, findings), [findings]);
+    return <ui.SoundExpeditionCard expedition={{ ...data.soundExpedition, targets }} />;
+  },
+})));
+
 const EXPEDITION_PATH = '/expeditions/lost-pixels-of-satoshi';
+const SOUND_EXPEDITION_ID = 'youve-got-history';
+const SOUND_EXPEDITION_PATH = `/expeditions/${SOUND_EXPEDITION_ID}`;
 const referenceImage = artifactById('new-png-48').previewUrl;
 
 const processSteps = [
@@ -66,7 +92,7 @@ function walletLabel(account, walletState, walletName, ensName) {
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, walletName, ensName, connectWallet, openAccountModal, expedition = false, expeditions = false, docs = false, wallet = false }) {
+function SiteHeader({ account, walletState, walletName, ensName, connectWallet, openAccountModal, expedition = false, expeditionMeta = null, expeditions = false, docs = false, wallet = false }) {
   const awayFromHome = expedition || expeditions || docs || wallet;
   const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -150,7 +176,7 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
       </header>
       {expedition && (
         <nav className="expedition-context-bar" aria-label="Current expedition">
-          <a href="/expeditions">EXPEDITIONS</a><span>└─</span><a href={EXPEDITION_PATH} aria-current="page">EXPEDITION 001: THE LOST PIXELS OF SATOSHI</a>
+          <a href="/expeditions">EXPEDITIONS</a><span>└─</span><a href={expeditionMeta?.path || EXPEDITION_PATH} aria-current="page">{expeditionMeta ? `EXPEDITION ${expeditionMeta.id}: ${expeditionMeta.title.toUpperCase()}` : 'EXPEDITION 001: THE LOST PIXELS OF SATOSHI'}</a>
         </nav>
       )}
     </div>
@@ -302,7 +328,7 @@ function TargetSubmission({ artifact, account, chainId, connectWallet, switchToM
 
       {(source === 'upload' || selectedEthscriptionId) && (
         <EthscribeWorkbench
-          key={`${artifact.id}-${source}-${selectedEthscriptionId}-${account}`}
+          key={`${artifact.expeditionId || 'lost-pixels-of-satoshi'}-${artifact.id}-${source}-${selectedEthscriptionId}-${account}`}
           mode="target"
           artifact={artifact}
           existingEthscriptionId={source === 'existing' ? selectedEthscriptionId : ''}
@@ -652,9 +678,9 @@ function HomePage({ account, walletState, walletName, ensName, connectWallet, op
             <p className="kicker"><span /> Ownable digital archaeology</p>
             <h1>Find the bytes. Establish the provenance. Own the artifact.</h1>
             <p className="hero-intro">Some files deserve more than a forgotten folder. Recover the exact bytes behind digital history, establish where they came from, and preserve them as ownable artifacts on Ethereum.</p>
-            <p className="hero-experiment">An open experiment in collecting digital history. Our first hunt is live.</p>
+            <p className="hero-experiment">An open experiment in collecting digital history. Hunt for Satoshi’s lost pixels or the original sounds of going online.</p>
             <div className="hero-actions">
-              <a className="primary-action" href={EXPEDITION_PATH}>Enter Expedition 001 <ArrowIcon /></a>
+              <a className="primary-action" href="/expeditions">Explore expeditions <ArrowIcon /></a>
               <a className="text-action" href="/docs">New here? Learn how Ethscribe works <ArrowIcon /></a>
             </div>
           </div>
@@ -711,7 +737,7 @@ function HomePage({ account, walletState, walletName, ensName, connectWallet, op
   );
 }
 
-function ExpeditionsPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, resolvedStats = huntStats }) {
+function ExpeditionsPage({ account, walletState, walletName, ensName, connectWallet, openAccountModal, resolvedStats = huntStats, soundFindings }) {
   return (
     <div className="site-shell expeditions-page">
       <SiteHeader account={account} walletState={walletState} walletName={walletName} ensName={ensName} connectWallet={connectWallet} openAccountModal={openAccountModal} expeditions />
@@ -720,26 +746,17 @@ function ExpeditionsPage({ account, walletState, walletName, ensName, connectWal
           <div><p className="kicker"><span /> Public fieldwork</p><h1>Expeditions</h1></div>
           <div className="expeditions-index-actions">
             <p>Focused hunts for historically significant files—defined before the search, verified byte by byte, and preserved as singular onchain artifacts.</p>
-            <a className="primary-action" href={EXPEDITION_PATH}>Enter the live expedition <ArrowIcon /></a>
+            <a className="primary-action" href="#live-expeditions">Explore the active hunts <ArrowIcon /></a>
           </div>
         </section>
 
         <section className="expedition-index-list" id="live-expeditions" aria-label="Live expeditions">
-          <p className="card-index expedition-archive-label">LIVE NOW / EXPEDITION 001</p>
-          <a className="expedition-index-card" href={EXPEDITION_PATH}>
-            <div className="expedition-index-visual"><img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" /><span>EXPEDITION 001</span></div>
-            <div className="expedition-index-copy">
-              <div className="expedition-index-meta"><span className="expedition-active-status">ACTIVE</span><span>BITCOIN · 2008–2010</span></div>
-              <h2>The Lost Pixels of Satoshi</h2>
-              <p>Complete the exact-file record behind Satoshi’s first two Bitcoin icon systems—and recover one attested PNG whose original bytes remain lost.</p>
-              <dl>
-                <div><dt>ETHSCRIBED</dt><dd>{resolvedStats.secured} / {resolvedStats.known}</dd></div>
-                <div><dt>KNOWN-BYTE GAPS</dt><dd>{resolvedStats.open}</dd></div>
-                <div><dt>LOST-BYTE TARGETS</dt><dd>{resolvedStats.lost}</dd></div>
-              </dl>
-              <strong>OPEN EXPEDITION <ArrowIcon /></strong>
-            </div>
-          </a>
+          <Suspense fallback={<p role="status">Loading Expedition 002…</p>}><SoundExpeditionDirectoryCard findings={soundFindings} /></Suspense>
+          <ExpeditionCard number="001" title="The Lost Pixels of Satoshi" path={EXPEDITION_PATH}
+            era="BITCOIN · 2008–2010"
+            description="Complete the exact-file record behind Satoshi’s first two Bitcoin icon systems—and recover one attested PNG whose original bytes remain lost."
+            recognized={resolvedStats.secured} total={resolvedStats.known} lost={resolvedStats.lost}
+            visual={<img src={referenceImage} alt="Satoshi Nakamoto’s secured 2010 Bitcoin icon" />} />
         </section>
 
       </main>
@@ -927,6 +944,9 @@ function App() {
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
   const [verifiedFindings, setVerifiedFindings] = useState([]);
   const [findingIndexState, setFindingIndexState] = useState('idle');
+  const [soundFindings, setSoundFindings] = useState([]);
+  const [soundFindingIndexState, setSoundFindingIndexState] = useState('idle');
+  const pendingPublishedFindings = useRef(new Map());
   const {
     account,
     chainId,
@@ -957,7 +977,7 @@ function App() {
       fetchVerifiedFindings()
       .then((records) => {
         if (active) {
-          setVerifiedFindings(records);
+          setVerifiedFindings(reconcileFindingSnapshot(records, pendingPublishedFindings.current));
           setFindingIndexState('ready');
         }
       })
@@ -972,8 +992,43 @@ function App() {
     return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); };
   }, [pathname]);
 
+  useEffect(() => {
+    if (!['/expeditions', '/wallet', SOUND_EXPEDITION_PATH].includes(pathname)) return undefined;
+    let active = true;
+    let fetching = false;
+    setSoundFindingIndexState('loading');
+    const refresh = () => {
+      if (fetching || document.visibilityState === 'hidden') return;
+      fetching = true;
+      fetchVerifiedFindings(fetch, SOUND_EXPEDITION_ID)
+        .then((records) => {
+          if (!active) return;
+          setSoundFindings(reconcileFindingSnapshot(records, pendingPublishedFindings.current, SOUND_EXPEDITION_ID));
+          setSoundFindingIndexState('ready');
+        })
+        .catch(() => { if (active) setSoundFindingIndexState('error'); })
+        .finally(() => { fetching = false; });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, [pathname]);
+
+  const allVerifiedFindings = useMemo(() => [...verifiedFindings, ...soundFindings], [verifiedFindings, soundFindings]);
+  const walletFindingIndexState = [findingIndexState, soundFindingIndexState].includes('error') ? 'error'
+    : [findingIndexState, soundFindingIndexState].every(state => state === 'ready') ? 'ready' : 'loading';
+
   const recordPublishedFinding = (finding) => {
     if (!finding?.findingId) return;
+    const expeditionId = finding.expeditionId || 'lost-pixels-of-satoshi';
+    if (!['lost-pixels-of-satoshi', SOUND_EXPEDITION_ID].includes(expeditionId)) return;
+    retainPublishedFinding(pendingPublishedFindings.current, finding);
+    if (finding.expeditionId === SOUND_EXPEDITION_ID) {
+      setSoundFindings((current) => [finding, ...current.filter((item) => item.findingId !== finding.findingId)]);
+      setSoundFindingIndexState('ready');
+      return;
+    }
     setVerifiedFindings((current) => [finding, ...current.filter((item) => item.findingId !== finding.findingId)]);
     setFindingIndexState('ready');
   };
@@ -984,7 +1039,8 @@ function App() {
   const isExpeditions = pathname === '/expeditions' || isLegacyProposalPath || isLegacyCreationPath;
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
-  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet;
+  const isSoundExpedition = pathname === SOUND_EXPEDITION_PATH;
+  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet && !isSoundExpedition;
 
   useEffect(() => {
     if (isLegacyProposalPath || isLegacyCreationPath) window.history.replaceState({}, '', '/expeditions');
@@ -992,14 +1048,14 @@ function App() {
 
   useEffect(() => {
     if (isDocs) return;
-    document.title = notFound ? 'Page not found — Ethscribe' : isWallet
+    document.title = isSoundExpedition ? 'You’ve Got History — Ethscribe Expedition 002' : notFound ? 'Page not found — Ethscribe' : isWallet
       ? 'Wallet — Ethscribe'
       : isExpeditions
         ? 'Expeditions — Ethscribe'
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound]);
+  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound, isSoundExpedition]);
 
   useEffect(() => {
     if (!modal) return undefined;
@@ -1043,13 +1099,14 @@ function App() {
     resolvedStats,
     findingIndexState,
     onFindingPublished: recordPublishedFinding,
+    soundFindings,
   };
   const headerProps = { account, walletState, walletName, ensName, connectWallet, openAccountModal };
 
   return (
     <>
       {import.meta.env.DEV && import.meta.env.MODE !== 'test' && <div className="local-review-notice" role="note"><strong>LOCAL REVIEW</strong> · Live public data. Byte checks work; publishing and transactions are disabled. The live site is unchanged.</div>}
-      {notFound ? <NotFoundPage header={<SiteHeader {...headerProps} expeditions />} /> : isDocs
+      {isSoundExpedition ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading Expedition 002…</p></main></div>}><SoundExpedition headerProps={headerProps} pageProps={pageProps} findings={soundFindings} findingIndexState={soundFindingIndexState} /></Suspense> : notFound ? <NotFoundPage header={<SiteHeader {...headerProps} expeditions />} /> : isDocs
         ? <DocsPage header={<SiteHeader {...pageProps} docs />} footer={<SiteFooter />} />
         : isWallet
           ? <WalletPage
@@ -1058,8 +1115,8 @@ function App() {
               connectWallet={connectWallet}
               switchToMainnet={switchToMainnet}
               provider={provider}
-              resolvedFindings={verifiedFindings}
-              findingIndexState={findingIndexState}
+              resolvedFindings={allVerifiedFindings}
+              findingIndexState={walletFindingIndexState}
               header={<SiteHeader {...headerProps} wallet />}
               footer={<SiteFooter />}
             />

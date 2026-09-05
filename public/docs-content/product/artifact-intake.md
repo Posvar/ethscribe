@@ -18,7 +18,7 @@ Creating or depositing does not automatically publish the assignment or create a
 
 Ethscriptions identifies the complete Data URI, including media type and encoding. Ethscribe separately compares the decoded file's SHA-256 with its target reference.
 
-The interface chooses the required wrapper. For example, Expedition 001 XPM targets use `data:image/x-xpixmap;base64,`. The server rejects a Finding using another prefix even if its decoded bytes match.
+The interface chooses the required wrapper. Expedition 001 XPM targets use `data:image/x-xpixmap;base64,`; Expedition 002 WAV targets use `data:audio/wav;base64,`. The server rejects a Finding using another prefix even if its decoded bytes match. Sound files keep their complete original headers, metadata and samples; no conversion is performed.
 
 The existence check covers the canonical content and a disclosed selection of aliases. It does not search all historical content across arbitrary wrappers. PNG and JPEG can also have alternate valid wrappers; this issue is not specific to XPM. See [byte-perfect identity](../foundations/byte-perfect-identity.md).
 

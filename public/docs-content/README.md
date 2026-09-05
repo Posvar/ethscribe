@@ -6,9 +6,11 @@ Ethscribe is an experiment in **ownable digital archaeology**: a place to recove
 
 A tiny icon, an early software asset, or a file rescued from an old archive can carry a remarkable story. The hunt is to recover the file itself, with evidence connecting it to that story. A matching thumbnail is only the beginning.
 
-## Start with the first expedition
+## Choose an expedition
 
 [The Lost Pixels of Satoshi](/expeditions/lost-pixels-of-satoshi) explores Bitcoin's earliest icon systems. Its timeline contains known files to recover and one attested PNG whose original bytes remain unknown.
+
+[You've Got History](/expeditions/youve-got-history), Expedition 002, is open for exact-byte sound submissions. Recover 17 release-defined WAV files from Windows, AOL, ICQ, MSN Messenger and AIM. Five AOL artifacts are already recognized; other matches enter the catalogue through a verified Finding.
 
 You can explore without connecting a wallet. To participate, open an unresolved target and choose **Submit a Finding**. Test a local file or an Ethscription you already own before preparing a transaction.
 
@@ -56,6 +58,7 @@ The experiment asks whether people return for the research, contribute useful di
 
 - [Your first Finding](product/first-finding.md)
 - [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md)
+- [You've Got History](expedition-002/youve-got-history.md)
 - [Byte-perfect identity](foundations/byte-perfect-identity.md)
 - [Ownership and marketplace](product/ownership-and-marketplace.md)
 - [Frequently asked questions](reference/faq.md)

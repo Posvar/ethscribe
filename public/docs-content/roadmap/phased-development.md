@@ -10,6 +10,7 @@ The implemented experience includes:
 
 - A permanent mission homepage and expedition directory.
 - Expedition 001 with a corpus grid, historical timeline, and artifact records.
+- Expedition 002 with 17 release-defined sound targets, canonical WAV validation, existing-asset deposits and signed submissions scoped to the correct hunt.
 - Candidate testing from an upload or a supported existing Ethscription.
 - Target-specific creation directly into market custody and deposit of existing matches.
 - Signed Finding assignments, validated and stored by the server.

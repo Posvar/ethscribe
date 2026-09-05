@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import XpmPreview from './XpmPreview';
-import { artifactById, artifacts } from './huntData';
+import { artifactRecordHref, catalogueArtifacts, expeditionArtifactById, getExpedition } from './expeditionRegistry';
 import { fetchMarketStatus, fetchWalletInventory } from './marketApi';
 import {
   MAINNET_CHAIN_ID,
@@ -20,10 +20,10 @@ import {
   waitForTransactionReceipt,
 } from './marketTransactions';
 
-const catalogueAssignments = new Map(artifacts
+const catalogueAssignments = new Map(catalogueArtifacts
   .filter((artifact) => artifact.status === 'secured' && artifact.ethscriptionId)
   .map((artifact) => [artifact.ethscriptionId.toLowerCase(), {
-    expeditionId: 'lost-pixels-of-satoshi',
+    expeditionId: artifact.expeditionId,
     targetId: artifact.id,
     ethscriptionId: artifact.ethscriptionId,
   }]));
@@ -192,7 +192,8 @@ function MarketplaceControls({ record, registerAction, listingAction, cancelActi
 }
 
 function InventoryCard({ record, assignment = undefined, assignmentState = 'ready', action = null, marketControls = null }) {
-  const assignedArtifact = assignment ? artifactById(assignment.targetId) : null;
+  const assignedArtifact = assignment ? expeditionArtifactById(assignment.expeditionId || 'lost-pixels-of-satoshi', assignment.targetId) : null;
+  const assignedExpedition = assignedArtifact ? getExpedition(assignedArtifact.expeditionId) : null;
   const assignmentAvailable = assignmentState === 'ready';
 
   return (
@@ -209,9 +210,9 @@ function InventoryCard({ record, assignment = undefined, assignmentState = 'read
       {assignment !== undefined && (
         <div className={`wallet-expedition-assignment${assignment ? ' assignment-linked' : assignmentAvailable ? ' assignment-unassigned' : ''}`}>
           <span>EXPEDITION ASSIGNMENT</span>
-          {assignment ? (
-            <a href={`/expeditions/lost-pixels-of-satoshi?artifact=${assignment.targetId}#record-${assignment.targetId}`}>
-              <strong>EXPEDITION 001 · THE LOST PIXELS OF SATOSHI</strong>
+          {assignedArtifact && assignedExpedition ? (
+            <a href={artifactRecordHref(assignedExpedition.id, assignedArtifact.id)}>
+              <strong>EXPEDITION {assignedExpedition.number} · {assignedExpedition.title.toUpperCase()}</strong>
               <small>{assignedArtifact?.filename || assignment.targetId}</small>
             </a>
           ) : assignmentAvailable ? (
@@ -443,7 +444,8 @@ export default function WalletPage({
     if (!id) return null;
     // Recognized catalogue IDs already identify their expedition target. A
     // later owner deposit does not need a new Finding to restore that link.
-    return resolvedFindings.find((finding) => finding.ethscriptionId?.toLowerCase() === id)
+    return resolvedFindings.find((finding) => finding.ethscriptionId?.toLowerCase() === id
+        && expeditionArtifactById(finding.expeditionId || 'lost-pixels-of-satoshi', finding.targetId))
       || catalogueAssignments.get(id)
       || null;
   };

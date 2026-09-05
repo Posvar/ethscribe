@@ -5,6 +5,7 @@ const { getArtifactMarket, isAddress, isEthscriptionId, MARKET_ADDRESS } = requi
 const {
   EXPEDITION_ID,
   TargetCommitmentError,
+  resolveExpeditionId,
   targetSpec,
   verifyTargetCandidate,
 } = require('./targetCommitments');
@@ -82,12 +83,12 @@ function validateAssignment(assignment, now = Date.now(), env = process.env) {
   if (assignment.schemaVersion !== 1 || assignment.documentType !== 'finding') {
     throw new FindingError(400, 'invalid_assignment', 'The Finding schema is not supported.');
   }
-  if (assignment.expeditionId !== EXPEDITION_ID) {
+  if (typeof assignment.expeditionId !== 'string') {
     throw new FindingError(400, 'invalid_target', 'The expedition target is not open for submissions.');
   }
   let spec;
   try {
-    spec = targetSpec(assignment.targetId);
+    spec = targetSpec(assignment.targetId, assignment.expeditionId);
   } catch (error) {
     if (error instanceof TargetCommitmentError) {
       throw new FindingError(error.statusCode, error.code, error.message);
@@ -138,7 +139,7 @@ function validateAssignment(assignment, now = Date.now(), env = process.env) {
   try {
     const result = verifyTargetCandidate(assignment, env);
     if (!result.eligible) {
-      throw new FindingError(400, 'target_mismatch', 'The decoded bytes do not match the sealed target commitment.');
+      throw new FindingError(400, 'target_mismatch', 'The decoded bytes do not match this expedition target.');
     }
   } catch (error) {
     if (error instanceof FindingError) throw error;
@@ -170,6 +171,10 @@ function decodeVerifiedContentUri(contentUri, expectedPrefix) {
 }
 
 function hasExpectedFileSignature(bytes, mediaType) {
+  if (mediaType === 'audio/wav') {
+    return bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF'
+      && bytes.toString('ascii', 8, 12) === 'WAVE' && bytes.readUInt32LE(4) + 8 === bytes.length;
+  }
   if (mediaType === 'image/png') {
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     return bytes.length >= png.length && bytes.subarray(0, png.length).equals(png);
@@ -240,12 +245,14 @@ function decodeXml(value) {
     .replaceAll('&amp;', '&');
 }
 
-function publicFinding(record) {
+function publicFinding(record, expeditionId = record?.assignment?.expeditionId) {
   const assignment = record?.assignment;
-  if (record?.documentType !== 'verified-finding' || assignment?.expeditionId !== EXPEDITION_ID) return null;
-  if (!Object.hasOwn(TARGET_FILENAMES, assignment.targetId)) return null;
+  if (record?.documentType !== 'verified-finding' || typeof assignment?.expeditionId !== 'string'
+    || assignment.expeditionId !== expeditionId) return null;
   try {
-    const spec = targetSpec(assignment.targetId);
+    const spec = targetSpec(assignment.targetId, expeditionId);
+    const filename = spec.filename || TARGET_FILENAMES[assignment.targetId];
+    if (!filename) return null;
     return {
       findingId: record.findingId,
       expeditionId: assignment.expeditionId,
@@ -254,7 +261,7 @@ function publicFinding(record) {
       ethscriptionId: assignment.ethscriptionId,
       rawSha256: assignment.rawSha256,
       protocolContentSha256: assignment.protocolContentSha256,
-      filename: TARGET_FILENAMES[assignment.targetId],
+      filename,
       byteLength: assignment.byteLength,
       authorAddress: assignment.authorAddress,
       ethscriptionCreator: record.verification?.ethscriptionCreator || null,
@@ -270,10 +277,15 @@ function publicFinding(record) {
   }
 }
 
-async function listFindings(fetchImpl = fetch, env = process.env, limit = MAX_LIST_RESULTS) {
+async function listFindings(fetchImpl = fetch, env = process.env, limit = MAX_LIST_RESULTS, expeditionId = EXPEDITION_ID) {
+  try {
+    resolveExpeditionId(expeditionId);
+  } catch (error) {
+    throw new FindingError(error.statusCode, error.code, error.message);
+  }
   const config = storageConfig(env);
   const boundedLimit = Math.min(Math.max(Math.floor(Number(limit)) || MAX_LIST_RESULTS, 1), MAX_LIST_RESULTS);
-  const prefix = `hunts/${EXPEDITION_ID}/findings/`;
+  const prefix = `hunts/${expeditionId}/findings/`;
   const exactEntries = new Map();
   let candidateEntries = [];
   let marker = '';
@@ -296,9 +308,11 @@ async function listFindings(fetchImpl = fetch, env = process.env, limit = MAX_LI
     }
     for (const [, blob] of xml.matchAll(/<Blob>([\s\S]*?)<\/Blob>/g)) {
       const name = decodeXml(blob.match(/<Name>([\s\S]*?)<\/Name>/)?.[1] || '');
-      const match = name.match(/^hunts\/lost-pixels-of-satoshi\/findings\/([a-z0-9-]+)--([a-f0-9]{64})\/finding\.json$/);
-      if (!match || !Object.hasOwn(TARGET_FILENAMES, match[1])) continue;
-      const spec = targetSpec(match[1]);
+      if (!name.startsWith(prefix)) continue;
+      const match = name.slice(prefix.length).match(/^([a-z0-9-]+)--([a-f0-9]{64})\/finding\.json$/);
+      if (!match) continue;
+      let spec;
+      try { spec = targetSpec(match[1], expeditionId); } catch { continue; }
       const modifiedAt = Date.parse(decodeXml(blob.match(/<Last-Modified>([\s\S]*?)<\/Last-Modified>/)?.[1] || ''));
       const entry = { name, targetId: match[1], ethscriptionId: `0x${match[2]}`, validationMode: spec.validationMode, modifiedAt: Number.isFinite(modifiedAt) ? modifiedAt : 0 };
       if (spec.validationMode === 'exact') exactEntries.set(name, entry);
@@ -325,12 +339,12 @@ async function listFindings(fetchImpl = fetch, env = process.env, limit = MAX_LI
           headers: { accept: 'application/json', 'x-ms-version': '2023-11-03' },
           maxBytes: MAX_RECORD_RESPONSE_BYTES,
         }, fetchImpl);
-        record = publicFinding(stored);
+        record = publicFinding(stored, expeditionId);
       } catch {
         // Recovery candidates may be skipped; accepted records fail the index
         // below so incomplete upstream responses cannot erase an accession.
       }
-      const valid = record?.targetId === entry.targetId && record?.ethscriptionId === entry.ethscriptionId
+      const valid = record?.expeditionId === expeditionId && record?.targetId === entry.targetId && record?.ethscriptionId === entry.ethscriptionId
         && Number.isFinite(Date.parse(record?.verifiedAt));
       if (!valid && entry.validationMode === 'exact') {
         // An incomplete read must not masquerade as a target becoming unfound.

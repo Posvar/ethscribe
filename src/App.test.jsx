@@ -10,6 +10,7 @@ vi.mock('./XpmPreview', () => ({ default: function MockXpmPreview() {
 vi.mock('./useEthscribeWallet', () => ({ useEthscribeWallet: vi.fn() }));
 
 const originalFetch = global.fetch;
+const SATOSHI_FINDINGS_URL = '/api/findings?expedition=lost-pixels-of-satoshi';
 const connectWallet = jest.fn();
 const switchToMainnet = jest.fn();
 const openAccountModal = jest.fn();
@@ -32,6 +33,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   global.fetch = originalFetch;
   window.history.pushState({}, '', '/');
 });
@@ -202,7 +204,7 @@ test('loads existing wallet Ethscriptions from an expedition target', async () =
     openAccountModal,
   });
   global.fetch = jest.fn(async (url) => {
-    if (url === '/api/findings') return { ok: true, json: async () => ({ result: [] }) };
+    if (url === SATOSHI_FINDINGS_URL) return { ok: true, json: async () => ({ result: [] }) };
     if (url === '/api/market/status') return { ok: true, json: async () => ({ result: { paused: false, transactionsEnabled: true, intakeEnabled: true, indexer: { healthy: true } } }) };
     if (String(url).startsWith('/api/market/wallet?owner=')) {
       return { ok: true, json: async () => ({ result: {
@@ -248,7 +250,7 @@ test('does not expose a standalone Ethscribe utility outside expeditions', () =>
 test('promotes an exact verified Finding into the live expedition grid and counter', async () => {
   const findingId = `0x${'66'.repeat(32)}`;
   global.fetch = jest.fn(async (url) => {
-    if (url === '/api/findings') {
+    if (url === SATOSHI_FINDINGS_URL) {
       return { ok: true, json: async () => ({ result: [{
         findingId: `november-20-xpm--${findingId.slice(2)}`,
         targetId: 'november-20-xpm',
@@ -291,8 +293,8 @@ test('renders a compact Expeditions archive focused on the live hunt', () => {
   expect(screen.getByRole('heading', { name: /^expeditions$/i })).toBeInTheDocument();
   expect(screen.getByText(/live now \/ expedition 001/i)).toBeInTheDocument();
   expect(screen.queryByText(/active and completed field records/i)).not.toBeInTheDocument();
-  expect(screen.getByRole('link', { name: /lost pixels of satoshi/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
-  expect(screen.getByRole('link', { name: /enter the live expedition/i })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
+  expect(screen.getByRole('link', { name: 'Enter Expedition 001' })).toHaveAttribute('href', '/expeditions/lost-pixels-of-satoshi');
+  expect(screen.getByRole('link', { name: /explore the active hunts/i })).toHaveAttribute('href', '#live-expeditions');
   expect(screen.queryByRole('link', { name: /propose/i })).not.toBeInTheDocument();
   expect(screen.queryByText(/proposal notebook/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/what should the field investigate next/i)).not.toBeInTheDocument();
@@ -331,7 +333,7 @@ test('keeps the timeline compact, filters targets, and restores the full record'
   expect(screen.getByText(/no targets match this view/i)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Show all targets' }));
   expect(screen.getByText('23 targets · 22 known files + 1 lost original')).toBeInTheDocument();
-  await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/findings', expect.anything()));
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(SATOSHI_FINDINGS_URL, expect.anything()));
 });
 
 test('a corpus link opens its target even after a different timeline filter is selected', async () => {
@@ -367,7 +369,7 @@ test('shows the exact listed amount and disables buying when a background listin
   let offline = false;
   const intervals = vi.spyOn(globalThis, 'setInterval');
   global.fetch = jest.fn(async (url) => {
-    if (url === '/api/findings') return { ok: true, json: async () => ({ result: [] }) };
+    if (url === SATOSHI_FINDINGS_URL) return { ok: true, json: async () => ({ result: [] }) };
     if (offline) throw new Error('offline');
     return { ok: true, json: async () => ({ result: {
       seller: `0x${'33'.repeat(20)}`,
@@ -394,7 +396,7 @@ test.each([
   ['paused', { transactionsEnabled: true, intakeEnabled: false, paused: true }],
   ['intake unavailable', { transactionsEnabled: true, intakeEnabled: false, paused: false }],
 ])('a %s market shows its listing without offering a purchase', async (_, market) => {
-  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === '/api/findings' ? [] : {
+  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === SATOSHI_FINDINGS_URL ? [] : {
     seller: `0x${'33'.repeat(20)}`,
     listing: { active: true, expired: false, listingNonce: '1', priceWei: '1000000000000000000' },
     custody: { verified: true },
@@ -428,7 +430,7 @@ test('switching wallets during the final listing read cancels purchase before an
   let resolveFreshRead;
   const freshRead = new Promise((resolve) => { resolveFreshRead = resolve; });
   global.fetch = vi.fn(async (url) => {
-    if (url === '/api/findings') return { ok: true, json: async () => ({ result: [] }) };
+    if (url === SATOSHI_FINDINGS_URL) return { ok: true, json: async () => ({ result: [] }) };
     marketReads += 1;
     if (marketReads === 2) return freshRead;
     return { ok: true, json: async () => ({ result: snapshot }) };
@@ -465,7 +467,7 @@ function recognizedArtifactFixture({ account = '', currentOwner = account, selle
       transactionsEnabled: true, intakeEnabled: true, indexer: { available: true, healthy: true },
     },
   };
-  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === '/api/findings' ? [] : snapshot }) }));
+  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: url === SATOSHI_FINDINGS_URL ? [] : snapshot }) }));
   window.history.pushState({}, '', '/expeditions/lost-pixels-of-satoshi?artifact=original-bc-ico');
   return snapshot;
 }
@@ -518,4 +520,93 @@ test('a failed ownership refresh removes an old owner deposit action', async () 
     expect(screen.getByText('LISTING UNAVAILABLE')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).not.toBeInTheDocument();
   } finally { intervals.mockRestore(); }
+});
+
+test('opens the public sound expedition with contextual navigation and a scoped Finding feed', async () => {
+  const { soundExpedition } = await import('./soundExpedition');
+  window.history.pushState({}, '', '/expeditions/youve-got-history');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: soundExpedition.title, level: 1 })).toBeInTheDocument();
+  const context = screen.getByRole('navigation', { name: 'Current expedition' });
+  expect(context).toHaveTextContent(`EXPEDITION 002: ${soundExpedition.title.toUpperCase()}`);
+  expect(within(context).getByRole('link', { name: /EXPEDITION 002/ })).toHaveAttribute('href', '/expeditions/youve-got-history');
+  expect(document.title).toContain('Ethscribe Expedition 002');
+  expect(screen.queryByRole('button', { name: /^(deposit|ethscribe|submit)/i })).not.toBeInTheDocument();
+  expect(global.fetch.mock.calls.some(([url]) => String(url).includes('youve-got-history'))).toBe(true);
+  expect(global.fetch.mock.calls.some(([url]) => String(url).includes('/api/market/'))).toBe(false);
+});
+
+test('the directory presents both active expeditions with the newest first', async () => {
+  window.history.pushState({}, '', '/expeditions');
+  render(<App />);
+  const sound = await screen.findByRole('region', { name: 'Expedition 002' });
+  expect(within(sound).getByRole('link', { name: 'Enter Expedition 002' })).toHaveAttribute('href', '/expeditions/youve-got-history');
+  const live = screen.getByRole('region', { name: 'Live expeditions' });
+  expect(within(live).getAllByRole('link').map(link => link.getAttribute('href'))).toEqual(['/expeditions/youve-got-history', '/expeditions/lost-pixels-of-satoshi']);
+});
+
+test('the sound expedition is available in production without a preview flag', async () => {
+  vi.stubEnv('DEV', false);
+  window.history.pushState({}, '', '/expeditions/youve-got-history');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'You’ve Got History', level: 1 })).toBeInTheDocument();
+  expect(screen.queryByText('Local research preview')).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'This trail ends here.' })).not.toBeInTheDocument();
+});
+
+test('the production directory includes the active sound expedition', async () => {
+  vi.stubEnv('DEV', false);
+  window.history.pushState({}, '', '/expeditions');
+  render(<App />);
+  expect(await screen.findByRole('region', { name: 'Expedition 002' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Enter Expedition 002' })).toHaveAttribute('href', '/expeditions/youve-got-history');
+});
+
+test('a sound target deep link opens the shared compact upload or existing-Ethscription Finding workflow', async () => {
+  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: String(url).includes('/api/findings') ? [] : { paused: false, transactionsEnabled: true, intakeEnabled: true, indexer: { healthy: true } } }) }));
+  window.history.pushState({}, '', '/expeditions/youve-got-history?artifact=windows-31-ding#record-windows-31-ding');
+  render(<App />);
+  expect(await screen.findByRole('region', { name: 'The familiar ding' })).toHaveAttribute('id', 'record-windows-31-ding');
+  expect(screen.queryByRole('button', { name: 'UPLOAD EXACT FILE' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'SUBMIT A FINDING' }));
+  expect(screen.getByRole('button', { name: 'UPLOAD EXACT FILE' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'USE EXISTING ETHSCRIPTION' })).toBeInTheDocument();
+  expect(screen.getByLabelText(/exact file/i)).toHaveAttribute('type', 'file');
+  fireEvent.click(screen.getByRole('button', { name: 'USE EXISTING ETHSCRIPTION' }));
+  expect(screen.getByText(/connect the wallet that owns the ethscription/i)).toBeInTheDocument();
+});
+
+test('a recognized AOL artifact reuses the owner deposit flow without asking for another Finding', async () => {
+  const { soundTargets } = await import('./soundExpedition');
+  const target = soundTargets.find(artifact => artifact.id === 'aol-got-mail-1993');
+  const account = `0x${'22'.repeat(20)}`;
+  const provider = { request: vi.fn() };
+  useEthscribeWallet.mockReturnValue({ account, chainId: '0x1', walletState: 'connected', walletName: 'MetaMask', provider, connectWallet, switchToMainnet, openAccountModal });
+  global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ result: String(url).includes('/api/findings') ? [] : {
+    ethscription: { transactionHash: target.ethscriptionId, currentOwner: account }, seller: null, listing: null,
+    custody: { verified: false, status: 'not_in_market' }, market: { address: MARKET_ADDRESS, chainId: 1, paused: false, transactionsEnabled: true, intakeEnabled: true, indexer: { healthy: true } },
+  } }) }));
+  window.history.pushState({}, '', '/expeditions/youve-got-history?artifact=aol-got-mail-1993');
+  render(<App />);
+  expect(await screen.findByRole('button', { name: 'DEPOSIT INTO MARKETPLACE' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'SUBMIT A FINDING' })).not.toBeInTheDocument();
+  expect(provider.request).not.toHaveBeenCalled();
+});
+
+test('a verified sound Finding updates its audio preview and recognized count', async () => {
+  const { soundTargets } = await import('./soundExpedition');
+  const target = soundTargets.find(artifact => artifact.id === 'windows-31-ding');
+  const ethscriptionId = `0x${'87'.repeat(32)}`;
+  global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ result: [{
+    findingId: `windows-31-ding--${ethscriptionId.slice(2)}`, expeditionId: 'youve-got-history', targetId: target.id,
+    validationMode: 'exact', ethscriptionId, rawSha256: target.sha256, protocolContentSha256: `0x${'65'.repeat(32)}`,
+    byteLength: target.bytes, authorAddress: `0x${'22'.repeat(20)}`, sourceUrl: target.sourceUrl,
+    contentUri: 'data:audio/wav;base64,UklGRg==', verifiedAt: '2026-09-05T12:00:00.000Z',
+  }] }) }));
+  window.history.pushState({}, '', '/expeditions/youve-got-history');
+  const { container } = render(<App />);
+  expect(await screen.findByText('6 / 17')).toBeInTheDocument();
+  const preview = container.querySelector(`audio[src="/api/ethscriptions/media/${ethscriptionId}"]`);
+  expect(preview).toBeInTheDocument();
+  expect(preview).toHaveAttribute('preload', 'none');
 });

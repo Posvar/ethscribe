@@ -5,15 +5,18 @@ import {
   buildFindingAssignment,
   buildWrapperChecks,
   CANONICAL_XPM_MEDIA_TYPE,
+  CANONICAL_WAV_MEDIA_TYPE,
   checkExpeditionTarget,
   checkProtocolExistence,
   findingAssignmentMessage,
   inspectFile,
   matchesMediaSignature,
+  mediaTypeForFile,
   publishFinding,
   waitForEthscriptionRecord,
   waitForVerifiedCustody,
   XPM_MEDIA_TYPE_CANDIDATES,
+  WAV_MEDIA_TYPE_CANDIDATES,
 } from './ethscriptionCreation';
 import { MARKET_ADDRESS } from './marketConfig';
 
@@ -51,6 +54,85 @@ test('checks common file signatures without treating a MIME label as proof', () 
   expect(matchesMediaSignature(Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), 'image/png')).toBe(true);
   expect(matchesMediaSignature(Uint8Array.from([97, 98, 99]), 'image/png')).toBe(false);
   expect(matchesMediaSignature(new TextEncoder().encode('/* XPM */'), CANONICAL_XPM_MEDIA_TYPE)).toBe(true);
+});
+
+function wavFixture() {
+  const bytes = new Uint8Array(48);
+  const view = new DataView(bytes.buffer);
+  const text = (offset, value) => bytes.set(new TextEncoder().encode(value), offset);
+  text(0, 'RIFF');
+  view.setUint32(4, 40, true);
+  text(8, 'WAVE');
+  text(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  text(36, 'data');
+  view.setUint32(40, 4, true);
+  bytes.set([0x80, 0x81, 0x7f, 0x80], 44);
+  return bytes;
+}
+
+test('automatically fixes WAV media type and preserves the complete RIFF file byte for byte', async () => {
+  const bytes = wavFixture();
+  const file = { name: 'MESSAGE.WAV', type: 'audio/x-wav', size: bytes.length, arrayBuffer: async () => bytes.buffer };
+  expect(mediaTypeForFile(file)).toBe(CANONICAL_WAV_MEDIA_TYPE);
+  expect(mediaTypeForFile({ ...file, name: 'renamed.bin', type: 'text/plain' }, { format: 'WAV' })).toBe(CANONICAL_WAV_MEDIA_TYPE);
+  const inspected = await inspectFile(file, mediaTypeForFile(file));
+  expect(inspected.signatureMatchesMediaType).toBe(true);
+  expect(inspected.dataUriPrefix).toBe('data:audio/wav;base64,');
+  expect(Uint8Array.from(atob(inspected.base64), (character) => character.charCodeAt(0))).toEqual(bytes);
+  expect(matchesMediaSignature(new TextEncoder().encode('RIFFnot a WAVE file'), 'audio/wav')).toBe(false);
+  expect(matchesMediaSignature(new TextEncoder().encode('not a WAV'), 'audio/x-wav')).toBe(false);
+  const checks = await buildWrapperChecks(inspected, WAV_MEDIA_TYPE_CANDIDATES);
+  expect(checks.map(({ dataUriPrefix }) => dataUriPrefix)).toEqual([
+    'data:audio/wav;base64,', 'data:audio/x-wav;base64,', 'data:audio/wave;base64,', 'data:audio/vnd.wave;base64,',
+  ]);
+  expect(checks.filter(({ canonical }) => canonical)).toHaveLength(1);
+  expect(new Set(checks.map(({ protocolContentSha256 }) => protocolContentSha256)).size).toBe(4);
+});
+
+test('rejects a one-byte-altered sound locally and still requires server verification for an exact match', async () => {
+  const bytes = wavFixture();
+  const file = { name: 'message.wav', size: bytes.length, arrayBuffer: async () => bytes.buffer };
+  const inspected = await inspectFile(file, CANONICAL_WAV_MEDIA_TYPE);
+  const artifact = { id: 'icq-message', expeditionId: 'youve-got-history', format: 'WAV', sha256: inspected.rawSha256, bytes: bytes.length };
+  const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => ({ result: {
+    expeditionId: artifact.expeditionId, targetId: artifact.id, eligible: true, validation: 'exact',
+  } }) }));
+  bytes[47] ^= 1;
+  const altered = await inspectFile(file, CANONICAL_WAV_MEDIA_TYPE);
+  expect(altered.signatureMatchesMediaType).toBe(true);
+  await expect(checkExpeditionTarget(artifact, altered, fetchImpl)).resolves.toMatchObject({ eligible: false, validation: 'mismatch' });
+  expect(fetchImpl).not.toHaveBeenCalled();
+  await expect(checkExpeditionTarget(artifact, inspected, fetchImpl)).resolves.toMatchObject({ eligible: true });
+  expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toMatchObject({
+    expeditionId: artifact.expeditionId, targetId: artifact.id, rawSha256: inspected.rawSha256,
+    protocolContentSha256: inspected.protocolContentSha256, byteLength: 48, dataUriPrefix: 'data:audio/wav;base64,',
+  });
+  await expect(checkExpeditionTarget({ ...artifact, sha256: null }, inspected, fetchImpl)).rejects.toThrow(/no verified byte commitment/);
+});
+
+test.each([undefined, 'lost-pixels-of-satoshi'])('rejects a sound target response scoped to the wrong expedition (%s)', async (expeditionId) => {
+  const inspection = { rawSha256: `0x${'11'.repeat(32)}`, byteLength: 48, dataUriPrefix: 'data:audio/wav;base64,' };
+  const artifact = { id: 'message', expeditionId: 'youve-got-history', format: 'WAV', sha256: inspection.rawSha256, bytes: 48 };
+  const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => ({ result: { expeditionId, targetId: 'message', eligible: true } }) }));
+  await expect(checkExpeditionTarget(artifact, inspection, fetchImpl)).rejects.toThrow(/invalid response/);
+});
+
+test('signs a sound Finding against Expedition 002, never the default Satoshi expedition', () => {
+  const assignment = buildFindingAssignment({
+    artifact: { id: 'icq-message', expeditionId: 'youve-got-history' },
+    inspection: { rawSha256: `0x${'11'.repeat(32)}`, protocolContentSha256: `0x${'22'.repeat(32)}`, dataUriPrefix: 'data:audio/wav;base64,', byteLength: 48, filename: 'message.wav' },
+    ethscriptionId: `0x${'33'.repeat(32)}`, account, claimSummary: 'Original shipping sound', sourceUrl: 'https://example.com/installer',
+  });
+  expect(assignment.expeditionId).toBe('youve-got-history');
+  expect(findingAssignmentMessage(assignment)).toContain('Expedition: youve-got-history');
+  expect(findingAssignmentMessage(assignment)).not.toContain('lost-pixels-of-satoshi');
 });
 
 test('checks the canonical XPM wrapper and explicit known alternates', async () => {

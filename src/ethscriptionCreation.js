@@ -2,11 +2,19 @@ import { MAINNET_CHAIN_ID, MARKET_ADDRESS } from './marketConfig';
 
 export const MAX_STANDARD_FILE_BYTES = 90_000;
 export const CANONICAL_XPM_MEDIA_TYPE = 'image/x-xpixmap';
+export const CANONICAL_WAV_MEDIA_TYPE = 'audio/wav';
+export const DEFAULT_EXPEDITION_ID = 'lost-pixels-of-satoshi';
 export const XPM_MEDIA_TYPE_CANDIDATES = [
   CANONICAL_XPM_MEDIA_TYPE,
   'image/x-xpm',
   'image/xpm',
   'text/x-xpm',
+];
+export const WAV_MEDIA_TYPE_CANDIDATES = [
+  CANONICAL_WAV_MEDIA_TYPE,
+  'audio/x-wav',
+  'audio/wave',
+  'audio/vnd.wave',
 ];
 
 const EXTENSION_MEDIA_TYPES = {
@@ -20,6 +28,7 @@ const EXTENSION_MEDIA_TYPES = {
   png: 'image/png',
   svg: 'image/svg+xml',
   txt: 'text/plain',
+  wav: CANONICAL_WAV_MEDIA_TYPE,
   xpm: CANONICAL_XPM_MEDIA_TYPE,
 };
 
@@ -54,6 +63,7 @@ export function isMediaType(value) {
 }
 
 export function mediaTypeForFile(file, artifact = null) {
+  if (artifact?.format === 'WAV') return CANONICAL_WAV_MEDIA_TYPE;
   if (artifact?.format === 'XPM') return CANONICAL_XPM_MEDIA_TYPE;
   if (artifact?.format === 'PNG') return 'image/png';
   if (artifact?.format === 'ICO') return 'image/x-icon';
@@ -75,6 +85,11 @@ export function buildFindingReceiptDataUri(canonicalContentSha256) {
 
 export function matchesMediaSignature(bytes, mediaType) {
   const type = String(mediaType).toLowerCase();
+  if (WAV_MEDIA_TYPE_CANDIDATES.includes(type)) {
+    return bytes.length >= 12
+      && [0x52, 0x49, 0x46, 0x46].every((value, index) => bytes[index] === value)
+      && [0x57, 0x41, 0x56, 0x45].every((value, index) => bytes[index + 8] === value);
+  }
   if (type === 'image/png') {
     return bytes.length >= 8 && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
       .every((value, index) => bytes[index] === value);
@@ -160,21 +175,36 @@ export async function checkProtocolExistence(checks, fetchImpl = fetch) {
 
 export async function checkExpeditionTarget(artifact, inspection, fetchImpl = fetch) {
   if (!artifact?.id || !inspection?.rawSha256) throw new Error('Choose a target and inspect a file first.');
+  const expeditionId = artifact.expeditionId || DEFAULT_EXPEDITION_ID;
+  const expectedSha = normalizeSha(artifact.sha256);
+  // Published sound commitments provide an immediate local rejection. The
+  // server still verifies every matching candidate; the browser is not the
+  // authority for accepting a Finding.
+  if (artifact.format === 'WAV' && (!expectedSha || !Number.isSafeInteger(artifact.bytes) || artifact.bytes <= 0)) {
+    throw new Error('This sound target has no verified byte commitment. No transaction was prepared.');
+  }
+  if (expectedSha && (normalizeSha(inspection.rawSha256) !== expectedSha
+    || (Number.isSafeInteger(artifact.bytes) && inspection.byteLength !== artifact.bytes))) {
+    return { expeditionId, targetId: artifact.id, eligible: false, validation: 'mismatch' };
+  }
   const response = await fetchImpl('/api/targets/check', {
     method: 'POST',
     headers: { 'content-type': 'application/json', accept: 'application/json' },
     body: JSON.stringify({
-      expeditionId: 'lost-pixels-of-satoshi',
+      expeditionId,
       targetId: artifact.id,
       rawSha256: inspection.rawSha256,
+      protocolContentSha256: inspection.protocolContentSha256,
       byteLength: inspection.byteLength,
       dataUriPrefix: inspection.dataUriPrefix,
     }),
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.message || 'The sealed target validator is unavailable. No transaction was prepared.');
-  if (!payload.result || payload.result.targetId !== artifact.id || typeof payload.result.eligible !== 'boolean') {
-    throw new Error('The sealed target validator returned an invalid response. No transaction was prepared.');
+  if (!response.ok) throw new Error(payload.message || 'The target validator is unavailable. No transaction was prepared.');
+  if (!payload.result || payload.result.targetId !== artifact.id || typeof payload.result.eligible !== 'boolean'
+    || (payload.result.expeditionId && payload.result.expeditionId !== expeditionId)
+    || (expeditionId !== DEFAULT_EXPEDITION_ID && payload.result.expeditionId !== expeditionId)) {
+    throw new Error('The target validator returned an invalid response. No transaction was prepared.');
   }
   return payload.result;
 }
@@ -268,7 +298,7 @@ export function buildFindingAssignment({ artifact, inspection, ethscriptionId, a
   return {
     schemaVersion: 1,
     documentType: 'finding',
-    expeditionId: 'lost-pixels-of-satoshi',
+    expeditionId: artifact.expeditionId || DEFAULT_EXPEDITION_ID,
     targetId: artifact.id,
     ethscriptionId: ethscriptionId.toLowerCase(),
     rawSha256: inspection.rawSha256.toLowerCase(),

@@ -4,7 +4,7 @@ const { jsonResponse } = require('../lib/market');
 exports.handler = async (event) => {
   if (event.httpMethod === 'GET') {
     try {
-      return jsonResponse(200, { result: await listFindings() }, 'public, max-age=0, s-maxage=15, stale-while-revalidate=30');
+      return jsonResponse(200, { result: await listFindings(undefined, undefined, undefined, event.queryStringParameters?.expedition) }, 'public, max-age=0, s-maxage=15, stale-while-revalidate=30');
     } catch (error) {
       if (error instanceof FindingError) {
         return jsonResponse(error.statusCode, { error: error.code, message: error.message });

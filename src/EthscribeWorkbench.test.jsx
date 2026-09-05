@@ -14,6 +14,169 @@ beforeAll(() => {
   if (!global.crypto?.subtle) {
     Object.defineProperty(global, 'crypto', { value: require('node:crypto').webcrypto });
   }
+  if (!File.prototype.arrayBuffer) {
+    Object.defineProperty(File.prototype, 'arrayBuffer', { configurable: true, value() {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsArrayBuffer(this);
+      });
+    } });
+  }
+});
+
+async function soundFixture() {
+  const bytes = new Uint8Array(48);
+  const view = new DataView(bytes.buffer);
+  bytes.set(new TextEncoder().encode('RIFF'), 0);
+  view.setUint32(4, 40, true);
+  bytes.set(new TextEncoder().encode('WAVEfmt '), 8);
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  bytes.set(new TextEncoder().encode('data'), 36);
+  view.setUint32(40, 4, true);
+  bytes.set([128, 129, 127, 128], 44);
+  const file = { name: 'Message.wav', type: 'audio/x-wav', size: bytes.length, arrayBuffer: async () => bytes.buffer };
+  const inspection = await inspectFile(file, 'audio/wav');
+  const artifact = {
+    id: 'icq-message', expeditionId: 'youve-got-history', expeditionNumber: '002', filename: file.name,
+    format: 'WAV', status: 'open', validationMode: 'exact', sha256: inspection.rawSha256,
+    bytes: bytes.length, sourceUrl: 'https://example.com/original-installer',
+  };
+  return { bytes, file, inspection, artifact };
+}
+
+const availableMarket = { ok: true, json: async () => ({ result: { paused: false, transactionsEnabled: true, intakeEnabled: true, indexer: { healthy: true } } }) };
+
+test('blocks a one-byte-altered WAV before any wallet prompt or duplicate request', async () => {
+  const { bytes, file, artifact } = await soundFixture();
+  bytes[47] ^= 1;
+  global.fetch = jest.fn(async (url) => {
+    if (url === '/api/market/status') return availableMarket;
+    throw new Error(`Unexpected ${url}`);
+  });
+  const provider = { request: jest.fn() };
+  const connectWallet = jest.fn();
+  const { container } = render(<EthscribeWorkbench mode="target" artifact={artifact}
+    account={`0x${'11'.repeat(20)}`} chainId="0x1" provider={provider} connectWallet={connectWallet} switchToMainnet={jest.fn()} />);
+  fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [file] } });
+  fireEvent.submit(screen.getByRole('button', { name: /^test bytes/i }).closest('form'));
+  expect(await screen.findByText('NOT A TARGET MATCH')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /ethscribe directly|deposit my|sign \+ publish/i })).not.toBeInTheDocument();
+  expect(provider.request).not.toHaveBeenCalled();
+  expect(connectWallet).not.toHaveBeenCalled();
+  expect(global.fetch.mock.calls.every(([url]) => url === '/api/market/status')).toBe(true);
+});
+
+test('tests an already owned WAV, deposits its exact ID, then signs and publishes only to Expedition 002', async () => {
+  const { artifact, inspection } = await soundFixture();
+  const account = `0x${'11'.repeat(20)}`;
+  const assetId = `0x${'22'.repeat(32)}`;
+  const depositHash = `0x${'33'.repeat(32)}`;
+  const onFindingPublished = jest.fn();
+  const record = { transaction_hash: assetId, content_sha: inspection.protocolContentSha256, content_uri: inspection.dataUri, current_owner: account, block_number: 1, ethscription_number: 100 };
+  global.fetch = jest.fn(async (url, options) => {
+    if (url === '/api/market/status') return availableMarket;
+    if (url === `/api/ethscriptions/${assetId}`) return { ok: true, json: async () => ({ result: record }) };
+    if (url === '/api/targets/check') {
+      expect(JSON.parse(options.body)).toMatchObject({ expeditionId: 'youve-got-history', targetId: artifact.id, dataUriPrefix: 'data:audio/wav;base64,' });
+      return { ok: true, json: async () => ({ result: { expeditionId: artifact.expeditionId, targetId: artifact.id, eligible: true, validation: 'exact' } }) };
+    }
+    if (url.includes('/exists/')) return { ok: true, json: async () => ({ result: {
+      exists: url.endsWith(inspection.protocolContentSha256), ethscription: url.endsWith(inspection.protocolContentSha256) ? record : null,
+    } }) };
+    if (url === `/api/market/artifact?id=${assetId}`) return { ok: true, json: async () => ({ result: {
+      seller: account, ethscription: { transactionHash: assetId }, custody: { verified: true },
+    } }) };
+    if (url === '/api/findings') return { ok: true, json: async () => ({ result: { findingId: 'sound-finding', storagePath: 'findings/youve-got-history/sound.json' } }) };
+    throw new Error(`Unexpected ${url}`);
+  });
+  const provider = { request: jest.fn(async ({ method }) => {
+    if (method === 'eth_chainId') return '0x1';
+    if (method === 'eth_estimateGas') return '0x10000';
+    if (method === 'eth_sendTransaction') return depositHash;
+    if (method === 'eth_getTransactionReceipt') return { status: '0x1', transactionHash: depositHash };
+    if (method === 'personal_sign') return `0x${'aa'.repeat(65)}`;
+    throw new Error(`Unexpected ${method}`);
+  }) };
+  render(<EthscribeWorkbench mode="target" artifact={artifact} existingEthscriptionId={assetId}
+    account={account} chainId="0x1" provider={provider} connectWallet={jest.fn()} switchToMainnet={jest.fn()} onFindingPublished={onFindingPublished} />);
+  await waitFor(() => expect(screen.getByRole('button', { name: /^test bytes/i })).toBeEnabled());
+  fireEvent.submit(screen.getByRole('button', { name: /^test bytes/i }).closest('form'));
+  fireEvent.click(await screen.findByRole('button', { name: /deposit my existing match/i }));
+  expect(provider.request).not.toHaveBeenCalled();
+  fireEvent.click(await screen.findByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
+  fireEvent.submit((await screen.findByRole('button', { name: /sign \+ publish finding/i })).closest('form'));
+  expect(await screen.findByText('FINDING PUBLISHED')).toBeInTheDocument();
+  const sent = provider.request.mock.calls.find(([request]) => request.method === 'eth_sendTransaction')[0].params[0];
+  expect(sent).toMatchObject({ from: account, to: MARKET_ADDRESS, data: assetId });
+  expect(provider.request.mock.calls.filter(([request]) => request.method === 'eth_sendTransaction')).toHaveLength(1);
+  const published = JSON.parse(global.fetch.mock.calls.find(([url]) => url === '/api/findings')[1].body);
+  expect(published.assignment).toMatchObject({ expeditionId: 'youve-got-history', targetId: artifact.id, ethscriptionId: assetId, rawSha256: inspection.rawSha256, dataUriPrefix: 'data:audio/wav;base64,' });
+  expect(published.message).toContain('Expedition: youve-got-history');
+  expect(published.message).not.toContain('lost-pixels-of-satoshi');
+  expect(onFindingPublished).toHaveBeenCalledTimes(1);
+  expect(global.fetch.mock.calls.filter(([url]) => url.includes('/exists/'))).toHaveLength(4);
+});
+
+test('discards an in-flight sound validation after the connected account changes', async () => {
+  const { artifact, file } = await soundFixture();
+  let finishTargetCheck;
+  global.fetch = jest.fn(async (url) => {
+    if (url === '/api/market/status') return availableMarket;
+    if (url === '/api/targets/check') return new Promise((resolve) => { finishTargetCheck = resolve; });
+    throw new Error(`Unexpected ${url}`);
+  });
+  const provider = { request: jest.fn() };
+  const props = { mode: 'target', artifact, chainId: '0x1', provider, connectWallet: jest.fn(), switchToMainnet: jest.fn() };
+  const { container, rerender } = render(<EthscribeWorkbench {...props} account={`0x${'11'.repeat(20)}`} />);
+  fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [file] } });
+  fireEvent.submit(screen.getByRole('button', { name: /^test bytes/i }).closest('form'));
+  await waitFor(() => expect(finishTargetCheck).toBeDefined());
+  rerender(<EthscribeWorkbench {...props} account={`0x${'44'.repeat(20)}`} />);
+  await act(async () => finishTargetCheck({ ok: true, json: async () => ({ result: { expeditionId: artifact.expeditionId, targetId: artifact.id, eligible: true, validation: 'exact' } }) }));
+  expect(screen.queryByText('READY TO ETHSCRIBE')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /ethscribe directly|deposit my|sign \+ publish/i })).not.toBeInTheDocument();
+  expect(global.fetch.mock.calls.some(([url]) => url.includes('/exists/'))).toBe(false);
+  expect(provider.request).not.toHaveBeenCalled();
+});
+
+test('a sound creation race returns a Finding Receipt without enabling assignment or a second transaction', async () => {
+  const { artifact, file, inspection } = await soundFixture();
+  const account = `0x${'11'.repeat(20)}`;
+  const txHash = `0x${'55'.repeat(32)}`;
+  global.fetch = jest.fn(async (url) => {
+    if (url === '/api/market/status') return availableMarket;
+    if (url === '/api/targets/check') return { ok: true, json: async () => ({ result: { expeditionId: artifact.expeditionId, targetId: artifact.id, eligible: true, validation: 'exact' } }) };
+    if (url.includes('/exists/')) return { ok: true, json: async () => ({ result: { exists: false, ethscription: null } }) };
+    if (url === `/api/ethscriptions/${txHash}`) return { ok: true, json: async () => ({ result: { transaction_hash: txHash, content_sha: inspection.receiptContentSha256, creator: MARKET_ADDRESS, initial_owner: account, current_owner: account } }) };
+    throw new Error(`Unexpected ${url}`);
+  });
+  const provider = { request: jest.fn(async ({ method }) => {
+    if (method === 'eth_chainId') return '0x1';
+    if (method === 'eth_estimateGas') return '0x10000';
+    if (method === 'eth_sendTransaction') return txHash;
+    if (method === 'eth_getTransactionReceipt') return { status: '0x1', transactionHash: txHash };
+    throw new Error(`Unexpected ${method}`);
+  }) };
+  const { container } = render(<EthscribeWorkbench mode="target" artifact={artifact}
+    account={account} chainId="0x1" provider={provider} connectWallet={jest.fn()} switchToMainnet={jest.fn()} />);
+  fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [file] } });
+  fireEvent.submit(screen.getByRole('button', { name: /^test bytes/i }).closest('form'));
+  fireEvent.click(await screen.findByRole('button', { name: /ethscribe directly into vault/i }));
+  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: /simulate \+ open wallet/i }));
+  expect(await screen.findByText('FINDING RECEIPT CREATED')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /sign \+ publish finding|ethscribe directly/i })).not.toBeInTheDocument();
+  expect(global.fetch.mock.calls.some(([url]) => url === '/api/findings' || url.includes('/api/market/artifact'))).toBe(false);
+  expect(provider.request.mock.calls.filter(([request]) => request.method === 'eth_sendTransaction')).toHaveLength(1);
 });
 
 test('hides the deposit action while an existing match is being sent and after custody is verified', async () => {

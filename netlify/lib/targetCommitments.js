@@ -1,7 +1,21 @@
 const { timingSafeEqual } = require('node:crypto');
+const soundTargets = require('../../shared/soundTargets.json');
 
 const EXPEDITION_ID = 'lost-pixels-of-satoshi';
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
+const SOUND_EXPEDITION_ID = 'youve-got-history';
+if (soundTargets.expeditionId !== SOUND_EXPEDITION_ID || !Array.isArray(soundTargets.targets)) {
+  throw new Error('The sound expedition commitment manifest is invalid.');
+}
+const SOUND_TARGETS = Object.freeze(Object.fromEntries(soundTargets.targets.map((target) => {
+  if (!/^[a-z0-9-]+$/.test(target.id) || !HASH_PATTERN.test(target.rawSha256)
+    || !HASH_PATTERN.test(target.protocolContentSha256) || !Number.isSafeInteger(target.byteLength)
+    || target.byteLength <= 0 || target.mediaType !== 'audio/wav' || target.canonicalPrefix !== 'data:audio/wav;base64,') {
+    throw new Error('A sound expedition commitment is invalid.');
+  }
+  return [target.id, Object.freeze({ ...target })];
+})));
+if (Object.keys(SOUND_TARGETS).length !== soundTargets.targets.length) throw new Error('Duplicate sound target ID.');
 
 const TARGET_SPECS = Object.freeze({
   'november-single-xpm': ['image/x-xpixmap', 9215],
@@ -56,14 +70,28 @@ function readCommitments(env = process.env) {
   return parsed;
 }
 
-function targetSpec(targetId) {
-  const spec = TARGET_SPECS[targetId];
+function resolveExpeditionId(expeditionId = EXPEDITION_ID) {
+  if (expeditionId !== EXPEDITION_ID && expeditionId !== SOUND_EXPEDITION_ID) {
+    throw new TargetCommitmentError(400, 'invalid_expedition', 'This expedition is not open for submissions.');
+  }
+  return expeditionId;
+}
+
+function targetSpec(targetId, expeditionId = EXPEDITION_ID) {
+  const scopedExpedition = resolveExpeditionId(expeditionId);
+  if (scopedExpedition === SOUND_EXPEDITION_ID) {
+    const spec = Object.hasOwn(SOUND_TARGETS, targetId) ? SOUND_TARGETS[targetId] : null;
+    if (!spec) throw new TargetCommitmentError(400, 'invalid_target', 'This expedition target is not open for submissions.');
+    return { mediaType: spec.mediaType, byteLength: spec.byteLength, validationMode: 'exact', filename: spec.filename,
+      rawSha256: spec.rawSha256, protocolContentSha256: spec.protocolContentSha256, canonicalPrefix: spec.canonicalPrefix };
+  }
+  const spec = Object.hasOwn(TARGET_SPECS, targetId) ? TARGET_SPECS[targetId] : null;
   if (!spec) throw new TargetCommitmentError(400, 'invalid_target', 'This expedition target is not open for submissions.');
   return { mediaType: spec[0], byteLength: spec[1], validationMode: targetId === 'lost-bc-png' ? 'provenance' : 'exact' };
 }
 
 function verifyTargetCandidate(candidate, env = process.env) {
-  const spec = targetSpec(candidate?.targetId);
+  const spec = targetSpec(candidate?.targetId, candidate?.expeditionId);
   const rawSha256 = normalizeHash(candidate?.rawSha256);
   if (!rawSha256 || !Number.isSafeInteger(candidate?.byteLength) || candidate.byteLength <= 0) {
     throw new TargetCommitmentError(400, 'invalid_candidate', 'The candidate hash or byte length is invalid.');
@@ -76,23 +104,28 @@ function verifyTargetCandidate(candidate, env = process.env) {
     return { eligible: true, validation: 'provenance-required' };
   }
 
-  const expectedHash = normalizeHash(readCommitments(env)[candidate.targetId]);
+  const expectedHash = spec.rawSha256 || normalizeHash(readCommitments(env)[candidate.targetId]);
   if (!expectedHash) {
     throw new TargetCommitmentError(503, 'target_validation_unavailable', 'This sealed target commitment is unavailable. No transaction was prepared.');
   }
   const hashMatches = timingSafeEqual(Buffer.from(rawSha256, 'hex'), Buffer.from(expectedHash, 'hex'));
+  const protocolMatches = !spec.protocolContentSha256 || candidate.protocolContentSha256 === undefined
+    || normalizeHash(candidate.protocolContentSha256) === spec.protocolContentSha256;
+  const eligible = hashMatches && candidate.byteLength === spec.byteLength && protocolMatches;
   return {
-    eligible: hashMatches && candidate.byteLength === spec.byteLength,
-    validation: hashMatches && candidate.byteLength === spec.byteLength ? 'exact' : 'mismatch',
+    eligible,
+    validation: eligible ? 'exact' : 'mismatch',
   };
 }
 
 module.exports = {
   EXPEDITION_ID,
+  SOUND_EXPEDITION_ID,
   TARGET_SPECS,
   TargetCommitmentError,
   normalizeHash,
   readCommitments,
+  resolveExpeditionId,
   targetSpec,
   verifyTargetCandidate,
 };

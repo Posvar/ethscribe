@@ -15,15 +15,12 @@ exports.handler = async (event) => {
   } catch {
     return jsonResponse(400, { error: 'invalid_json', message: 'The target-check payload is not valid JSON.' });
   }
-  if (payload.expeditionId !== EXPEDITION_ID) {
-    return jsonResponse(400, { error: 'invalid_expedition', message: 'This expedition is not open for byte testing.' });
-  }
-
   try {
     const result = verifyTargetCandidate(payload);
     return jsonResponse(200, {
       result: {
         targetId: payload.targetId,
+        expeditionId: payload.expeditionId ?? EXPEDITION_ID,
         eligible: result.eligible,
         validation: result.validation,
       },

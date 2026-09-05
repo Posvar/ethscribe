@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "researchDate": "2026-09-04",
+  "family": "Windows 3.1 retail system-event sounds",
+  "scope": "Four native WAV files identified in SETUP.INF of the preserved English Windows 3.1 (3.10.103) retail 3.5-inch floppy set. A Windows 95 recording is documented separately but deferred from the current creation flow.",
+  "canonicalPrefix": "data:audio/wav;base64,",
+  "confidence": "Exact bytes from preserved software distribution media with internal installer mappings. Archive checksums establish repeatability, not a Microsoft signature or absolute earliest recording priority.",
+  "sources": [
+    {
+      "id": "windows-31-retail",
+      "label": "Microsoft Windows 3.1 (3.10.103), English retail 3.5-inch floppy set",
+      "catalogUrl": "https://winworldpc.com/download/41574932-18c3-9a11-c3a4-e284a2c3a570",
+      "archiveSha256": "1669bd0a505024ed1b852c1d77a71fcbcbd6dcf4fddd78163e780c7778225cd5",
+      "archiveSha512": "5ecc69587430a2921a8e3607396ab0a89036abc810a839a8cf0457ece98c28c0b363775e8b1e1cffe26f475f53856e2a6d223e5c95b097b6ffddaf277042a203",
+      "archiveBytes": 6694673,
+      "imageDirectory": "Microsoft Windows 3.1 (3.10.103) (3.5)",
+      "images": [
+        { "path": "Disk01.img", "sha256": "86a56b7068993037ae950d0c81b29029b154e8c068c3f72f5e5e51a5833be8e2", "contains": ["SETUP.INF"] },
+        { "path": "Disk03.img", "sha256": "1f5e2bd0d96d1aabd4e83690f208f4b0b637f029bf53c93f0823291fe1fb6f0f", "contains": ["TADA.WA_", "CHIMES.WA_", "CHORD.WA_"] },
+        { "path": "Disk05.img", "sha256": "4560f34f960b54bec30a4d8cd90c94fc4e6d1f45814c8659d1e5626afce9c8c3", "contains": ["DING.WA_"] }
+      ],
+      "installerManifest": { "path": "Disk01.img/SETUP.INF", "sha256": "6ec98d9a1ea4d679a675a7620a38b2371c67cc47e85ad012f895747d3ca8f790", "fileListLines": [857, 858, 859, 860], "eventMappingLines": [1268, 1269, 1270, 1271, 1272, 1273, 1274] },
+      "releaseDate": "1992-04-06",
+      "historicalSourceUrl": "https://learn.microsoft.com/en-us/shows/history/history-of-microsoft-1992"
+    },
+    {
+      "id": "windows-95-oem-rtm",
+      "label": "Microsoft Windows 95, OEM RTM CD-ROM",
+      "catalogUrl": "https://winworldpc.com/download/07c3a63e-c2b4-6e04-11c3-a6e280947e52",
+      "archiveSha256": "be2a76ecc9098e6717a03e292d9bbac8bce53ce3e7cc0011cb040112c5611adc",
+      "archiveSha512": "9cf3860bfaaa5f3d38bb201c5eb1ed92a00d49416efd7653e98f9bc3caaa958f927c026ea8d63630676c18a1f9ed0e70f6976c5151884350c058ebd4ac34d0af",
+      "archiveBytes": 359585044,
+      "imagePath": "Microsoft Windows 95 (OEM) (RTM).iso",
+      "imageSha256": "4cf4dc217b52338482d4a50997ac107abe63156bfe00bc65998124d265bcbace",
+      "cabinetPath": "WIN95/WIN95_02.CAB through WIN95_17.CAB, multi-volume set",
+      "layoutEntry": "layout.inf:959, mssound.wav=9,,135876,8dfe",
+      "layoutInfSha256": "12b924045764b3c887ad8b2e0179d3eb9924b466f3e02a15a01bd5c362d1b003",
+      "eventAndRenameManifest": "motown.inf:338,340,390,1477",
+      "motownInfSha256": "29c85af7c04b2d3e445cf6c7fa74de435d17fccad47aabc64103f7521e39165e",
+      "releaseDate": "1995-08-24",
+      "historicalSourceUrl": "https://blogs.windows.com/windows-insider/2020/08/24/looking-back-the-25th-anniversary-of-windows-95/"
+    }
+  ],
+  "targets": [
+    {
+      "id": "windows-31-tada",
+      "title": "Tada — Windows starts",
+      "filename": "TADA.WAV",
+      "sourceId": "windows-31-retail",
+      "sourceMember": "Disk03.img/TADA.WA_",
+      "compressedSha256": "b52567fdb0820e4687e41bf70b2d4fb7ee1c5a21e50e528bbe3023624ea9e5db",
+      "byteLength": 27804,
+      "sha256": "e78187f27ea746aee7ceda0d8daf701d8d3dc469b24c7b25b71fa32bf773b136",
+      "canonicalProtocolSha256": "54b3dbcf82aff93cee9c6e6af119be87932b308813527377a9cb1101beef6c32",
+      "codec": "PCM", "channels": 1, "sampleRate": 22050, "bitsPerSample": 8,
+      "durationSeconds": 1.2589569160997733,
+      "installedEvents": ["SystemStart — Windows Start"],
+      "scratchPath": ".tools/research/sounds/windows/win31-files/tada.wav"
+    },
+    {
+      "id": "windows-31-chimes",
+      "title": "Chimes — Windows exits",
+      "filename": "CHIMES.WAV",
+      "sourceId": "windows-31-retail",
+      "sourceMember": "Disk03.img/CHIMES.WA_",
+      "compressedSha256": "40b8999d1c8ce407a6a99a3fe773c9dd7e10a074cf1b2d9297717146346987b3",
+      "byteLength": 15920,
+      "sha256": "84798041819704f56ec141ecf2cdc12b95eb8b2c5b4315ba84cab89b820e6060",
+      "canonicalProtocolSha256": "1798efde13c543c3f8247f02ce8d63d679a60d54cff2b276090c1c24f86ff621",
+      "codec": "PCM", "channels": 1, "sampleRate": 22050, "bitsPerSample": 8,
+      "durationSeconds": 0.72,
+      "installedEvents": ["SystemExit — Windows Exit"],
+      "scratchPath": ".tools/research/sounds/windows/win31-files/chimes.wav"
+    },
+    {
+      "id": "windows-31-chord",
+      "title": "Chord — a moment of caution",
+      "filename": "CHORD.WAV",
+      "sourceId": "windows-31-retail",
+      "sourceMember": "Disk03.img/CHORD.WA_",
+      "compressedSha256": "eeadd9e961b8bf9f9e70bcca90c34cfde66098bd4d9e782a7bc5a2d6d561f43e",
+      "byteLength": 24982,
+      "sha256": "e30478918dbcbc8b514915b721992f9f76c2e19b72ef0f418dd1bf8b3c38afd5",
+      "canonicalProtocolSha256": "2cb3059f4b81c95a574fe5bcf4c905c94d1362e12a58d34c12bbc3c93d930ba3",
+      "codec": "PCM", "channels": 1, "sampleRate": 22050, "bitsPerSample": 8,
+      "durationSeconds": 1.1309750566893424,
+      "installedEvents": ["SystemExclamation — Exclamation", "SystemHand — Critical Stop", "SystemQuestion — Question", "SystemAsterisk — Asterisk"],
+      "scratchPath": ".tools/research/sounds/windows/win31-files/chord.wav"
+    },
+    {
+      "id": "windows-31-ding",
+      "title": "Ding — the default beep",
+      "filename": "DING.WAV",
+      "sourceId": "windows-31-retail",
+      "sourceMember": "Disk05.img/DING.WA_",
+      "compressedSha256": "ffcc12f4a6c3fcbc3d359615f7fc1c2ed77c6ad366ac564e19d6cb376510a7c0",
+      "byteLength": 11598,
+      "sha256": "b5ad2d751f7cab05d61b372d6a41ce00a49ca653a9cbfaf6f6e093bf01415cd9",
+      "canonicalProtocolSha256": "a5d874bdeda8a9098ca98608fb69e03073a286cd79c8d6c2748d07982837d22a",
+      "codec": "PCM", "channels": 1, "sampleRate": 22050, "bitsPerSample": 8,
+      "durationSeconds": 0.5239909297052154,
+      "installedEvents": ["SystemDefault — Default Beep"],
+      "scratchPath": ".tools/research/sounds/windows/win31-files/ding.wav"
+    }
+  ],
+  "deferredTargets": [
+    {
+      "id": "windows-95-microsoft-sound",
+      "title": "The Microsoft Sound — Brian Eno",
+      "filename": "mssound.wav",
+      "installedFilename": "The Microsoft Sound.wav",
+      "sourceId": "windows-95-oem-rtm",
+      "sourceMember": "WIN95 cabinet set/mssound.wav",
+      "byteLength": 135876,
+      "sha256": "9d667f61d830fc908405d2392a2d695abd046437a2859e9289984fae2e62c0a2",
+      "canonicalProtocolSha256": "e8e9d4079e1ad78f233a8e127ffbb9c45e1c96055e08b5c5e26a7f0f8cd600c0",
+      "codec": "PCM", "channels": 1, "sampleRate": 22050, "bitsPerSample": 8,
+      "durationSeconds": 6.122675736961451,
+      "riffChunks": [{ "id": "fmt ", "bytes": 16 }, { "id": "data", "bytes": 135005 }, { "id": "DISP", "bytes": 620 }, { "id": "LIST", "bytes": 190 }],
+      "embeddedInfo": { "IART": "Brian Eno", "ICOP": "1995 Microsoft Corporation", "INAM": "The Microsoft Sound", "IPRD": "Microsoft Windows 95" },
+      "installedEvents": ["SystemStart — .Default and .Current sound schemes"],
+      "status": "verified-bytes-deferred-creation-path",
+      "deferralReason": "135876 raw bytes exceeds the current site's 90000-byte standard creation limit. This is a product-path restriction, not a blanket claim that the Ethscriptions protocol cannot preserve the file. No infrastructure or file transformation is authorized by this research task.",
+      "culturalSourceUrl": "https://www.loc.gov/programs/national-recording-preservation-board/recording-registry/registry-by-induction-years/2025/",
+      "scratchPath": ".tools/research/sounds/windows/win95-files/mssound.wav"
+    }
+  ]
+}

@@ -13,6 +13,8 @@ import {
   buildFindingAssignment,
   buildWrapperChecks,
   CANONICAL_XPM_MEDIA_TYPE,
+  CANONICAL_WAV_MEDIA_TYPE,
+  DEFAULT_EXPEDITION_ID,
   checkExpeditionTarget,
   checkProtocolExistence,
   inspectFile,
@@ -22,6 +24,7 @@ import {
   waitForEthscriptionRecord,
   waitForVerifiedCustody,
   XPM_MEDIA_TYPE_CANDIDATES,
+  WAV_MEDIA_TYPE_CANDIDATES,
 } from './ethscriptionCreation';
 
 function ArrowIcon() {
@@ -33,6 +36,7 @@ function short(value, start = 10, end = 8) {
 }
 
 function targetMediaType(artifact) {
+  if (artifact?.format === 'WAV') return CANONICAL_WAV_MEDIA_TYPE;
   if (artifact?.format === 'XPM') return CANONICAL_XPM_MEDIA_TYPE;
   if (artifact?.format === 'PNG') return 'image/png';
   if (artifact?.format === 'ICO') return 'image/x-icon';
@@ -119,7 +123,7 @@ export default function EthscribeWorkbench({
   const [pendingSubmission, setPendingSubmission] = useState(null);
   const operationVersion = useRef(0);
   const contextRef = useRef('');
-  const contextKey = `${account?.toLowerCase() || ''}:${chainId || ''}:${artifact?.id || ''}:${existingEthscriptionId}`;
+  const contextKey = `${account?.toLowerCase() || ''}:${chainId || ''}:${artifact?.expeditionId || DEFAULT_EXPEDITION_ID}:${artifact?.id || ''}:${existingEthscriptionId}`;
   contextRef.current = contextKey;
   const previousContext = useRef(contextKey);
 
@@ -195,7 +199,8 @@ export default function EthscribeWorkbench({
   }, [existingEthscriptionId]);
 
   const onMainnet = chainId?.toLowerCase() === '0x1';
-  const targetEligible = Boolean(activeArtifact && targetCheck?.targetId === activeArtifact.id && targetCheck.eligible);
+  const targetEligible = Boolean(activeArtifact && targetCheck?.targetId === activeArtifact.id && targetCheck.eligible
+    && (targetCheck.expeditionId || DEFAULT_EXPEDITION_ID) === (activeArtifact.expeditionId || DEFAULT_EXPEDITION_ID));
   const rawMatchesTarget = !submissionMode || targetEligible;
   const existingRecord = existing?.ethscription || null;
   const existingOwner = existingRecord?.current_owner?.toLowerCase();
@@ -277,7 +282,7 @@ export default function EthscribeWorkbench({
         setTargetCheck(checkedTarget);
         if (!checkedTarget.eligible) {
           setPhase('mismatch');
-          setMessage('The uploaded bytes do not match the sealed target commitment. No transaction was prepared.');
+          setMessage('The uploaded bytes do not match this target’s reference file. No transaction was prepared.');
           return;
         }
       }
@@ -286,7 +291,9 @@ export default function EthscribeWorkbench({
         nextInspection,
         activeArtifact?.format === 'XPM' || XPM_MEDIA_TYPE_CANDIDATES.includes(nextInspection.mediaType)
           ? XPM_MEDIA_TYPE_CANDIDATES
-          : [nextInspection.mediaType],
+          : activeArtifact?.format === 'WAV' || WAV_MEDIA_TYPE_CANDIDATES.includes(nextInspection.mediaType)
+            ? WAV_MEDIA_TYPE_CANDIDATES
+            : [nextInspection.mediaType],
       );
       const checked = await checkProtocolExistence(checks);
       if (!isCurrent()) return;
@@ -317,7 +324,7 @@ export default function EthscribeWorkbench({
         setMessage(embeddedTargetMode
           ? checkedTarget?.validation === 'provenance-required'
             ? 'Candidate file passed format preflight. This lost-byte target still requires a reproducible provenance case.'
-            : 'Exact target match confirmed by the sealed validator. No duplicate was found for the canonical or known equivalent wrappers.'
+            : 'Exact target match confirmed. No duplicate was found for the standard or known equivalent file formats.'
           : 'No exact protocol duplicate was found. The transaction can now be prepared.');
       }
     } catch (error) {
@@ -329,14 +336,16 @@ export default function EthscribeWorkbench({
 
   const selectTargetForInspection = async (target) => {
     if (!effectiveInspection) return;
+    const isCurrent = startOperation();
     setSelectedTargetId(target.id);
     setTargetCheck(null);
     setClaimSummary(`Exact-byte candidate for ${target.filename}`);
     setSourceUrl(target.status === 'lost' ? '' : (target.sourceUrl || ''));
     setPhase('inspecting');
-    setMessage('Testing your locally hashed bytes against the sealed target commitment.');
+    setMessage('Testing your locally hashed bytes against the target’s reference file.');
     try {
       const checkedTarget = await checkExpeditionTarget(target, effectiveInspection);
+      if (!isCurrent()) return;
       setTargetCheck(checkedTarget);
       if (!checkedTarget.eligible) {
         setPhase('mismatch');
@@ -346,10 +355,11 @@ export default function EthscribeWorkbench({
       setPhase(custody ? 'custody-verified' : existing ? 'duplicate' : 'ready');
       setMessage(checkedTarget.validation === 'provenance-required'
         ? 'Candidate format accepted. The historical claim still requires a reproducible provenance case.'
-        : 'Exact target match confirmed by the sealed validator. You may continue with the existing matching Ethscription.');
+        : 'Exact target match confirmed. You may continue with the existing matching Ethscription.');
     } catch (error) {
+      if (!isCurrent()) return;
       setPhase('error');
-      setMessage(error.message || 'The sealed target validator is unavailable. No deposit was prepared.');
+      setMessage(error.message || 'The target validator is unavailable. No deposit was prepared.');
     }
   };
 
@@ -489,7 +499,7 @@ export default function EthscribeWorkbench({
 
   const submitAssignment = async (event) => {
     event.preventDefault();
-    if (!activeArtifact || !effectiveInspection || !selectedEthscriptionId || !custody || !account || busy || market?.localPreview) return;
+    if (!activeArtifact || !effectiveInspection || !targetEligible || !wrapperMatchesTarget || !selectedEthscriptionId || !custody || !account || busy || market?.localPreview) return;
     const isCurrent = startOperation();
     setPhase('signing');
     setMessage('Review and sign the target assignment. This signature costs no gas and cannot move the artifact.');
@@ -519,7 +529,7 @@ export default function EthscribeWorkbench({
     }
   };
 
-  const canCreate = inspection && rawMatchesTarget && !existing && !pendingSubmission && phase === 'ready' && market?.intakeEnabled;
+  const canCreate = inspection && rawMatchesTarget && wrapperMatchesTarget && !existing && !pendingSubmission && phase === 'ready' && market?.intakeEnabled;
   const canDepositExisting = submissionMode && inspection && rawMatchesTarget && wrapperMatchesTarget && existing && existingOwnedByWallet
     && !custody && !pendingSubmission && !busy && phase === 'duplicate' && !market?.localPreview;
   const displayTransactionHash = transactionHash || selectedEthscriptionId;
@@ -537,7 +547,7 @@ export default function EthscribeWorkbench({
           : 'CHECKING…';
   const wrapperCheckSummary = duplicateChecks.length === 1
     ? 'Canonical Data URI checked in the background.'
-    : `Canonical Data URI + ${Math.max(duplicateChecks.length - 1, 0)} common XPM aliases checked in the background.`;
+    : `Standard file format + ${Math.max(duplicateChecks.length - 1, 0)} common ${activeArtifact?.format === 'WAV' ? 'WAV' : 'XPM'} alternatives checked in the background.`;
 
   return (
     <section className={`ethscribe-workbench workbench-${mode}`} aria-label={embeddedTargetMode ? `Submit a finding for ${artifact.filename}` : 'Ethscribe a file into the market vault'}>
@@ -662,9 +672,9 @@ export default function EthscribeWorkbench({
             <div className="compatible-targets">
               {compatibleTargets.map((target) => (
                 <button type="button" key={target.id} onClick={() => selectTargetForInspection(target)}>
-                  <span>{target.validationMode === 'exact' ? 'TEST SEALED TARGET' : 'PROVENANCE RECOVERY TARGET'}</span>
+                  <span>{target.validationMode === 'exact' ? 'TEST TARGET MATCH' : 'PROVENANCE RECOVERY TARGET'}</span>
                   <strong>{target.filename}</strong>
-                  <small>Expedition 001 · continue to assignment</small>
+                  <small>Expedition {target.expeditionNumber || '001'} · continue to assignment</small>
                 </button>
               ))}
             </div>
@@ -674,7 +684,7 @@ export default function EthscribeWorkbench({
 
       {!embeddedTargetMode && submissionMode && (
         <div className="selected-expedition-target">
-          <span>SUBMITTING TO EXPEDITION 001</span>
+          <span>SUBMITTING TO EXPEDITION {activeArtifact.expeditionNumber || '001'}</span>
           <strong>{activeArtifact.filename}</strong>
           {!custody && <button type="button" onClick={() => { setSelectedTargetId(''); setTargetCheck(null); }}>Cancel assignment</button>}
         </div>
@@ -688,7 +698,7 @@ export default function EthscribeWorkbench({
         <p className="ethscribe-race-result">Your existing Ethscription contains the same decoded bytes, but it does not use this target’s frozen {requiredTargetPrefix} wrapper. It cannot be assigned to this target, and the site will not silently create a second raw-byte copy.</p>
       )}
 
-      {submissionMode && custody && !finding && (
+      {submissionMode && targetEligible && wrapperMatchesTarget && custody && !finding && (
         <form className="finding-assignment-form" onSubmit={submitAssignment}>
           <div><span>02 · SIGN TARGET ASSIGNMENT</span><strong>NO GAS · CANNOT MOVE THE ARTIFACT</strong></div>
           <label>Claim summary<textarea rows="3" maxLength="500" value={claimSummary} onChange={(event) => setClaimSummary(event.target.value)} required /></label>

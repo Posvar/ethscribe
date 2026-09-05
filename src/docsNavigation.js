@@ -40,6 +40,12 @@ export const docsSections = [
     ],
   },
   {
+    title: 'Expedition 002',
+    items: [
+      { title: "You've Got History", slug: 'expedition-002/youve-got-history', file: 'expedition-002/youve-got-history.md' },
+    ],
+  },
+  {
     title: 'Roadmap',
     items: [
       { title: 'Phased development', slug: 'roadmap/phased-development', file: 'roadmap/phased-development.md' },

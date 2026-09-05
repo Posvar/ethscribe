@@ -1,0 +1,5 @@
+.expedition-directory-entry + .expedition-directory-entry { margin-top: 32px; }
+.expedition-directory-entry { min-width: 0; }
+.expedition-card-sound-visual { display: flex; flex-direction: column; align-items: center; gap: 20px; color: var(--paper); text-align: center; }
+.expedition-card-sound-visual svg { width: 72px; height: 72px; fill: none; stroke: var(--signal); stroke-width: 1.2; }
+.expedition-card-sound-visual p { font: 400 clamp(25px, 2.5vw, 34px)/1.25 Georgia, serif; margin: 0; }

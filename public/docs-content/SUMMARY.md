@@ -28,6 +28,10 @@
 
 * [The Lost Pixels of Satoshi](expedition-001/the-lost-pixels-of-satoshi.md)
 
+## Expedition 002
+
+* [You've Got History](expedition-002/youve-got-history.md)
+
 ## Roadmap
 
 * [Phased development](roadmap/phased-development.md)

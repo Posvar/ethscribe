@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import WalletPage from './WalletPage';
 import { artifactById } from './huntData';
+import { soundTargets } from './soundExpedition';
 
 const originalFetch = global.fetch;
 const owner = '0x4B2EEfe5515d3464F1F7B7b713dCD4eC74954Bba';
@@ -45,6 +46,33 @@ beforeEach(() => {
 
 afterEach(() => {
   global.fetch = originalFetch;
+});
+
+test.each(['loading', 'error', 'ready'])('recognizes an existing AOL artifact as Expedition 002 while Finding reads are %s', async (findingIndexState) => {
+  const known = soundTargets.find(target => target.id === 'aol-got-mail-1993');
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ result: {
+    owner: owner.toLowerCase(), market, directlyOwned: [], claimableWei: '0', pagination: {},
+    escrow: [{ transactionHash: known.ethscriptionId, ethscriptionNumber: 351032, mimetype: 'audio/wav', custody: { verified: false } }],
+  } }) }));
+  const { container } = render(<WalletPage account={owner} chainId="0x1" findingIndexState={findingIndexState} />);
+  expect(await screen.findByRole('link', { name: /expedition 002.*GOTMAIL\.WAV/i })).toHaveAttribute('href', '/expeditions/youve-got-history?artifact=aol-got-mail-1993#record-aol-got-mail-1993');
+  expect(container.querySelector('audio')).toHaveAttribute('src', `/api/ethscriptions/media/${known.ethscriptionId}`);
+  expect(screen.queryByText(/UNASSIGNED CONTRACT DEPOSIT/)).not.toBeInTheDocument();
+});
+
+test('links a newly verified sound Finding to 002, and does not accept a crossed expedition assignment', async () => {
+  const crossedId = `0x${'c'.repeat(64)}`;
+  global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ result: {
+    owner: owner.toLowerCase(), market, directlyOwned: [], claimableWei: '0', pagination: {},
+    escrow: [ethscriptionId, crossedId].map(transactionHash => ({ transactionHash, ethscriptionNumber: 999, mimetype: 'audio/wav', custody: { verified: false } })),
+  } }) }));
+  render(<WalletPage account={owner} chainId="0x1" resolvedFindings={[
+    { expeditionId: 'youve-got-history', targetId: 'msn-new-message', ethscriptionId },
+    { expeditionId: 'lost-pixels-of-satoshi', targetId: 'msn-new-message', ethscriptionId: crossedId },
+  ]} />);
+  expect(await screen.findByRole('link', { name: /expedition 002.*type\.wav/i })).toHaveAttribute('href', '/expeditions/youve-got-history?artifact=msn-new-message#record-msn-new-message');
+  expect(screen.getByText('UNASSIGNED CONTRACT DEPOSIT')).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /expedition 001.*type\.wav/i })).not.toBeInTheDocument();
 });
 
 test('shows a focused Field Wallet without operational pilot panels', async () => {

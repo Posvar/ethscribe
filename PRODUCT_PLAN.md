@@ -2,14 +2,14 @@
 
 **Category:** Ownable digital archaeology  
 **Product:** `ethscri.be`  
-**Status:** Public experiment with Expedition 001, signed Findings, and an active immutable marketplace; reviewed audit and owner-deposit improvements approved for release
+**Status:** Public experiment with Expeditions 001 and 002, expedition-scoped signed Findings, and an active immutable marketplace
 **Updated:** September 4, 2026
 
 ## Current product baseline
 
 MVP and V1 are one wallet-native release. The current experiment asks whether people enjoy recovering historically significant files, documenting provenance, and collecting the resulting Ethscriptions.
 
-The implemented public routes are Mission, Expeditions, the active Satoshi expedition, Field Wallet, and Docs. Public proposals are closed. Ethscribing and existing-asset deposits begin inside an expedition target; there is no general-purpose creation utility or arbitrary wallet deposit action.
+The implemented public routes are Mission, Expeditions, the active Satoshi and sound expeditions, Field Wallet, and Docs. Public proposals are closed. Ethscribing and existing-asset deposits begin inside an expedition target; there is no general-purpose creation utility or arbitrary wallet deposit action.
 
 The submission sequence is candidate test → create or deposit → wait for protocol/custody verification → sign and publish the Finding. Testing and the assignment signature cost no gas. A direct creation enters market custody with the researcher as protocol creator. It can be withdrawn without listing; a later one-time registration supplies the Ethscription ID needed to list it for sale.
 
@@ -32,11 +32,29 @@ The active contract is `EthscribeMarketV2` at `0x65a6771a4f82bcc1fad26CC944cA673
 
 ## Next development priorities
 
+### Expedition 002 release — known-byte sounds
+
+The Macintosh, DOOM, and Pokémon placeholder expeditions have been removed. The owner approved publishing Expedition 002 and opening submissions on September 4, 2026. Its targets are exact, recoverable historical audio files—not speculative missing resources or modern recordings.
+
+**You've Got History — the sounds of going online, 1992–2000.** The reference set has 17 files: four Windows 3.1 system-event WAVs, all five AOL 1.0 Windows sounds, ICQ 1.02 Beta's Message.wav, three MSN Messenger 1.0.0863 sounds, and four AIM 4.1.2010 sounds. Every reference has extracted bytes, a precise software release, pinned source/member hashes, raw and canonical-URI hashes, and reproducible extraction notes. Signed MSN/AIM installers provide stronger publisher authentication than the preserved unsigned disk images; these confidence levels stay explicit.
+
+**Never change the historical bytes.** Preserve the complete original file including headers, metadata and padding. Do not resample, trim, normalize, strip metadata or re-export. Lossless extraction from its original software archive is permitted and documented. Windows 95's verified 135,876-byte Microsoft Sound remains a deferred reference because it exceeds the current 90,000-byte creation limit; no transformation or infrastructure change is authorized to make it fit.
+
+The founder's You've Got Mail Ethscription `0x7802ddffee8b4a11a14f60c824135f9aa119a82e021246d022eec8eff8ddb357` exactly matches the complete `GOTMAIL.WAV` in the inspected AOL 1.0 Windows distribution. This supports that version-specific claim, not absolute priority over all recordings, development builds, or platforms. Evidence, reference manifests, and exclusions live in [Expedition 002 research](research/expedition-002/README.md).
+
+**Infrastructure decision: keep what is deployed.** No new creator, upgradeable vault, migration, or creation fee is planned for this pass. Continue the existing free direct-to-custody creation flow and immutable 5% sales fee. The [fee exploration](planning/CREATION_FEES_EXPLORATION.md) and [replacement-vault discussion](planning/UPGRADEABLE_MARKET_DIRECTION.md) are deferred historical options, not active implementation instructions.
+
+The public expedition at `/expeditions/youve-got-history` and its directory card use the existing creation/deposit/Finding flow. `shared/soundTargets.json` is the shared browser/server commitment source; WAV files always use `data:audio/wav;base64,`. Target validation and signed assignments explicitly bind expedition plus target, and Azure stores each expedition's Findings under its own prefix. The five recognized AOL IDs support owner deposits and wallet links without replacement Findings. New accepted Findings update the sound catalogue and progress; owner deposits and sales remain separate states.
+
+Reference WAVs, disk images, and installers stay in ignored research storage; tracked evidence contains hashes and source metadata. Only recognized Ethscriptions supply audio playback. Local development remains read-only. Publication approval is not a copyright grant, and no new contract, migration or creation fee is introduced.
+
+### Delivery priorities
+
 1. Make the first complete user journey legible and recoverable, including interrupted sessions and slow indexing.
 2. Exercise creation, assignment, registration, listing, purchase, withdrawal, and claim with explicit outcomes.
 3. Obtain independent review of custody, settlement, and transaction preparation.
 4. Improve signature inspection, evidence export, and a visible lost-file review/correction process.
-5. Measure independent participation and repeat interest before adding another expedition or reopening proposals.
+5. Measure independent participation and repeat interest across the two expeditions before further expansion or reopening proposals.
 
 The current roadmap is maintained in [Phased development](public/docs-content/roadmap/phased-development.md). Visitor-facing behavior is documented in [Your first Finding](public/docs-content/product/first-finding.md) and [Ownership and marketplace](public/docs-content/product/ownership-and-marketplace.md).
 

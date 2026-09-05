@@ -14,9 +14,9 @@ The steps below cover submitting a candidate against an unresolved target.
 
 ## 1. Follow the clues
 
-Read the target's date, historical path, format, and recovery notes. Preserve the original file and record where you found it. Opening and resaving an XPM, PNG, or ICO can change its bytes even when it looks the same.
+Read the target's date, historical path, format, and recovery notes. Preserve the original file and record where you found it. Opening and resaving an XPM, PNG, ICO or WAV can change its bytes even when it looks or sounds the same. Never normalize, trim, resample or strip metadata from a sound target.
 
-Open targets intentionally withhold their reference hash and direct download location. The goal is to follow historical evidence and test a candidate you recovered. The match check confirms the file without handing out the answer.
+Expedition 001's unresolved targets intentionally withhold their reference hash and direct download location. Expedition 002 publishes its exact sound-file hashes and release context, while keeping unrecognized audio previews sealed. In either case, recover the original file from its historical source rather than a converted copy.
 
 ## 2. Test your candidate
 
@@ -54,7 +54,7 @@ Preflight cannot reserve a payload. If another transaction creates the canonical
 
 Review the claim summary and primary source URL, then sign the Finding assignment. This signature costs no gas and cannot move your Ethscription.
 
-The server verifies the signature, indexed content, target match, and custody before recording the Finding. A successful exact-match Finding updates the target in the expedition. Creating an Ethscription alone does not complete this final assignment.
+The server verifies the signature, indexed content, target match, and custody before recording the Finding. The signature binds the expedition and target; a submission for one expedition cannot be reassigned to another. A successful exact-match Finding updates that expedition's target. Creating an Ethscription alone does not complete this final assignment.
 
 A lost-file candidate remains a research candidate. It does not automatically turn the unresolved target into an accepted historical recovery.
 

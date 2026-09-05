@@ -8,12 +8,14 @@ const {
   assignmentMessage,
   decodeVerifiedContentUri,
   fetchEthscription,
+  hasExpectedFileSignature,
   listFindings,
   publicFinding,
   storeFinding,
   validateAssignment,
   verifyAndStoreFinding,
 } = require('./finding');
+const sounds = require('../../shared/soundTargets.json');
 
 function hash(value) {
   return `0x${createHash('sha256').update(value).digest('hex')}`;
@@ -282,4 +284,134 @@ test('an oversized official record is rejected at the response boundary', async 
   await assert.rejects(fetchEthscription(ethscriptionId, async () => new Response('{}', {
     headers: { 'content-length': '1000001' },
   })), (error) => error instanceof FindingError && error.code === 'indexer_unavailable');
+});
+
+function soundAssignment(overrides = {}) {
+  const target = sounds.targets[0];
+  return assignment({
+    expeditionId: sounds.expeditionId,
+    targetId: target.id,
+    filename: target.filename,
+    byteLength: target.byteLength,
+    rawSha256: `0x${target.rawSha256}`,
+    protocolContentSha256: `0x${target.protocolContentSha256}`,
+    dataUriPrefix: target.canonicalPrefix,
+    ...overrides,
+  });
+}
+
+test('sound Findings validate exact reference commitments independently of expedition 001 secrets', () => {
+  assert.deepEqual(validateAssignment(soundAssignment(), now, {}), {
+    mediaType: 'audio/wav', expectedPrefix: 'data:audio/wav;base64,',
+  });
+  for (const overrides of [
+    { rawSha256: `0x${'00'.repeat(32)}` },
+    { byteLength: sounds.targets[0].byteLength + 1 },
+    { protocolContentSha256: `0x${'00'.repeat(32)}` },
+  ]) {
+    assert.throws(() => validateAssignment(soundAssignment(overrides), now, {}),
+      error => error instanceof FindingError && error.code === 'target_mismatch');
+  }
+  assert.throws(() => validateAssignment(soundAssignment({ dataUriPrefix: 'data:audio/x-wav;base64,' }), now, {}),
+    error => error instanceof FindingError && error.code === 'wrong_wrapper');
+  assert.throws(() => validateAssignment(soundAssignment({ expeditionId: 'lost-pixels-of-satoshi' }), now, {}),
+    error => error instanceof FindingError && error.code === 'invalid_target');
+  assert.throws(() => validateAssignment(assignment({ expeditionId: sounds.expeditionId }), now, {}),
+    error => error instanceof FindingError && error.code === 'invalid_target');
+});
+
+test('the RIFF/WAVE guard rejects disguised text, wrong container IDs, truncation and appended bytes', () => {
+  const fixture = Buffer.alloc(44);
+  fixture.write('RIFF', 0); fixture.writeUInt32LE(36, 4); fixture.write('WAVE', 8);
+  assert.equal(hasExpectedFileSignature(fixture, 'audio/wav'), true);
+  assert.equal(hasExpectedFileSignature(Buffer.from('RIFF is only a word, not a WAVE file'), 'audio/wav'), false);
+  const wrongContainer = Buffer.from(fixture); wrongContainer.write('AVI ', 8);
+  assert.equal(hasExpectedFileSignature(wrongContainer, 'audio/wav'), false);
+  assert.equal(hasExpectedFileSignature(fixture.subarray(0, 40), 'audio/wav'), false);
+  assert.equal(hasExpectedFileSignature(Buffer.concat([fixture, Buffer.from([0])]), 'audio/wav'), false);
+});
+
+test('a signed sound Finding cannot publish a claimed target hash over different official indexed bytes', async () => {
+  const value = soundAssignment(), message = assignmentMessage(value), signature = await wallet.signMessage(message);
+  let stores = 0;
+  await assert.rejects(verifyAndStoreFinding({ assignment: value, message, signature }, {
+    now, env: {},
+    fetchImpl: async () => Response.json({ result: {
+      transaction_hash: value.ethscriptionId,
+      content_sha: value.protocolContentSha256,
+      content_uri: 'data:audio/wav;base64,UklGRg==',
+      current_owner: MARKET_ADDRESS,
+      previous_owner: wallet.address,
+    } }),
+    storeFinding: async () => { stores += 1; },
+  }), error => error instanceof FindingError && error.code === 'indexer_mismatch');
+  assert.equal(stores, 0);
+});
+
+test('changing a signed sound Finding expedition or target cannot reuse the old signature', async () => {
+  const original = soundAssignment(), message = assignmentMessage(original), signature = await wallet.signMessage(message);
+  const other = sounds.targets[1];
+  const changed = soundAssignment({ targetId: other.id, filename: other.filename, byteLength: other.byteLength,
+    rawSha256: `0x${other.rawSha256}`, protocolContentSha256: `0x${other.protocolContentSha256}` });
+  await assert.rejects(verifyAndStoreFinding({ assignment: changed, message, signature }, { now, env: {} }),
+    error => error instanceof FindingError && error.code === 'message_mismatch');
+  await assert.rejects(verifyAndStoreFinding({ assignment: { ...original, expeditionId: 'lost-pixels-of-satoshi' }, message, signature }, { now, env: {} }),
+    error => error instanceof FindingError && error.code === 'invalid_target');
+});
+
+function storedSoundFinding(number = 1) {
+  const value = soundAssignment({ ethscriptionId: `0x${number.toString(16).padStart(64, '0')}` });
+  const findingId = `${value.targetId}--${value.ethscriptionId.slice(2)}`;
+  return {
+    name: `hunts/${sounds.expeditionId}/findings/${findingId}/finding.json`,
+    modifiedAt: new Date(now).toUTCString(),
+    record: { documentType: 'verified-finding', findingId, assignment: value,
+      verifiedAt: new Date(now).toISOString(), verification: { indexedContentUri: 'data:audio/wav;base64,fixture' } },
+  };
+}
+
+test('Finding lists scope both Azure prefix and blob paths, keeping expedition feeds separate', async () => {
+  const satoshi = storedFinding('november-20-xpm', 1), sound = storedSoundFinding(2);
+  const fixtures = new Map([satoshi, sound].map(entry => [entry.name, entry.record]));
+  for (const expeditionId of ['lost-pixels-of-satoshi', sounds.expeditionId]) {
+    const bodyRequests = [];
+    const result = await listFindings(async (url) => {
+      const parsed = new URL(url);
+      if (parsed.searchParams.get('comp') === 'list') {
+        assert.equal(parsed.searchParams.get('prefix'), `hunts/${expeditionId}/findings/`);
+        // Deliberately return unrelated blobs to ensure filtering is not delegated to storage.
+        return new Response(listingXml([satoshi, sound]));
+      }
+      const name = parsed.pathname.slice('/ethscribe-assets/'.length);
+      bodyRequests.push(name);
+      return Response.json(fixtures.get(name));
+    }, listTestEnv, 50, expeditionId);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].expeditionId, expeditionId);
+    assert.equal(bodyRequests.length, 1);
+    assert.ok(bodyRequests[0].startsWith(`hunts/${expeditionId}/`));
+  }
+});
+
+test('a scoped blob whose JSON names another expedition fails closed and cannot masquerade as accepted', async () => {
+  const sound = storedSoundFinding();
+  sound.record.assignment.expeditionId = 'lost-pixels-of-satoshi';
+  assert.equal(publicFinding(sound.record, sounds.expeditionId), null);
+  await assert.rejects(listFindings(async url => String(url).includes('comp=list')
+    ? new Response(listingXml([sound])) : Response.json(sound.record), listTestEnv, 50, sounds.expeditionId),
+  error => error instanceof FindingError && error.code === 'storage_unavailable');
+});
+
+test('unknown expedition list requests fail before any network or storage access', async () => {
+  let reads = 0;
+  await assert.rejects(listFindings(async () => { reads += 1; }, {}, 50, '../youve-got-history'),
+    error => error instanceof FindingError && error.code === 'invalid_expedition');
+  assert.equal(reads, 0);
+});
+
+test('sound public names are fixed by their own expedition, not an unsigned upload filename', () => {
+  const entry = storedSoundFinding();
+  entry.record.assignment.filename = 'not-a-bitcoin-icon.png';
+  assert.equal(publicFinding(entry.record).filename, sounds.targets[0].filename);
+  assert.equal(publicFinding(entry.record, 'lost-pixels-of-satoshi'), null);
 });

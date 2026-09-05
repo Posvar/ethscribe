@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "expeditionId": "youve-got-history",
+  "targets": [
+    {
+      "id": "windows-31-tada",
+      "filename": "TADA.WAV",
+      "byteLength": 27804,
+      "rawSha256": "e78187f27ea746aee7ceda0d8daf701d8d3dc469b24c7b25b71fa32bf773b136",
+      "protocolContentSha256": "54b3dbcf82aff93cee9c6e6af119be87932b308813527377a9cb1101beef6c32",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "windows-31-chimes",
+      "filename": "CHIMES.WAV",
+      "byteLength": 15920,
+      "rawSha256": "84798041819704f56ec141ecf2cdc12b95eb8b2c5b4315ba84cab89b820e6060",
+      "protocolContentSha256": "1798efde13c543c3f8247f02ce8d63d679a60d54cff2b276090c1c24f86ff621",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "windows-31-chord",
+      "filename": "CHORD.WAV",
+      "byteLength": 24982,
+      "rawSha256": "e30478918dbcbc8b514915b721992f9f76c2e19b72ef0f418dd1bf8b3c38afd5",
+      "protocolContentSha256": "2cb3059f4b81c95a574fe5bcf4c905c94d1362e12a58d34c12bbc3c93d930ba3",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "windows-31-ding",
+      "filename": "DING.WAV",
+      "byteLength": 11598,
+      "rawSha256": "b5ad2d751f7cab05d61b372d6a41ce00a49ca653a9cbfaf6f6e093bf01415cd9",
+      "protocolContentSha256": "a5d874bdeda8a9098ca98608fb69e03073a286cd79c8d6c2748d07982837d22a",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "aol-welcome-1993",
+      "filename": "WELCOME.WAV",
+      "byteLength": 13450,
+      "rawSha256": "339887fb470798029a04b94abf5106cc7e9bc72e163bc9810599750fe2f596fb",
+      "protocolContentSha256": "a17870f8205463c4dd7706c62479a5d3b1a2de2fceb91a51a205d14b686c59f4",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": "0xa8fc46cc129c693191dffb6d23c74869d8e25fd20ee7cc2a102afda758593e84"
+    },
+    {
+      "id": "aol-got-mail-1993",
+      "filename": "GOTMAIL.WAV",
+      "byteLength": 9946,
+      "rawSha256": "de26a6726130fedd92a220dce0246b8f0d1ab3b1b040ec56800f99903259a679",
+      "protocolContentSha256": "df99609184eff13a9b1453b60309a55f480538dd32b66312b831524096e5e003",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": "0x7802ddffee8b4a11a14f60c824135f9aa119a82e021246d022eec8eff8ddb357"
+    },
+    {
+      "id": "aol-goodbye-1993",
+      "filename": "GOODBYE.WAV",
+      "byteLength": 5450,
+      "rawSha256": "2b31e8e992c1789a6c2c3f383fd5b0f0ace29f0fa1695a213a9c7fc07e3cbd33",
+      "protocolContentSha256": "841277ce4fe6267208ca159542f62a1cd719079f353078a081530cd3ef6d225e",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": "0xf3a837e9baccec7fbefaa0310c09d011b55e3eeaa29391a4ac9b153c98676f20"
+    },
+    {
+      "id": "aol-instant-message-1993",
+      "filename": "IM.WAV",
+      "byteLength": 10600,
+      "rawSha256": "fc69197b7bf1d117ffdca457aff8d825b10945922e8097a6811331d0696002df",
+      "protocolContentSha256": "ff0b9b8a8eba65cae89632a26beee972fcc715a47f5c58b870a80d519b8dfe75",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": "0x44b41bdd3767b3df87039eb558e27924c54c5891d05c52824387a4a76af66663"
+    },
+    {
+      "id": "aol-file-done-1993",
+      "filename": "FILEDONE.WAV",
+      "byteLength": 7802,
+      "rawSha256": "1a22e77cf57b4a7a287603e0a2f97729cc5f8f24f2bc9005728ab912d542710e",
+      "protocolContentSha256": "5f953bf34cea4cf1b310904ffb495e0409ae0f6421c28549aec6b0ef7de6eeec",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": "0x7d99913f826988bc374353f6e516a548be235e416a8b4866375a01507e1c11cc"
+    },
+    {
+      "id": "icq-message",
+      "filename": "Message.wav",
+      "byteLength": 9996,
+      "rawSha256": "a9f6f2ecd6b9742c1057f5b3ab0889c08f2c6538df451b97b66c5ac46cbe9169",
+      "protocolContentSha256": "926cb7ee23bfcdd6040251863bb04c3f0bb095928a81a1ac0ed090dff2d22eb0",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "msn-new-message",
+      "filename": "type.wav",
+      "byteLength": 4454,
+      "rawSha256": "7dcf1f942ac06f4c191b8dc849049d52e49f56952ccc2c7d078278281da1c234",
+      "protocolContentSha256": "02cfb98144c72f47ce8ad11596653da6b24b33f04cb69c46d66bdca08902e11e",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "msn-contact-online",
+      "filename": "online.wav",
+      "byteLength": 6160,
+      "rawSha256": "41fbbe77e6e309a46a57bcef17f783bf365f9de67d35d70af4c93d90d86f53bb",
+      "protocolContentSha256": "f95509dadbe43c65c0c6b4bcebc4d4ce95cd38bff5ebbaba01155fb305a29866",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "msn-new-mail",
+      "filename": "newemail.wav",
+      "byteLength": 6156,
+      "rawSha256": "9040e9d4bed77d86e56c916f08829497cc758bcef411a0e4cd17c11695e6cfc8",
+      "protocolContentSha256": "7a04d61949643bff3fcea3232552ccc2d2ffc2c47f7f13e145b85af1fabb7d96",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "aim-door-open",
+      "filename": "DOOROPEN.WAV",
+      "byteLength": 19180,
+      "rawSha256": "9a80cf6367e8b3b9ab6d362cab623116721cc5ec0aef4148f26bac2a7f14b52c",
+      "protocolContentSha256": "0b74c57da8c8e0182381cd6951b8541ba14355610a3d5a3fbb0798dbfa0d4863",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "aim-door-slam",
+      "filename": "DoorSlam.wav",
+      "byteLength": 9388,
+      "rawSha256": "466a1098e3c6e39c075fa737d05c55073972640d7d954950856887ec25cdc4b5",
+      "protocolContentSha256": "9bf2f431c15d1dafba37ae9cf4719690d98fb484e7faae5870538062b8466135",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "aim-message-received",
+      "filename": "imrcv.wav",
+      "byteLength": 18348,
+      "rawSha256": "dbbc5b04325f4a5c64654cfc213ffaa47c1efc2a2f874f9587cc75f6615c0f9d",
+      "protocolContentSha256": "893371bd80ece234d682cb4fd1aca7df106d760732584ef9f8f3d0586a7b132a",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    },
+    {
+      "id": "aim-message-sent",
+      "filename": "imsend.wav",
+      "byteLength": 17772,
+      "rawSha256": "4d41a55a23128e759040bfbd7ebe7ce339d4a8adf0767177ba548b359f996a88",
+      "protocolContentSha256": "ba5d2ff36ba800a6db367f7c1558fadb967ab9a2e69f409d8fb8f2d2d8e477d5",
+      "mediaType": "audio/wav",
+      "canonicalPrefix": "data:audio/wav;base64,",
+      "ethscriptionId": null
+    }
+  ]
+}
