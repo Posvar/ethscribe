@@ -15,6 +15,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/market/browse"
+  to = "/.netlify/functions/market-browse"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/market/status"
   to = "/.netlify/functions/market-status"
   status = 200

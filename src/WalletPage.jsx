@@ -131,7 +131,7 @@ function TextAssetPreview({ source, label }) {
   return <pre className="wallet-asset-text" aria-label={`${label} text preview`}>{preview.text}</pre>;
 }
 
-function AssetPreview({ record }) {
+export function AssetPreview({ record }) {
   const source = record.transactionHash ? `/api/ethscriptions/media/${record.transactionHash}` : '';
   const [failedSource, setFailedSource] = useState('');
   const mimetype = (record.mimetype || '').toLowerCase();

@@ -32,6 +32,10 @@ The active contract is `EthscribeMarketV2` at `0x65a6771a4f82bcc1fad26CC944cA673
 
 ## Next development priorities
 
+### Marketplace browse — publication approved
+
+A wallet-free `/marketplace` browse page shows recognized escrowed artifacts across the published expeditions, with All/Listed, exact-price sorting, friendly file-type and expedition filters, search, grid/list views and pagination. The navigation item sits between Expeditions and Wallet. It reuses current custody checks and links to existing artifact-level sale controls; it introduces no contract change or new trade execution path. Publication was approved on 6 September 2026; the two draft expeditions remain local-only. See [the marketplace implementation notes](planning/MARKETPLACE_BROWSE_PREVIEW.md).
+
 ### Expedition 000 — completed EBURP collection, publication approved
 
 **EBURP: Before the Punks** brings the existing `eburp.art` collection into a completed retrospective at `/expeditions/eburp`. It preserves all 216 original PNG payloads and Ethscription IDs: 92 core sprites matched to EBURP’s first repository commit (1 November 2013), plus a separate 124-character preservation archive. “Complete” describes the existing catalogue, not current custody, fresh verification of every ID, or availability for sale.

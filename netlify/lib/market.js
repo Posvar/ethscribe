@@ -596,6 +596,8 @@ module.exports = {
   getMarketStatus,
   getArtifactMarket,
   getWalletInventory,
+  fetchIndexerList,
+  rpcBatch,
   isAddress,
   isEthscriptionId,
   jsonResponse,

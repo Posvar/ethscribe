@@ -15,12 +15,20 @@ If a recognized expedition artifact is still in your wallet, first open its reco
 1. Open [Field Wallet](/wallet) and select **Marketplace custody**.
 2. If a direct creation has not been registered for trading, choose **Register for sale** and wait for confirmation and custody verification.
 3. Set a fixed price in ETH and approve the listing transaction.
-4. The listing appears in the corresponding recovered artifact's expedition record.
+4. The listing appears in the corresponding recovered artifact's expedition record and the Marketplace browse page.
 5. Change the price, cancel the listing, or withdraw the artifact from your wallet controls.
 
 Registration is a one-time step per deposit that records the now-known Ethscription ID for settlement. It is not a second creation or a sale. Canceling a listing leaves custody unchanged. Withdrawal cancels an attached listing.
 
 A contract deposit by itself does not make an artifact eligible for Ethscribe's curated catalogue. The first-party deposit flow begins within an expedition target.
+
+## Browse the Marketplace
+
+Open [Marketplace](/marketplace) without connecting a wallet to browse recognized expedition artifacts held in market custody. Choose **All escrow** or **Listed**, filter by expedition or file type, search the collection, and sort by price. Grid and list views include previews; audio artifacts have playback controls.
+
+Unlisted artifacts are not offers for sale. Unrecognized deposits and the burned EBURP archive do not enter this catalogue. A reserved listing may only be purchased by its designated buyer.
+
+The gallery refreshes periodically and identifies stale or incomplete reads. Prices and custody are rechecked on the artifact record before purchase; a browse card is not authorization to trade. No separate indexer or new contract is required.
 
 ## Buy from an artifact record
 

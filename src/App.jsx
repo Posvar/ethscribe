@@ -28,6 +28,7 @@ const LocalExpeditionCards = loadLocalExpedition ? lazy(() => loadLocalExpeditio
 const EburpExpedition = lazy(() => import('./EburpExpedition.jsx'));
 const EburpCard = lazy(() => import('./EburpExpedition.jsx').then(module => ({ default: module.EburpCard })));
 const EburpWallet = lazy(() => import('./EburpWallet'));
+const Marketplace = lazy(() => import('./MarketplacePage'));
 
 const loadSoundExpedition = () => Promise.all([import('./SoundExpeditionPage'), import('./soundExpedition')]);
 const SoundExpedition = lazy(() => loadSoundExpedition().then(([ui, data]) => ({
@@ -102,8 +103,8 @@ function walletLabel(account, walletState, walletName, ensName) {
   return walletState === 'connecting' ? 'Connecting…' : 'Connect Wallet';
 }
 
-function SiteHeader({ account, walletState, walletName, ensName, connectWallet, openAccountModal, expedition = false, expeditionMeta = null, expeditions = false, docs = false, wallet = false }) {
-  const awayFromHome = expedition || expeditions || docs || wallet;
+function SiteHeader({ account, walletState, walletName, ensName, connectWallet, openAccountModal, expedition = false, expeditionMeta = null, expeditions = false, docs = false, wallet = false, marketplace = false }) {
+  const awayFromHome = expedition || expeditions || docs || wallet || marketplace;
   const expeditionsActive = expedition || expeditions;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuToggle = useRef(null);
@@ -139,6 +140,7 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
         <nav className="main-nav" aria-label="Primary navigation">
           <a href={awayFromHome ? '/#mission' : '#mission'}>Mission</a>
           <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" aria-current={expeditionsActive ? 'page' : undefined}>Expeditions</a>
+          <a className={marketplace ? 'nav-active' : ''} href="/marketplace" aria-current={marketplace ? 'page' : undefined}>Marketplace</a>
           <a className={wallet ? 'nav-active' : ''} href="/wallet" aria-current={wallet ? 'page' : undefined}>Wallet</a>
         </nav>
         {account ? (
@@ -180,6 +182,7 @@ function SiteHeader({ account, walletState, walletName, ensName, connectWallet, 
             )}
             <a href={awayFromHome ? '/#mission' : '#mission'} onClick={closeMenu}>Mission</a>
             <a className={expeditionsActive ? 'nav-active' : ''} href="/expeditions" onClick={closeMenu}>Expeditions</a>
+            <a className={marketplace ? 'nav-active' : ''} href="/marketplace" aria-current={marketplace ? 'page' : undefined} onClick={closeMenu}>Marketplace</a>
             <a className={wallet ? 'nav-active' : ''} href="/wallet" onClick={closeMenu}>Wallet</a>
           </nav>
         )}
@@ -1066,10 +1069,11 @@ function App() {
   const isExpeditions = pathname === '/expeditions' || isLegacyProposalPath || isLegacyCreationPath;
   const isDocs = pathname === '/docs' || pathname.startsWith('/docs/');
   const isWallet = pathname === '/wallet';
+  const isMarketplace = pathname === '/marketplace';
   const isSoundExpedition = pathname === SOUND_EXPEDITION_PATH;
   const localExpeditionSlug = import.meta.env.DEV && LocalExpedition && ['/expeditions/browser-wars', '/expeditions/skin-deep'].includes(pathname) ? pathname.split('/').pop() : null;
   const isEburp = pathname === '/expeditions/eburp';
-  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet && !isSoundExpedition && !localExpeditionSlug && !isEburp;
+  const notFound = pathname !== '/' && !isExpedition && !isExpeditions && !isDocs && !isWallet && !isSoundExpedition && !localExpeditionSlug && !isEburp && !isMarketplace;
 
   useEffect(() => {
     if (isLegacyProposalPath || isLegacyCreationPath) window.history.replaceState({}, '', '/expeditions');
@@ -1077,14 +1081,14 @@ function App() {
 
   useEffect(() => {
     if (isDocs || localExpeditionSlug || isEburp) return;
-    document.title = isSoundExpedition ? 'You’ve Got History — Ethscribe Expedition 002' : notFound ? 'Page not found — Ethscribe' : isWallet
+    document.title = isMarketplace ? 'Marketplace — Ethscribe' : isSoundExpedition ? 'You’ve Got History — Ethscribe Expedition 002' : notFound ? 'Page not found — Ethscribe' : isWallet
       ? 'Wallet — Ethscribe'
       : isExpeditions
         ? 'Expeditions — Ethscribe'
       : isExpedition
         ? 'The Lost Pixels of Satoshi — Ethscribe Expedition 001'
         : 'Ethscribe — Ownable Digital Archaeology';
-  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound, isSoundExpedition, localExpeditionSlug, isEburp]);
+  }, [isDocs, isExpedition, isExpeditions, isWallet, notFound, isSoundExpedition, localExpeditionSlug, isEburp, isMarketplace]);
 
   useEffect(() => {
     if (!modal) return undefined;
@@ -1144,6 +1148,7 @@ function App() {
         />
       </Suspense> : localExpeditionSlug ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading local expedition…</p></main></div>}><LocalExpedition slug={localExpeditionSlug} renderHeader={meta => <SiteHeader {...headerProps} expedition expeditionMeta={{ ...meta, id: meta.number }} />} footer={<SiteFooter />} /></Suspense> : isSoundExpedition ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} expeditions /><main id="main-content" tabIndex={-1}><p role="status">Loading Expedition 002…</p></main></div>}><SoundExpedition headerProps={headerProps} pageProps={pageProps} findings={soundFindings} findingIndexState={soundFindingIndexState} /></Suspense> : notFound ? <NotFoundPage header={<SiteHeader {...headerProps} expeditions />} /> : isDocs
         ? <DocsPage header={<SiteHeader {...pageProps} docs />} footer={<SiteFooter />} />
+        : isMarketplace ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} marketplace /><main id="main-content" tabIndex={-1}><p role="status">Loading marketplace…</p></main></div>}><Marketplace header={<SiteHeader {...headerProps} marketplace />} footer={<SiteFooter />} /></Suspense>
         : isWallet
           ? <Suspense fallback={<div className="site-shell"><SiteHeader {...headerProps} wallet /><main id="main-content" tabIndex={-1}><p role="status">Loading Field Wallet…</p></main></div>}><EburpWallet
               account={account}
